@@ -4,7 +4,7 @@
 # Log: port_work/g6/boot.log (LOG=...), last TAILN lines printed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
-BIN=port_work/g6/bin
+BIN=${BIN:-port_work/g6/bin}
 if [ "${1:-}" = --sync ]; then mkdir -p $BIN; cp build/wasm/game.js build/wasm/game.wasm $BIN/; echo "synced $(stat -f %Sm $BIN/game.wasm)"; exit 0; fi
 ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
 LOG=${LOG:-port_work/g6/boot.log}

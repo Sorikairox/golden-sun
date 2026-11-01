@@ -1,0 +1,14 @@
+# GS9, after prologue.keys (real play, no probe): the first rock falls, north along x 18 to cell 18,47, east up the
+# slope (20-21,47) to 22,47, north to 22,45, west to 19,45, north to 19,39, east: "Ugh... Hrnghhh..." (cell
+# behavior 30, ValePrologue_HearGaretStruggling, f~5830), A through Garet's lines: he drops his chest and joins
+# (2-member party from f~6650). Found with tests/probes/pathfind.cjs + where.cjs.
+A@4820-4822,A@4880-4882   # "You know the way... Be careful!" and close
+DOWN@4950-5040            # south, to the ledge
+RIGHT@5050-5070           # east: the first rock falls
+UP@5350-5520              # north past Isaac's house
+RIGHT@5521-5600           # east up the slope to 22,47
+UP@5601-5640              # north to 22,45
+LEFT@5641-5690            # west to 19,45
+UP@5691-5790              # north to 19,39
+RIGHT@5791-5830           # east: Isaac hears Garet
+A@5900-6620/40            # Garet's lines; he joins
