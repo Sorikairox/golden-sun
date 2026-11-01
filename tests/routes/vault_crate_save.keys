@@ -1,0 +1,6 @@
+# GS16: save in the room with the crate after Move (after vault_crate.keys): Start, Save your quest, file 1,
+# "OK to save over this file?" LEFT to Yes, A (written ~f7300), B.
+START@6950-6952,A@7040-7042    # pause menu, Save
+A@7140-7142                    # file 1
+LEFT@7240-7242,A@7290-7292     # Yes: save over it
+B@7500-7502                    # close "Your game was saved."

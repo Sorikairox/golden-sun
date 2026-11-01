@@ -1,0 +1,19 @@
+# GS16: from the vault_inn save (guests' floor; continue with vale_day1_continue.keys + --flash-in).
+# Into the guests' room (15,44): the chase starts (LogRoomsA_StartCorneringSuspects, ~f2600; A taps through
+# "Hey, they're back!"). Isaac runs up the east crossbar and west along the top row: both suspects are squeezed into
+# the west column between him and Ivan: "Uh-oh! I'm surrounded!" (~f2850)
+UP@2100-2110,A@2200-2560/40,UP@2620-2720,LEFT@2721-2900
+# "Now, Ivan!": Mind Read on the cornered suspect, the party's talk outside the room (A taps; B closes a late menu)
+A@2920-4900/40,B@5000-5200/40
+# Out of the guests' room door, the corridor to the stairs (22,39), LEFT down to the inn (46,40), out its south
+# door: Vault (13,19) at f5824
+RIGHT@5300-5312,DOWN@5313-5336,RIGHT@5338-5385,UP@5387-5395,RIGHT@5397-5427,UP@5429-5440,RIGHT@5442-5459
+RIGHT@5461-5464,UP@5465-5544,UP@5546-5560,LEFT@5570-5607,DOWN@5640-5657,LEFT@5659-5668,LEFT@5670-5674
+DOWN@5675-5770,DOWN@5772-5823
+# Row 21 west to 9,21, up the ladder by the inn (9,17-18; centred at x 152) into the west entrance: the room with
+# the crate (ent 13, 40,26) at f6073
+DOWN@5840-5865,LEFT@5867-5924,LEFT@5926-5931,UP@5933-6072
+# Below the crate (43,27), face north: field menu, Psynergy, Isaac, Move (one DOWN), LEFT: the crate slides to
+# column 42 (FLAG_VAULT_CRATE_MOVED), the way up behind it opens
+DOWN@6160-6169,RIGHT@6171-6214,UP@6230-6233,A@6260-6262,A@6340-6342,A@6400-6402,DOWN@6440-6442,A@6480-6482
+LEFT@6580-6620
