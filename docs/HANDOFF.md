@@ -2,6 +2,47 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS18 — 2026-11-02: Goma Cave to Kolima Forest by real play: Forge, the way out, Bilibin (Mind Read, McCoy), the barricade, Kolima's curse
+
+### Done
+- **Tooling**: `tests/probes/hpath.cjs`, a height- and layer-aware path search (terrain kinds and samples, step +8/-12 px from
+  MapGrid_CheckCollision, jump/climb/ledge cells, scene gap jumps HPATH_JUMPW, the cell picture's layer bits; maps of reachable
+  cells or raw heights); mapdump MAP_MODE=height now prints shape byte 1 in 8-px units (y 32 printed 0 before). It found the
+  pillar room's way (the pond room) at once.
+- **Real play, no probe** (story order from the vendor scene sources first; docs/G18.md 2), five new saves + regress cases:
+  - `goma_forge.keys`: the pond room, **Move** on the west pillar and on the stump (it falls into the pond), across the pond on
+    its jump cells, the east ledge, Cure x3, **Forge's battle won** (battlebot: Quake, Ray, Flint unleashed), Forge joins, the
+    witness leaves; save. (A first try at Forge with low HP was lost: the party woke at the Vault Sanctum.)
+  - `bilibin.keys`: exit 9, **Move** on the stream room's stump (it leaps into the stream), the bridge, diagonal stairs, the
+    World Map to **Bilibin**; save.
+  - `mccoy.keys`: **Mind Read** (L shortcut) on the tree man ("Help me... Somebody..."), the palace gate, **McCoy's audience**,
+    the captain's barricade hint; save.
+  - `kolima.keys`: back out, the **Bilibin Barricade** (**Move** on the crates), the World Map to **Kolima**, the curse scene
+    (Tret and Laurel); save.
+  - `kolima_forest.keys`: Cure x5, the World Map to **Kolima Forest**; save. Furthest saved point:
+    `port_work/g18/final/furthest_kolima_forest_4400.png`; highlights in story order `port_work/g18/final/sheet.png` (frames in
+    final/frames.txt).
+- **No port bug found**; 0 distinct stubs hit. Checked: the interlaced wipe's grey-looking half (WIN0 = BG0 only on even lines,
+  the old scene on odd lines; pixel and register check), Kolima's silences (the scene's own BGM fade-outs), Mind Read's tint.
+  No asm/C change: no EQUIV spec or audit row, the wasm was not rebuilt (web tests not rerun).
+- **Audio per second** on the five routes: sound in every window except power-on, and the curse scene's fade-outs in kolima
+  (G18.md 5); DAC clamp up to 0.41 % in battle music.
+
+### Next
+1. From the kolima_forest save: the entrance's logs (roll one west into the river, cross; KolimaForest_HopEast), the glade,
+   the forest's scenes to **Tret** (the curse lifted), back to Kolima (Granite in the village), McCoy's reward. Grind first: the
+   party is Lv 6 (Forge nearly won); use battlebot for Djinn/summons.
+2. Use hpath (HPATH_MAP=1, then HPATH_TO) in every new cave; search again after Move/scene events change cells.
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 33/33 OK (before the last case was added; `kolima_forest` then OK on its own, 34 cases; `--update`
+  only for the five new cases), `--quick` 9/9 OK in 33 s, test_arm 79/79 EQUIV, leak
+  check PASS, code-range audit untouched.
+- Routing: Move reaches 32 px (2/3 counted for the stump): push into the cliff edge before casting. A examines the Bilibin tree
+  man from Mind Read's range: use the L shortcut. START is swallowed while a message is up. autowalk's WALK_TAP opens menus.
+- No downloads, installs, deploys or permission denials.
+
 ## GS17 — 2026-11-02: Vault Sanctum to Goma Cave by real play: Revive, Ivan rejoins (Whirlwind), the cave's stream and pillar rooms, Djinn/Psynergy/summon in battle
 
 ### Done

@@ -59,10 +59,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   at the Vault healer, the north gate, the Goma Cave Entrance (pillars by push and Move, **Ivan rejoins** with Whirlwind, the stump
   leaps into the pool, Whirlwind on the ivy), the stream room, the pillar room (east pillar settled); battles with Djinn set and
   unleash, Ray and a **Venus summon** (battlebot BB_SEQ). Three saves, regress 29 cases, `regress.sh --quick`. No port bug found.
+- GS18 (2026-11-02): **Goma Cave to Kolima Forest by real play** (goma_forge, bilibin, mccoy, kolima, kolima_forest.keys;
+  docs/G18.md): the pond room, Move on the west pillar and both stumps, **Forge's battle won**, the bridge, Bilibin (**Mind Read**
+  via the L shortcut, McCoy's audience), the barricade's crates, **Kolima's curse scene**. New `tests/probes/hpath.cjs`
+  (height- and layer-aware path search, trap 43); mapdump height scale fixed. Five saves, regress 34 cases. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the goma_pillar save: the pond room and the y-32 ledges (G17.md 2 end), Forge, the stream room's north and the bridge,
-  Bilibin; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the kolima_forest save: the entrance's logs, the forest to Tret (curse lifted), Kolima, McCoy's reward (grind first,
+  Lv 6); `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -363,3 +367,10 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     only within 8 px of height (Catch 48, Douse 64, Mind Read 16) and, past 11 px, within ~34 degrees of the facing rounded to a
     quarter turn; stand level and in line. Move pushes once per cast and ends on A/B/L/R. The cast tint colour is chosen by
     `gFrameCount & 7` (eight colours), so it differs from cast to cast. Diagonal stairs need diagonal input.
+43. Cave routing (GS18): walls in caves are heights, and a room's levels can be separate map layers. gMapGridWork's layers[] are
+    0x30 apart and each is a window into the 128-wide gMapGridCellBuffer; a cell's picture halfword bits 13-12 (if not 0) put an
+    actor standing on it on that layer - 1 (actor_camera.c). A step is legal up to 8 px up and 12 px down from the actor's ground
+    (MapGrid_CheckCollision); jump cells are stood on and pushed against for 12 frames. tests/probes/hpath.cjs models all of
+    this; search again after Move or a scene event copies cells. Move reaches 32 px (2/3 for ACTOR_NEAR_PSYNERGY): push into the
+    cliff edge before casting across a gap. Where A examines something (its reach exceeds Mind Read's), cast from the L/R
+    shortcut (Psynergy menu member row: L on the member, pick the Psynergy).
