@@ -360,3 +360,74 @@ section 6), Psynergy/Djinn/summons in a link battle (no party has them), three-m
 7. Netsim in the page (`?netsim=lat:MS,jit:MS,loss:PCT`) can wrap the WebRTC transport the way link_loopback.js wraps
    the in-memory one; the G7 exit test (two pages in one headless Chrome via a local room server) should replay the
    routes above.
+
+## 8. G7 online implementation and results (GS8)
+
+Implemented as section 7 asks; link.c and the wasm are unchanged (same build as GS7).
+
+| Piece | File |
+|---|---|
+| WebRTC transport (`Module.linkTransport`), hello check, per-turn hash, netsim, hidden-page ticker, page panel | `port/web/net.js` |
+| Page hooks: transport + module handed to net.js, per-frame `GSNet.onFrame`, frame wait from rAF or the worker ticker, test key hook `window.__gsScript` | `port/web/main.js` |
+| Panel "Link battle online" (Host / room code / Join / status / round trip / Leave; manual codes; desync warning) | `port/web/index.html` |
+| Build id (`build_id.js`: first 16 hex of SHA-256 of game.wasm + game.js) | `tools/site.sh` |
+| Room server logic (adapted from GoldenEye's, 2 players, ROM SHA-1) + Netlify Function v2 on Blobs (not deployed) | `port/netlify/functions/room/{core,room}.mjs`, `port/netlify/package.json` |
+| Local room server for tests (+ `--selftest`, 21 checks) | `tools/roomserver.mjs` |
+| Two-page test (one headless Chrome, two browser contexts) | `tests/web_link.cjs` |
+
+Channels: one RTCPeerConnection, negotiated data channels `frame` (id 1, `ordered:false, maxRetransmits:0`) = transport
+channel 0, and `bulk` (id 2, reliable ordered) = channel 1. Our control messages travel as **text** (JSON) on `bulk`,
+link.c's messages as binary, so there are only the two channels and hello always precedes link traffic:
+`hello` {build, rom (SHA-1), edition 'en', role, fresh}, `refuse` {why}, `bye`, `ping`/`pong` (round trip shown in
+the panel, every 2 s), `hash`. `connected()` turns true only when both channels are open and the partner's hello
+matches (same build id, same ROM, English, opposite roles); otherwise both pages show "link refused: ..." (the room
+server already compares build and ROM at join; hello also covers the manual codes). playerId 0 = host = link parent.
+
+Signaling: room codes (5 characters, `create/join/host/offer/guest/answer/close` as GoldenEye) at `/api/room`
+(`?roomapi=URL` overrides), the host closes the room once linked; STUN only (Google + Cloudflare), no TURN (D15);
+`?stun=none` = host candidates only (local tests). Manual fallback: "Host: make code" -> the guest pastes it and
+"answers" -> the host pastes the answer (deflated SDP, `GS1.` prefix, ~650 characters each).
+
+Online settings and timing:
+- `Port_LinkSetFreshFrames(300)` when the link is accepted (5 s of jitter never drops "both heard"; a partner who
+  leaves shows as a link loss after 5 s, then the game's own counters run).
+- Hidden page: rAF stops and timers drop to ~1 Hz; while in a session net.js starts a Worker posting every 4 ms and
+  main.js's frame wait runs from those ticks. **In the headless test the second page is hidden** (`visibilityState`
+  "hidden"): it ran at 59.6-59.7 frames/s through the whole battle on the worker ticks, so this path is exercised.
+- Fixed game windows vs round trip (both pages with the same netsim, so the round trip is twice the delay):
+
+| netsim each way | measured RTT | result |
+|---|---|---|
+| none (127.0.0.1) | 0-5 ms | battle over at ~f3850 like node; 20/20 hashes equal; b wins on both screens; tally saved |
+| 80 ms + 0-20 ms jitter, 2 % (PLAN G7 exit profile `lat:80,jit:20,loss:2`) | ~170 ms | same result, 20/20 equal |
+| 100 ms + 0-20 ms jitter, 10 % frames dropped | ~210 ms | same result, 20/20 equal (~380 frames dropped per side) |
+| 250 ms + 0-30 ms jitter, 10 % frames dropped | ~510 ms | same result, 20/20 equal; battle slower (over at ~f5700: every transfer and handshake costs round trips) |
+
+  LinkBattle_WaitSync (30 frames) never failed, even at a 510 ms (~30-frame) round trip: it only waits for the
+  *skew* between the two sides after the action exchange, which is well under a round trip. Turn transfers (300) and
+  the Arena windows (600/900) are far away. **No WaitSync override** (none needed; revisit only if a real session
+  above ~500 ms RTT fails).
+- Desync guard: at each change of gBattleRandomSeed (the turn boundary link2.cjs checks), each page hashes its party
+  unit and the enemy unit (names and side byte excluded) and sends `hash` {key battle.turn, seed, own, enemy}; the
+  partner checks `own == its enemy`, `enemy == its own`, same seed. A mismatch logs both hashes (console, `[net]
+  DESYNC ...`) and shows a non-blocking warning in the panel. No C hook needed (JS reads RAM after each frame).
+- Netsim (`?netsim=DELAY,DROP,JITTER` with DROP a fraction or percent, or `?netsim=lat:MS,jit:MS,loss:PCT`) delays this
+  page's outgoing messages, keeps bulk ordered, drops/reorders frames. Its queue is drained every game frame as well
+  as by a timer: from timers alone a hidden page's 1 Hz throttling turned 100 ms into ~1 s (first netsim run: RTT
+  1100 ms on the hidden page, battle stuck after two turns; trap 34).
+
+Tests (`tests/web_link.cjs`, ~90-130 s each): `node tests/web_link.cjs` (clean), `--netsim 100,0.1,20`,
+`--netsim 250,0.1,30 --frames 8000`, `--manual --refuse` (manual codes connect, page b claims another build: both
+pages refuse). Captures: `port_work/g8/{clean,netsim,netsim250}/sheet.png` (a | b, 2 pairs a row).
+
+Not tested: a real session across two networks (NAT traversal with STUN only; some pairs will not connect, D15);
+partner leaving mid-battle (the game should show its link-lost message after the 5 s fresh window); a really hidden
+tab in a desktop browser (headless "hidden" was tested); mobile Safari.
+
+### Going live (gated on D14: permission from alchemy's author; nothing was deployed)
+1. Site: `tools/site.sh` -> publish `build/site` (it holds no ROM bytes; leak check per build).
+2. Function: `port/netlify/functions/room/` (Netlify Functions v2, path `/api/room`, Blobs store `golden-sun-rooms`);
+   its one dependency `@netlify/blobs` is declared in `port/netlify/package.json` and must be installed by the deploy
+   step (e.g. copy it next to the functions dir and `npm install`, as GoldenEye's deploy_web.sh does), not committed.
+   Deploy e.g. `netlify deploy --dir build/site --functions port/netlify/functions` on a new site (user's account).
+3. Then the PLAN G7 exit's second half: one real session across two machines/networks, reported by the user.

@@ -2,6 +2,48 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS8 — 2026-11-01: online link battle between two pages (G7, local): WebRTC transport, rooms, hello, hash guard
+
+### Done
+- **port/web/net.js**: `Module.linkTransport` on one RTCPeerConnection, negotiated channels `frame` (id 1, unordered,
+  maxRetransmits 0) and `bulk` (id 2, reliable); our control JSON (hello/refuse/bye/ping/pong/hash) as text on bulk.
+  link.c and the wasm unchanged. playerId 0 = room host.
+- **Rooms**: `port/netlify/functions/room/{core,room}.mjs` (adapted from GoldenEye's: 2 players, ROM SHA-1; Netlify
+  Function v2 on Blobs, `@netlify/blobs` declared in `port/netlify/package.json`, NOT installed, NOT deployed);
+  `tools/roomserver.mjs PORT` local copy for tests, `--selftest` 21/21. Manual copy-paste codes as fallback.
+- **hello**: build id (`build_id.js` from tools/site.sh: SHA-256 of game.wasm + game.js, 16 hex), ROM SHA-1,
+  edition 'en', roles; mismatch -> both pages "link refused: ..." (tested with --manual --refuse).
+- **Online settings**: `Port_LinkSetFreshFrames(300)` on accept; Worker ticks (4 ms) drive the frame wait while the
+  page is hidden; per-turn hash at each gBattleRandomSeed change, non-blocking panel warning + `[net] DESYNC` log on
+  mismatch. **No WaitSync override needed** (passes at a ~510 ms round trip; LINK.md section 8 table).
+- **Page**: panel "Link battle online" (details): Host (room code shown big), code field + Join, status line,
+  round trip, Leave, manual codes, desync warning; 44 px targets (checked by the test). `?netsim=DELAY,DROP,JITTER` or
+  `lat:,jit:,loss:`; `?roomapi=`, `?stun=none` test aids. Test key hook `window.__gsScript` (frame-indexed keys).
+- **tests/web_link.cjs**: one muted headless Chrome, two browser contexts (own IndexedDB), local static + room server,
+  host/join by the panel buttons, link routes to the end of the battle. Results (all PASS, 0 console errors/warnings):
+  clean: linked at f~250, 20/20 hashes equal, "b won (a down on both screens)", tally saved; `--netsim 100,0.1,20`:
+  RTT ~210 ms, ~380 frames dropped per side, 20/20, same result; `--netsim lat:80,jit:20,loss:2` (the PLAN exit profile): RTT ~170 ms, 20/20, same result;
+  `--netsim 250,0.1,30 --frames 8000`: RTT ~510 ms,
+  20/20, same result (battle ends ~f5700 instead of ~f3850); `--manual --refuse`: both refuse. Page b is hidden in
+  headless (trap 35) and still ran 59.6 frames/s on worker ticks.
+- Captures (gitignored): `port_work/g8/clean/sheet.png`, `port_work/g8/netsim/sheet.png`,
+  `port_work/g8/netsim250/sheet.png` (a | b side by side: lobby, apply, battle start, attacks, down/felled, results saved).
+- Docs: LINK.md section 8 (implementation, timing table, going-live steps), PLAN G7 note, orchestrator status, traps 34-35.
+
+### Next
+1. User: permission from alchemy's author (D14). Then deploy per LINK.md 8 "Going live" (site + function; npm install
+   of @netlify/blobs in the deploy step) and one real session across two networks (PLAN G7 exit, second half).
+2. Tests: partner leaves mid-battle (expect the game's link-lost message after 5 s), failed exchange + retry, a real
+   hidden desktop tab, phones (iOS memory, D5).
+
+### Notes
+- Regressions: tools/link2.sh 20/20 agree, b won, same digests as before; 76/76 EQUIV; prologue save cmp OK; leak
+  check PASS; tests/web_touch.cjs ALL PASS. No downloads, no installs, nothing deployed, no permission denials.
+- First netsim run failed (RTT 1.1 s on the hidden page, battle stalled after two turns): netsim's setTimeout delays
+  were throttled in the hidden page; fixed by draining the netsim queue every game frame (trap 34). Not a transport bug.
+- Confidence: high for the local online path (seen on both screens, hashes, three network profiles); medium for real
+  networks (STUN-only NAT traversal untested; D15 means some pairs cannot connect).
+
 ## GS7 — 2026-11-01: local link battle end to end (G6, D21): link.c over a message transport, two instances
 
 ### Done

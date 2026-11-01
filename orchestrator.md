@@ -14,14 +14,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS7 (2026-11-01): **local link battle runs end to end** (G6, D21): port/pc/link.c replaces serial.c's API over a
-  message transport (unreliable newest-wins frames + reliable bulk); two wasm instances in node (tests/link2.cjs,
-  tools/link2.sh) go File Screen -> Battle Arena lobby -> attendant -> circle -> party exchange -> 4 turns (both
-  Attack) -> one Isaac falls -> back to the Arena with the tally saved; both sides mirror each other at every seed
-  change, also with 1-3 frames of delay, 20-50 % dropped frames and reordering; deterministic run to run. 76/76 EQUIV.
-  Details: docs/LINK.md section 7 (with the G7 needs). Battles: docs/G6.md.
-- Next: G7 (WebRTC transport behind the same interface, rooms, hello/build check, online fresh window); a link-loss
-  and an exchange-retry test; route to a real prologue fight.
+- GS8 (2026-11-01): **online link battle works between two pages** (G7, local): port/web/net.js puts link.c's
+  transport on WebRTC data channels (frame unreliable/unordered, bulk reliable; control JSON as text on bulk), room
+  codes (port/netlify/functions/room, local tools/roomserver.mjs) + manual codes, hello check (build id, ROM SHA-1,
+  English), fresh window 300 online, worker ticks while hidden, per-turn hash guard, page panel "Link battle online",
+  ?netsim. tests/web_link.cjs: two pages in one headless Chrome reach the end of a link battle with 20/20 turn hashes
+  equal and the same winner, clean and at ~210 ms / ~510 ms round trips with 10 % frame loss; no WaitSync override
+  needed. Nothing deployed (D14). Details: docs/LINK.md section 8.
+- Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
+  across two networks; tests for partner-leaves mid-battle and failed exchange + retry; route to a real prologue fight.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -282,3 +283,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 33. A frame-scripted route through the Arena lobby keeps working under delay/drop only because the waits are the
     game's (it polls the peer's state); tap A over a long window, and B (not A) to close the last message, or a new
     talk with the attendant starts.
+34. A hidden page's timers run at ~1 Hz: anything paced by setTimeout (netsim delays, polling) is distorted there. The
+    game loop runs from a Worker's ticks while hidden (net.js); the netsim queue is drained every game frame.
+35. In headless Chrome the second page target (another browser context) is `visibilityState: hidden` while the first
+    is visible: tests/web_link.cjs's page b exercises the hidden-page path (it must still run ~60 frames/s).

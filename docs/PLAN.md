@@ -76,6 +76,10 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   STUN only. Per-turn battle-state hash comparison and desync report. Netsim in page.
 - **Exit:** two pages in one muted headless Chrome (still one browser at a time) complete an online link battle via a local room server under `netsim=lat:80,jit:20,loss:2`;
   then one real session across two machines/networks reported by the user.
+- GS8: first part of the exit met locally (tests/web_link.cjs, docs/LINK.md section 8): two pages, real WebRTC on
+  127.0.0.1, local room server, full link battle with 20/20 turn hashes equal and the same result, clean and under
+  netsim lat:80,jit:20,loss:2 (the profile above), 100 ms + 0-20 ms jitter + 10 % frame loss (each way) and 250 ms + 0-30 ms + 10 %. Left: a real session across
+  two networks (needs a deployed site: gated on D14).
 
 ## G8 — Polish and optional features
 
