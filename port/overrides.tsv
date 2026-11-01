@@ -1,0 +1,19 @@
+# What the wasm build replaces in vendor/alchemy (pinned 24b72a32) and why (orchestrator D3). Vendor files are
+# never edited or copied: a replaced header is taken over by port/shim/prelude.h (its include guard), a replaced
+# C file is left out of the build and our own file takes its place.
+# kind: header = shim header (done); file = whole vendor file replaced (todo in G2); asm = vendor assembly routine
+# replaced by our C (todo, D6). status: done | todo
+vendor	kind	ours	status	why
+games/tbs/include/system/dma.h	header	port/shim/system/port_dma.h	done	Dma_Set is a register-pinned stmia in inline asm; ours stores the three DMA registers and calls Port_DmaWritten
+games/tbs/include/system/iwram_call.h	header	port/shim/system/port_iwram_call.h	done	calls ARM routines at fixed IWRAM addresses; wasm calls our C functions (Port_Iwram*)
+games/tbs/include/system/transform.h	header	port/shim/system/port_transform.h	done	identity matrix stores are three stmia in inline asm; plain C
+games/tbs/include/system/mul_q16.h	header	port/shim/system/port_mul_q16.h	done	smull/orr in inline asm; 64-bit product in C
+games/tbs/include/types.h	header	port/shim/prelude.h	done	FIXED_ADDRESS/FIXED_OFFSET: plain constants (identity memory map, D5) instead of MODERN's linked names
+games/tbs/src/game/game/units.c	header	port/shim/prelude.h	done	__builtin_return_address (a FAKEMATCH test) defined as NULL, which takes the same return
+games/tbs/src/battle/battle/turn.c	file	-	todo	GNU nested functions (clang rejects them): lift to file-scope functions with an explicit context
+games/tbs/src/window/window/windows.c	file	-	todo	GNU nested functions
+games/tbs/src/window/screens/battle_djinn_preview.c	file	-	todo	GNU nested functions
+games/tbs/src/battle_effect/battle_effect/particle_streams.c	file	-	todo	GNU nested functions
+games/tbs/src/menu/menu/item.c	file	-	todo	calls an IWRAM routine as IwramIrqMain + Iwram_CopyWordsOffset (address arithmetic on code)
+games/tbs/src/field/actor_update_arm.c	file	-	todo	ARM C calling IWRAM routines by offset from IwramIrqMain (IWRAM_ENTRY)
+games/tbs/src/system/system/frame.c	file	-	todo	swi 2/3 (Halt/Stop) and the frame-wait stack switch (mov sp) in inline asm: becomes the fiber yield (D8)
