@@ -8,3 +8,9 @@ EraseFlashChip	port/pc/flash.c	chip command sequence + polling; ours fills the 6
 EraseFlashSector	port/pc/flash.c	sector command sequence + polling; ours fills the sector with 0xff
 ReadFlash	port/pc/flash.c	runs ReadFlashCore from a halfword copy on the stack (no wasm function there); ours copies directly
 Flash_VerifySector	port/pc/flash.c	runs VerifyFlashCore from a stack copy; ours compares directly, same result
+Serial_Initialize	port/pc/link.c	configures multiplayer SIO and installs the per-halfword serial/timer-3 IRQ handler; ours resets the link state and SIOCNT id bits for the message transport (D21)
+Serial_PollStatus	port/pc/link.c	partner search from SIOCNT's SD/SI and arms timer 3 on the parent; ours: connected = the transport is
+Serial_ExchangePayloads	port/pc/link.c	collects the packets the IRQ handler assembled and builds the next; ours trades the 24-byte payload on the unreliable channel, newest wins
+Serial_StartSend	port/pc/link.c	streams 20-byte blocks over the per-frame payload; ours sends the whole buffer on the reliable channel
+Serial_StartReceive	port/pc/link.c	receives the block stream; ours takes the next queued bulk message
+Serial_StepBlockTransfer	port/pc/link.c	block protocol with rewinds; ours completes sends the peer consumed and delivers queued bulks

@@ -263,7 +263,7 @@ def run(objs, out, root, clang, jobs, stages):
                 undefined[parts[1]].add(os.path.basename(o))
             elif len(parts) == 3 and parts[1] in 'TDBRVWtdbr':
                 defined.add(parts[2])
-    libc = {'memcpy', 'memset', 'memmove', 'printf', 'iprintf', 'puts', 'fflush', 'stdout', 'putchar', 'abort', 'port_frame_ready', 'abort', 'malloc', 'free', 'strlen', 'memcmp',
+    libc = {'memcpy', 'memset', 'memmove', 'printf', 'iprintf', 'puts', 'fflush', 'stdout', 'putchar', 'abort', 'port_frame_ready', 'port_link_connected', 'port_link_player_id', 'port_link_send', 'port_link_recv', 'abort', 'malloc', 'free', 'strlen', 'memcmp',
             '__stack_pointer', '__heap_base', '__indirect_function_table', '__memory_base', '__table_base',
             'emscripten_stack_get_current', '__stack_low', '__stack_high', '__data_end'}
     missing = {n: u for n, u in undefined.items() if n not in defined and n not in libc and n not in adapters}
