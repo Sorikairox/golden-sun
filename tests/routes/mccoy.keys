@@ -1,0 +1,12 @@
+# GS18: from the bilibin save (Bilibin's entrance; continue with vale_day1_continue.keys + --flash-in). Ivan's Mind Read
+# set as the L shortcut (member row: L on Ivan, Mind Read), two cells south of the tree man, L: "Help me...
+# Somebody..." (FieldPsynergy_StartMindReadWave's hue-shifting tint); north up the town to the palace grounds (f3606);
+# the east gate guard ("The lord will only meet with brave and mighty warriors... Think you're up to it?" Yes), the gate
+# opens; into McCoy's Palace (f4984), up the red carpet's west column into McCoy's room (f5338): the audience (McCoy,
+# the captain, Garet, Ivan; A every 40 frames) ends with McCoy sending the party away; outside his door the captain
+# hints at the barricade (f11932, McCoyPalace_CaptainHintsAtBarricade) and leaves.
+A@2100-2103,A@2150-2153,RIGHT@2200-2203,RIGHT@2230-2233,L@2260-2263,DOWN@2310-2313,A@2360-2363,A@2420-2423,B@2480-2483
+B@2530-2533,B@2580-2583,RIGHT@2630-2646,UP@2670-2673,L@2720-2723,A@2950-2953,LEFT@3050-3066,UP@3068-3535
+LEFT@3540-3552,UP@3554-3620,RIGHT@3720-3736,UP@3740-3780,A@3800-3803,A@3880-3883,A@3960-3963,A@4040-4043,A@4120-4123
+A@4200-4203,A@4280-4283,A@4360-4363,A@4440-4443,A@4520-4523,LEFT@4900-4910,UP@4912-5040,LEFT@5160-5170,UP@5172-5450
+A@5550-12900/40,A@13000-13003

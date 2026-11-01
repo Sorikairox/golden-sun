@@ -37,7 +37,7 @@ module.exports = (m, frame) => {
   const SHAPES = 0x0202c000, WEIGHT = 0x080132fc, INDEX = 0x080133fc;
   let cur = layer; // the layer cellAt/beh/height read (set by the search)
   const cellAt = (cx, cz) => LP[cur] + 4 * (cx + (cz << 7));
-  const beh = (cx, cz) => (cx < 0 || cx > 127 || cz < 0 ? 255 : H[cellAt(cx, cz) + 2]);
+  const beh = (cx, cz) => (cx < 0 || cx > 127 || cz < 0 || cellAt(cx, cz) >= 0x0201c000 ? 255 : H[cellAt(cx, cz) + 2]);
   const layerOf = (cx, cz) => { const t = (H[cellAt(cx, cz) + 1] >> 4) & 3; return t ? t - 1 : cur; };
   const height = (px, pz) => { // ground height in pixels at map pixel (px, pz)
     const sh = SHAPES + 4 * H[cellAt(px >> 4, pz >> 4) + 3], kind = H[sh] & 15, x = px & 15, y = pz & 15;
