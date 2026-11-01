@@ -139,15 +139,15 @@ that edition's address map, not a port. Out of scope until asked.
   compiles their ten objects with alchemy GCC and fits them to the original layout (`tools/ref/standin_fix.py`,
   docs/G1.md); every other byte of the ROM is verified equal. The address map marks those symbols
   `standin-xref`/`standin-offset`. When the sources are approved the script uses the real compilers.
+- **D17 Shims by include guard (GS1):** the wasm build forces `port/shim/prelude.h` first; it includes our PC
+  versions of hardware-bound vendor headers and defines the vendor include guards, so vendor headers are never
+  edited or copied. Whole-file replacements are listed in `port/overrides.tsv`.
 - **D18 Build-time transforms, not copies (GS2):** vendor C that clang cannot take is rewritten by generic rules
   (`tools/wasm/port_src.py`, `port/asm_rules.tsv`) into the gitignored build tree at build time; our tree holds
   the rules only.
 - **D19 Data binding in IR (GS2):** data symbols are bound to their GBA addresses by rewriting the IR
   (`tools/wasm/bind.py`); data holding code pointers (and data pointing to it) is copied from the ROM into wasm
   buffers at run time with its pointer slots patched (`port/symbols/relocs.tsv`).
-- **D17 Shims by include guard (GS1):** the wasm build forces `port/shim/prelude.h` first; it includes our PC
-  versions of hardware-bound vendor headers and defines the vendor include guards, so vendor headers are never
-  edited or copied. Whole-file replacements are listed in `port/overrides.tsv`.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
