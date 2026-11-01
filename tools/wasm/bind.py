@@ -28,6 +28,10 @@ INDIRECT_CALL = re.compile(r'^(\s+(?:%[-\w.]+ = )?(?:tail |notail )?call [^%@(]*
 COMPILER_LOCAL = re.compile(r'^(\.str|switch\.table|__block_|\.compoundliteral|__const\.|_NSConcrete|\.Lswitch|reltable)')
 
 
+DIVISION = re.compile(r'^(\s*%[\w.$-]+) = (sdiv|udiv|srem|urem)( exact)? i32 ([^,]+), (.+)$')
+DIVISION_FN = {'sdiv': '__divsi3', 'udiv': '__udivsi3', 'srem': '__modsi3', 'urem': '__umodsi3'}
+
+
 def read_tsv(path):
     rows, header = [], None
     for line in open(path, encoding='utf-8'):
@@ -228,6 +232,7 @@ def run(objs, out, root):
                     repl[name] = fmt(f'ov{image}_{name}')
         new_lines = []
         n_rc = [0]
+        div_used = set()
         for line in lines:
             mf = DEF_FUNC.match(line)
             if mf and ' internal ' in line.split('@', 1)[0] + ' ':
@@ -248,6 +253,15 @@ def run(objs, out, root):
                 n = name_of(mm)
                 return repl.get(n, mm.group(0)) if n in repl else mm.group(0)
             line = TOKEN.sub(sub, line)
+            md = None if obj.startswith('port/') else DIVISION.match(line)
+            if md and not re.fullmatch(r'-?\d+', md.group(5).strip()):
+                # a division by a variable: the ARM has no divide instruction, so the game calls libgcc's
+                # __divsi3/__udivsi3/__modsi3/__umodsi3 (our EQUIV ports, port/pc/iwram.c): the same results,
+                # including a divisor of 0 (wasm's i32.div traps) and the remainder's sign (G6)
+                fn = DIVISION_FN[md.group(2)]
+                line = f'{md.group(1)} = call i32 @{fn}(i32 {md.group(4)}, i32 {md.group(5).strip()})'
+                div_used.add(fn)
+                stats['divisions by a variable sent to libgcc ports'] += 1
             mc = INDIRECT_CALL.match(line)
             if mc:
                 # an indirect call: the pointer may be a GBA code address (ROM data, the overlay entry table, a
@@ -263,6 +277,9 @@ def run(objs, out, root):
         decls = []
         if n_rc[0] and not any(l.startswith('declare ptr @Port_ResolveCode(') for l in new_lines):
             decls.append('declare ptr @Port_ResolveCode(ptr)')
+        for fn in sorted(div_used):
+            if not any(l.startswith(('declare i32 @' + fn + '(', 'define i32 @' + fn + '(')) for l in new_lines):
+                decls.append(f'declare i32 @{fn}(i32, i32)')
         for name, r in repl.items():
             if r.startswith('@reloc_') and not any(l.startswith(r + ' = ') for l in new_lines):
                 decls.append(f'{r} = external global [0 x i8], align 4')

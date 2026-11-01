@@ -1,0 +1,4 @@
+# G6 (after prologue.keys + first_rock.keys, with --probe tests/probes/battle.cjs: the stormy night's monster
+# battle, zone 12 slot 2, starts at frame 5400): A through the messages, Fight, Attack, the first target, every
+# turn, until both Wild Mushrooms fall (~f6700), the spoils, and back to ValePrologue (f6832). Inputs only.
+A@5800-7500/40

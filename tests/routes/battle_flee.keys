@@ -1,0 +1,3 @@
+# G6 (as battle_fight.keys): close the opening messages, Flee on the first menu ("Isaac and friends run!"),
+# back to ValePrologue by ~f6150. Inputs only.
+A@5800-5900/40,RIGHT@5960-5962,A@6000-6002
