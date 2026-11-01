@@ -1,0 +1,5 @@
+# Scripted input for the prologue (tests/boot.cjs --keys-file), from a blank save. Frames are game frames
+# from power-on; A taps advance messages. Inputs only (no game data).
+A@650-652                 # File Screen: confirm the name "Isaac" (cursor starts on END)
+A@700-4400/40             # Isaac's house: messages; Dora and Kyle outside
+A@4450-4452               # "You can find your way, can't you?" Yes

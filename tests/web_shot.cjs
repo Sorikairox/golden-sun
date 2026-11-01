@@ -2,7 +2,9 @@
 // port_work/webtest, local only) on 127.0.0.1, opens the page with ?romurl=, waits for N game frames, and saves
 // screenshots of the canvas to port_work/g3/web_*.png. Prints console errors. One Chrome at a time: the script
 // refuses to start while another headless Chrome runs, and kills only the processes it started.
-// Usage: node tests/web_shot.cjs [frames,frames,...] (default 200,600,1000)
+// Usage: node tests/web_shot.cjs [frames,frames,...] (default 200,600,1000) [--flash FILE] [--press FRAME:CODE,...]
+//   --flash puts a 64 KB save (port_work/, never committed) into the page's IndexedDB before it starts;
+//   --press holds a key (KeyboardEvent.code, e.g. Enter for Start) for 6 frames from that game frame.
 'use strict';
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
@@ -11,7 +13,10 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ROM = process.env.ROM || path.join(process.env.HOME, 'roms/Golden_Sun_USA_Europe.gba');
-const shots = (process.argv[2] || '200,600,1000').split(',').map(Number);
+const shots = (process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : '200,600,1000').split(',').map(Number);
+const argOpt = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : ''; };
+const FLASH = argOpt('--flash');
+const PRESSES = argOpt('--press').split(',').filter(Boolean).map((x) => { const [f, code] = x.split(':'); return { f: +f, code, done: 0 }; });
 const PORT = 8737 + (process.pid % 200);
 const DEBUG_PORT = 9337 + (process.pid % 200);
 
@@ -33,13 +38,15 @@ async function main() {
   fs.mkdirSync(dir, { recursive: true });
   for (const f of fs.readdirSync(path.join(ROOT, 'build/site'))) fs.symlinkSync(path.join(ROOT, 'build/site', f), path.join(dir, f));
   fs.symlinkSync(ROM, path.join(dir, 'rom.gba'));
-  const out = path.join(ROOT, 'port_work/g3');
+  if (FLASH) fs.symlinkSync(path.resolve(FLASH), path.join(dir, 'flash.sav'));
+  const out = path.resolve(ROOT, process.env.OUT || 'port_work/g3');
   fs.mkdirSync(out, { recursive: true });
 
   // a small static server (node's own: python's http.server stalled Chrome's first load for a minute)
   const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm' };
   const server = require('http').createServer((req, res) => {
     const name = path.basename(decodeURIComponent(req.url.split('?')[0])) || 'index.html';
+    if (name === 'setup.html') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><title>setup</title>'); return; }
     const file = path.join(dir, name);
     if (!fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(name)] || 'application/octet-stream' });
@@ -77,14 +84,30 @@ async function main() {
     await send('Runtime.enable');
     await send('Page.enable');
 
+    if (FLASH) { // same origin first: write the save where the page looks for it, then start the page
+      await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/setup.html` }); // an empty page of the origin
+      await sleep(500);
+      const r = await send('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => { try {
+        const bytes = new Uint8Array(await (await fetch('flash.sav')).arrayBuffer());
+        const d = await new Promise((ok, no) => { const q = indexedDB.open('golden-sun', 1); q.onupgradeneeded = () => q.result.createObjectStore('files'); q.onsuccess = () => ok(q.result); q.onerror = no; });
+        await new Promise((ok, no) => { const t = d.transaction('files', 'readwrite'); t.objectStore('files').put(bytes, 'flash'); t.oncomplete = ok; t.onerror = no; });
+        d.close(); return bytes.length + ' bytes put in IndexedDB';
+      } catch (e) { return 'failed: ' + (e && (e.message || (e.target && e.target.error) || e.type)); } })()` });
+      console.log(`flash: ${r.result.result.value}`);
+    }
     await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba` });
+    const key = (type, code) => send('Input.dispatchKeyEvent', { type, code, key: code === 'Enter' ? 'Enter' : code, windowsVirtualKeyCode: code === 'Enter' ? 13 : 0 });
     const frames = async () => (await send('Runtime.evaluate', { expression: 'window.__gsFrames || 0', returnByValue: true })).result.result.value;
     for (const f of shots) {
       let n = 0;
       while ((n = await frames()) < f) {
         if (Date.now() - t0 > 180000) throw new Error(`only ${n} frames after 180 s`);
         if (errors.length) break;
-        await sleep(100);
+        for (const p of PRESSES) {
+          if (!p.done && n >= p.f) { await key('keyDown', p.code); p.done = 1; }
+          else if (p.done === 1 && n >= p.f + 6) { await key('keyUp', p.code); p.done = 2; }
+        }
+        await sleep(30);
       }
       const shot = await send('Page.captureScreenshot', { format: 'png' });
       const file = path.join(out, `web_${String(n).padStart(5, '0')}.png`);
