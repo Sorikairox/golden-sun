@@ -75,6 +75,7 @@ async function start(rom) {
   let next = performance.now();
   let lastFlashGen = 0;
   const savedFlash = await dbGet('flash');
+  console.log('page: save looked up');
   // each completed frame (line 160): draw it, latch the keys, and wait for the next display refresh at the GBA's
   // rate; the game is suspended there (ASYNCIFY) until the promise resolves
   const onFrame = () => {
@@ -101,6 +102,7 @@ async function start(rom) {
       requestAnimationFrame(tick);
     });
   };
+  console.log('page: instantiating the game module');
   m = await GoldenSun({
     print: (s) => console.log(s),
     printErr: (s) => console.warn(s),
@@ -139,7 +141,9 @@ $('file').addEventListener('change', (e) => { if (e.target.files[0]) useFile(e.t
   // ?romurl=... (local tests only): fetch the ROM from that URL instead of the picker; still checked
   const url = params.get('romurl');
   if (url) {
+    console.log('page: game.js loaded; fetching the ROM');
     const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    console.log('page: ROM fetched');
     const err = await checkRom(bytes);
     if (err) { status(err); return; }
     start(bytes);

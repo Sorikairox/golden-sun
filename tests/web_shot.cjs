@@ -1,4 +1,4 @@
-// Page test in muted headless Chrome (G3): serves build/site plus the player's ROM (a symlink in the gitignored
+// Page test in muted headless Chrome (G3): serves (node http) build/site plus the player's ROM (a symlink in the gitignored
 // port_work/webtest, local only) on 127.0.0.1, opens the page with ?romurl=, waits for N game frames, and saves
 // screenshots of the canvas to port_work/g3/web_*.png. Prints console errors. One Chrome at a time: the script
 // refuses to start while another headless Chrome runs, and kills only the processes it started.
@@ -36,11 +36,19 @@ async function main() {
   const out = path.join(ROOT, 'port_work/g3');
   fs.mkdirSync(out, { recursive: true });
 
-  const server = spawn('/opt/homebrew/bin/python3', ['-m', 'http.server', String(PORT), '--bind', '127.0.0.1', '-d', dir], { stdio: 'ignore' });
+  // a small static server (node's own: python's http.server stalled Chrome's first load for a minute)
+  const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm' };
+  const server = require('http').createServer((req, res) => {
+    const name = path.basename(decodeURIComponent(req.url.split('?')[0])) || 'index.html';
+    const file = path.join(dir, name);
+    if (!fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(name)] || 'application/octet-stream' });
+    fs.createReadStream(file).pipe(res);
+  }).listen(PORT, '127.0.0.1');
   const profile = fs.mkdtempSync(path.join(ROOT, 'port_work/chrome-'));
   const chrome = spawn(CHROME, ['--headless=new', '--mute-audio', '--no-first-run', '--no-default-browser-check',
     `--user-data-dir=${profile}`, `--remote-debugging-port=${DEBUG_PORT}`, '--window-size=800,700', 'about:blank'], { stdio: 'ignore' });
-  const cleanup = () => { try { chrome.kill('SIGKILL'); } catch (e) { /* gone */ } try { server.kill(); } catch (e) { /* gone */ } };
+  const cleanup = () => { try { chrome.kill('SIGKILL'); } catch (e) { /* gone */ } try { server.close(); } catch (e) { /* gone */ } };
   process.on('exit', cleanup);
   try {
     let target;
@@ -52,6 +60,7 @@ async function main() {
     const ws = new WebSocket(target.webSocketDebuggerUrl);
     await new Promise((r) => { ws.onopen = r; });
     let id = 0;
+    const t0 = Date.now();
     const pending = new Map();
     const errors = [];
     ws.onmessage = (ev) => {
@@ -60,14 +69,14 @@ async function main() {
       if (msg.method === 'Runtime.consoleAPICalled') {
         const text = msg.params.args.map((a) => a.value ?? a.description ?? '').join(' ');
         if (msg.params.type === 'error' || msg.params.type === 'warning') errors.push(text);
-        else if (!/^stub:/.test(text)) console.log('page:', text);
+        else if (!/^stub:/.test(text)) console.log(`page [${((Date.now() - t0) / 1000).toFixed(1)} s]:`, text);
       }
       if (msg.method === 'Runtime.exceptionThrown') errors.push(msg.params.exceptionDetails.exception?.description || msg.params.exceptionDetails.text);
     };
     const send = (method, params = {}) => new Promise((resolve) => { const i = ++id; pending.set(i, resolve); ws.send(JSON.stringify({ id: i, method, params })); });
     await send('Runtime.enable');
     await send('Page.enable');
-    const t0 = Date.now();
+
     await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba` });
     const frames = async () => (await send('Runtime.evaluate', { expression: 'window.__gsFrames || 0', returnByValue: true })).result.result.value;
     for (const f of shots) {
