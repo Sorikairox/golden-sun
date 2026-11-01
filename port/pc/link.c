@@ -14,6 +14,8 @@
  *   VBlank with the link fresh, as the original's last block would. The send completes when the peer's frames
  *   report it consumed (rxDone), as the original waits for the receiver's DONE flag.
  * - Epochs: each Serial_Initialize starts a new sender epoch; the peer drops queued bulks of an older epoch.
+ *   While the transport is not connected the peer is forgotten (GS10), so a new link session (the partner
+ *   reloaded or restarted its game, whose epochs start again at 1) is accepted whatever its epoch.
  * - SIOCNT keeps plausible id bits (4-5), SD and SI, because game code reads them directly (LINK.md section 2).
  * No serial or timer-3 IRQ is used; Serial_HandleTransferInterrupt is never installed. */
 #include <string.h>
@@ -115,10 +117,17 @@ static int AcceptEpoch(u8 e) {
   return e == peerEpoch;
 }
 
+/* GS10: no link session = no known peer; the next session's first message sets the peer epoch afresh */
+static void ForgetPeerIfDisconnected(void) {
+  if (!port_link_connected())
+    peerKnown = 0;
+}
+
 static void Drain(void) {
   static u8 buf[BULK_HEADER + BULK_MAX];
   int n;
   int heard = 0;
+  ForgetPeerIfDisconnected();
   while ((n = port_link_recv(LINK_CH_BULK, buf, sizeof buf)) >= 0) {
     u32 size;
     if (n < BULK_HEADER || buf[0] != MSG_BULK || !AcceptEpoch(buf[1]))
@@ -183,6 +192,7 @@ static s32 Status(void) {
 /* Once a frame from wait(): the partner search. Connected = the transport is; the parent "clocks". */
 s32 Serial_PollStatus(void) {
   WriteSiocnt();
+  ForgetPeerIfDisconnected();
   if (gSerialWork[W_PHASE] == 0) {
     if (port_link_connected()) {
       gSerialWork[W_MODE] = MyId() == 0 ? MODE_CLOCKING : 0;

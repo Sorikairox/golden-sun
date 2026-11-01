@@ -6,6 +6,11 @@
 // Usage: node tests/link2.cjs game.js ROM FRAMES [--keys0 SPEC] [--keys1 SPEC] [--keys-file0 F] [--keys-file1 F]
 //   [--flash FILE | --flash0 F --flash1 F] [--delay D] [--drop P] [--jitter J] [--seed S] [--fresh N]
 //   [--probe0 F] [--probe1 F] [--shot 100,200] [--every N] [--out DIR] [--watch] [--hash] [--quiet]
+//   [--silence F-G] [--cut F] [--rejoin G] [--stop0 F]
+// Link robustness (GS10): --silence F-G drops every message both ways from frame F to G while both ends still say
+// connected (a network drop: WebRTC keeps the channels open); --cut F: from frame F the partner is gone (connected()
+// false on both ends, as net.js reports after a 'bye' / closed channel); --rejoin G: connected again at G (a new
+// session with the same partner); --stop0 F: instance a stops stepping at F (its tab was closed), b runs on.
 // --flash default: port_work/g7/flash_battle.sav, made from GS4's prologue save (port_work/g4/flash.sav) with the
 // file summary's Djinn-flag count set to 1 (test only: the File Screen offers Battle only for such a file).
 'use strict';
@@ -76,6 +81,19 @@ async function main() {
   // --probe0/--probe1 FILE[,FILE]: tests/boot.cjs-style probes ((m, frame, keys) => void) for one instance
   const probes = [0, 1].map((i) => (opt('--probe' + i, '') || '').split(',').filter(Boolean).map((f) => require(path.resolve(f))));
   const pair = createLoopbackPair({ delay: +opt('--delay', 0), drop: +opt('--drop', 0), jitter: +opt('--jitter', 0), seed: +opt('--seed', 1) });
+  // GS10 robustness wrappers around the pair's ends
+  const [silA, silB] = (opt('--silence', '') || '0-0').split('-').map(Number);
+  const cutAt = +opt('--cut', 0), rejoinAt = +opt('--rejoin', 0), stop0 = +opt('--stop0', 0);
+  let simFrame = 0, simDropped = 0;
+  const silent = () => silA && simFrame >= silA && simFrame <= silB;
+  for (const e of pair.ends) {
+    const send = e.send;
+    // frames sent during a silence are lost; bulk (reliable) is held and delivered when the silence ends, as SCTP
+    // retransmits it once the path is back
+    e.held = [];
+    e.send = (ch, bytes) => { if (silent()) { if (ch === 1) e.held.push(bytes); else simDropped++; return; } send(ch, bytes); };
+    e.flush = () => { for (const b of e.held.splice(0)) send(1, b); };
+  }
   const rom = fs.readFileSync(romPath);
   const factory = require(path.resolve(gameJs));
   const names = ['a', 'b'];
@@ -134,7 +152,13 @@ async function main() {
   };
   for (let f = 1; f < frames; f++) {
     pair.tick();
+    simFrame = f;
+    if (cutAt && f === cutAt) { pair.setConnected(false); console.log(`f${f}: link cut (partner gone)`); }
+    if (rejoinAt && f === rejoinAt) { pair.setConnected(true); console.log(`f${f}: link back (new session)`); }
+    if (silA && f === silA) console.log(`f${f}: silence starts (no messages either way until f${silB})`);
+    if (silA && f === silB + 1) for (const e of pair.ends) e.flush();
     for (const me of inst) {
+      if (stop0 && me.i === 0 && f >= stop0) continue;
       const p = me.wait();
       const r = me.resume; me.resume = null; r();
       await p;
@@ -178,7 +202,7 @@ async function main() {
   console.log(`ram digest a ${digest(0)} b ${digest(1)}`);
   const st = (i, k) => inst[i].m._Port_LinkStat(k);
   console.log(`link2: ${frames} lockstep frames in ${ms} ms (${(frames / (ms / 1000)).toFixed(0)} fps per pair); ` +
-    `transport: ${pair.stats.sent[0]} frame msgs (${pair.stats.dropped} dropped), ${pair.stats.sent[1]} bulk; ` +
+    `transport: ${pair.stats.sent[0]} frame msgs (${pair.stats.dropped} dropped, ${simDropped} silenced), ${pair.stats.sent[1]} bulk; ` +
     `a: late ${st(0, 1)} bulk in/out ${st(0, 2)}/${st(0, 3)}; b: late ${st(1, 1)} bulk in/out ${st(1, 2)}/${st(1, 3)}; ` +
     `sheets: ${shotFiles.map((f) => path.relative(process.cwd(), f)).join(' ') || 'none'}`);
   process.exit(0);
