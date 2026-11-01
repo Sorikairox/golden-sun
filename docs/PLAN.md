@@ -3,7 +3,7 @@
 Each phase has exit criteria that a fresh agent can check. Decisions and rules: `orchestrator.md`.
 One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the end of each.
 
-## G1 — Toolchain and address map (GS1: done but for the final match; see docs/G1.md)
+## G1 — Toolchain and address map (done, GS1; see docs/G1.md)
 
 - Build a `golden-sun-tools` Docker image (ubuntu:24.04 + binutils-arm-none-eabi, gcc, make, libpng-dev,
   libutf8proc-dev, pkg-config). Fetch alchemy's `alchemy-gcc` submodule; `make bootstrap`; `make compare-tbs-en`
@@ -12,11 +12,9 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   and the object list; classify every object as code, code-pointer table, or asset.
 - `tools/build_ref.sh` runs it all with compact output.
 - **Exit:** `compare-tbs-en: OK`; the symbol table committed (no bytes); counts of code vs data objects recorded.
-- GS1 status: table, counts and gsret match done. alchemy equals the ROM except the 11,596 bytes of the ten
-  objects built by stand-ins for old_agbcc/GCC 2.95.2, whose sources (pret/agbcc, gcc-2.95.2.tar.gz) await
-  approval; then rerun `tools/build_ref.sh` for `compare-tbs-en: OK`.
+- Done: `compare-tbs-en: OK` (SHA-1 5c469520..., GS1 addendum), gsret matches, map committed.
 
-## G2 — Compile everything to wasm (link with stubs)
+## G2 — Compile everything to wasm (link with stubs) (done, GS2; see docs/G2.md)
 
 - `port/shim/` headers (dma, iwram_call, transform, io_reg, irq...) and the override list; lift the nested
   functions; fix cast-as-lvalue sites; namespaced overlays (D7). GS1 started it: 159/166 linked C objects

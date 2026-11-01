@@ -14,13 +14,10 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS1 (2026-11-01): G1 done except the last matching step. Toolchain image `golden-sun-tools` (602 MB) and
-  `tools/build_ref.sh`. **gsret matches** (ROM + 96 overlays). **alchemy tbs-en equals the ROM except 11,596
-  bytes** inside the ten objects of two compilers not yet built (old_agbcc, GCC 2.95.2: their sources need
-  approval). Address map committed (`port/symbols/`, 99.18 % of the ROM in sections). wasm census: 159/166
-  linked C objects compile with `port/shim`. Details: `docs/G1.md`.
-- Waiting on the user: approve `pret/agbcc` (nested submodule of alchemy-gcc) and `gcc-2.95.2.tar.gz`
-  (ftp.gnu.org) for the full `compare-tbs-en: OK`. G2 can start without it.
+- GS2 (2026-11-01): **G1 done**: alchemy tbs-en builds byte-identical (SHA-1 5c469520, `make compare-tbs-en`
+  OK) and gsret matches; address map in `port/symbols/`. **G2 done**: `tools/web_build.sh` compiles all 124 C
+  code objects into one `game.wasm` with 42 logged stubs and 300 veneers; leak check passes (docs/G2.md).
+- Next: G3 (boot to the title screen): PC layer core, relocated tables, overlay dispatch, renderer, page.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -142,6 +139,12 @@ that edition's address map, not a port. Out of scope until asked.
   compiles their ten objects with alchemy GCC and fits them to the original layout (`tools/ref/standin_fix.py`,
   docs/G1.md); every other byte of the ROM is verified equal. The address map marks those symbols
   `standin-xref`/`standin-offset`. When the sources are approved the script uses the real compilers.
+- **D18 Build-time transforms, not copies (GS2):** vendor C that clang cannot take is rewritten by generic rules
+  (`tools/wasm/port_src.py`, `port/asm_rules.tsv`) into the gitignored build tree at build time; our tree holds
+  the rules only.
+- **D19 Data binding in IR (GS2):** data symbols are bound to their GBA addresses by rewriting the IR
+  (`tools/wasm/bind.py`); data holding code pointers (and data pointing to it) is copied from the ROM into wasm
+  buffers at run time with its pointer slots patched (`port/symbols/relocs.tsv`).
 - **D17 Shims by include guard (GS1):** the wasm build forces `port/shim/prelude.h` first; it includes our PC
   versions of hardware-bound vendor headers and defines the vendor include guards, so vendor headers are never
   edited or copied. Whole-file replacements are listed in `port/overrides.tsv`.
@@ -218,3 +221,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     headers by include guard (D17), not by include order.
 13. Do not copy `out/<ed>/text/messages.inc` anywhere outside the Docker volume: it is the game's text.
     `port_work/g1/gen/text/msg_ids.h` (ids only) is enough for the census.
+14. A data symbol in IR is `ptr @name` (opaque pointers): binding it to an address is a token substitution with
+    `inttoptr (i32 ADDR to ptr)`. Keep it that way (no typed-pointer IR, no -O0 frontend tricks).
+15. alchemy's code objects are aggregates: `battle/battle.c` #includes `turn.c`, `action.c`... Transform the
+    whole include closure (the build mirrors the tree), not just the files clang names first.
+16. Far-call names declared K&R style (`f()`) are variadic in IR; their veneers take the target's signature.

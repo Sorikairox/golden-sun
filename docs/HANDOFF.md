@@ -2,6 +2,30 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS2 — 2026-11-01: G1 finished (exact match), G2 done
+
+### Done
+- **GS1 addendum:** the user approved `pret/agbcc` `da598c1d` and `gcc-2.95.2.tar.gz` (Docker only; D13). The
+  fetch step gets both (agbcc into `vendor/agbcc`, the tarball into `vendor/downloads/`, SHA-256 checked against
+  alchemy-gcc's pin). **`tools/build_ref.sh` now reports `alchemy tbs-en: 5c4695205413df7db52b9a184815a07783999971
+  MATCH`**, 0 bytes differ, and alchemy's own `make compare-tbs-en` prints OK. `port/symbols` regenerated: all
+  663 ROM sections check `rom`. The stand-in fit had all 47 cross-referenced addresses right, 35 of 49 offset
+  guesses wrong; it stays only as a fallback.
+- New symbol tables: `relocs.tsv` (22,517 pointer slots of data symbols and their targets), `absolute.tsv`
+  (5,252 ids used as addresses).
+- **G2** (details `docs/G2.md`): `tools/web_build.sh` -> all 124 C code objects compile and link into one
+  `game.wasm` (1.7 MB, 3.4 KB of data, runs in node); 42 logged stubs (23 asm, 15 Port_*, 4 other) + 300
+  veneers; leak check PASS (0 of 1.9 M ROM data windows).
+- `port/overrides.tsv` updated: the seven files are handled by build-time transforms and shim macros.
+
+### Next (G3)
+1. PC layer core: frame driver with a fiber (Port_BiosHalt yields), IRQ dispatch, DMA (Port_DmaWritten),
+   timers, KEYINPUT, BIOS SWIs, the IWRAM routines (Port_Iwram*), the 23 asm stubs by priority of the boot path.
+2. `Port_RelocateAll` (fill reloc_* buffers from the ROM, patch slots from relocs.tsv; generate the table in C).
+3. Overlay dispatch (entry tables at 0x02008000) and the code-as-data calls.
+4. Renderer v1 + page v1 (ROM picker, SHA-1, keyboard); boot in muted headless Chrome (one at a time; check no
+   other Chrome is running first).
+
 ## GS1 — 2026-11-01: toolchain, reference builds, address map (G1)
 
 ### Done
