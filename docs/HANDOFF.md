@@ -2,6 +2,45 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS13 — 2026-11-02: Sol Sanctum by real play to both Small Jewels; examine events fixed (trap 40)
+
+### Done
+- **Save start points**: `tests/routes/sol_sanctum_save.keys` (in SolSanctumCorridor after the first random battle;
+  regress `sol_sanctum_save`, SHA-1 6f18f61b...) and `sol_jewels_save.keys` (second relief room, both jewels set;
+  regress `sol_jewels`, SHA-1 949d2596...). Both continue with `vale_day1_continue.keys` + `--flash-in`. regress.sh makes
+  the saves a case starts from first when asked for alone (chained: vale_day1 -> sol_sanctum -> sol_jewels).
+- **Real play, no probe** (`sol_jewels.keys`, story order read from sol_sanctum_entrance.c / _corridor.c / _maze.c first;
+  docs/G13.md 2): corridor west exit, the pillar room over water (jump cells), the chest (**first Small Jewel**), the
+  first minotaur relief (menu opens itself, Item, Use: the west wall opens), Kraden suspects a hidden passage, **Move** on
+  the east statue (the doorway behind it), the room of steps, the maze and its chest (**second Small Jewel**, Isaac Lv 2),
+  the second relief room (Kraden: statues out of reach), **Move from a pillar across the water** (range 32 px: only from
+  the pillar's north edge), the jump, **the second jewel set**; save. 8 random battles won on the way (A every 40).
+  Furthest: second relief room, both jewels set, saved (save-run f33800). Highlights `port_work/g13/final/sheet.png`,
+  furthest `port_work/g13/final/frame_33800.png`.
+- **Port bug fixed (trap 40)**: searching the relief said "but Isaac can't open it...": Field_ExamineCell tells an event
+  routine from a search result by bits 27-24 (FIND_FUNCTION_BITS, set in GBA code addresses); a wasm function pointer
+  is a table index 0x10000-0x1ffff (trap 26), so every EVENT examine trigger ran as a locked chest. port/c_rules.tsv rule
+  + PORT_IS_CODE_INDEX (port/shim/port_api.h); all FIND_ values are >= 0x100000, so unambiguous. Vendor C, no asm: no
+  EQUIV spec needed (79/79 unchanged). Every old regress digest unchanged with the fix.
+- **Checked**: every new screen (G13.md 4); the battle background matches the vendor's sol_sanctum.png; audio of the
+  whole sol_jewels route 561/564 one-second windows with sound (silent: power-on before the title); 0 stubs hit.
+- **Tools**: autowalk `WALK_FIGHT` (battles do not end a walk), `WALK_CENTER` (centre on pillar tops before jumps),
+  `s` waypoints end on an entrance change; tools/contact.cjs `SCALE`/`CROP` zoom.
+
+### Next
+1. From the sol_jewels save: Move statue 2 off the round passage (104,31) the same way, the Luna/Sol rooms, the
+   Elemental Star room, the eruption, Mt. Aleph's escape (save there), the World Map, Vault (save).
+2. Grinding only if needed (Isaac Lv 2 at 31 exp; the Sanctum fights are easy with A every 40).
+3. task.c's `(task->func >> 24) == 2` is the same code-address-bits pattern as trap 40: check if a task misbehaves.
+
+### Notes
+- Tests at the end (one wasm build this session): regress 19/19 OK (`--update` only for the two new cases; old rows
+  unchanged), test_arm 79/79 EQUIV, leak check PASS, web_touch ALL PASS, web_phone ALL PASS, web_link clean PASS (0
+  console errors).
+- Routing: A on a relief while the jewel is held opens the field menu; Item is one RIGHT from Psynergy; Move needs the
+  target within 32 px and 8 px of height. Scratch helpers in port_work/g13 (s.sh, walk.sh, bfs.js, r*.keys).
+- No downloads, installs, deploys or permission denials.
+
 ## GS12 — 2026-11-02: Vale day one by real play from a reproducible save; Saturos and Menardi, Kraden, Sol Sanctum, first random battle won
 
 ### Done

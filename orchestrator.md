@@ -40,9 +40,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   vale_day1_continue.keys): Saturos and Menardi, Kraden's plan, Mt. Aleph, Sol Entrance, Sol Sanctum's stepping stones and
   the **first random battle won** (vale_sanctum.keys, sol_sanctum.keys; docs/G12.md). No port bug found on the new
   screens; regress 17 cases.
+- GS13 (2026-11-02): **Sol Sanctum by real play to both Small Jewels** from a new in-game save inside the Sanctum
+  (sol_sanctum_save.keys, sol_jewels.keys, sol_jewels_save.keys; docs/G13.md): pillar room, chest, first relief, Kraden,
+  **Move** on statues (incl. from a pillar across water), the maze, the second relief. **Port bug fixed**: examine events ran
+  as locked chests (trap 40). Regress 19 cases.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  Sol Sanctum onwards by real play (G12.md 2); run tools/regress.sh after every build.
+  Sol Sanctum onwards by real play from the sol_jewels save (G13.md 2 end); run tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -324,3 +328,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     trust a walk (tests/probes/autowalk.cjs) over the model. GS11: slopes push the leader sideways when he turns north/south on
     them (end the leg on the flat cell past the slope); bridges live on another map layer (the river looks walled in
     layer 0); kind-4 pairs on a diagonal are cliff edges; read the scene's story order before walking (docs/G11.md 1).
+40. Vendor C that tells code from data by the **bits of a code address** breaks on wasm table indices (trap 26): Field_ExamineCell
+    takes a search result as an event routine only when bits 27-24 are set (FIND_FUNCTION_BITS), so every examine event (the
+    minotaur reliefs) ran as a locked chest ("but Isaac can't open it..."). GS13: c_rules.tsv adds PORT_IS_CODE_INDEX (port_api.h)
+    to that test. Look for the same pattern when an event shows the wrong message (task.c `func >> 24 == 2` is another one).
