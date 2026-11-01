@@ -62,8 +62,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   WebRTC DataChannels, per-frame payload with "no packet" on gaps, bulk sends whole, widened timeouts (option).
 - Signaling: copy-paste codes first, then room codes via a Netlify Function + Blobs (local room server in tests);
   STUN only. Per-turn battle-state hash comparison and desync report. Netsim in page.
-- **Exit:** two pages in one muted headless Chrome (still one browser at a time; two
-  pages in one browser) complete an online link battle via a local room server under `netsim=lat:80,jit:20,loss:2`;
+- **Exit:** two pages in one muted headless Chrome (still one browser at a time) complete an online link battle via a local room server under `netsim=lat:80,jit:20,loss:2`;
   then one real session across two machines/networks reported by the user.
 
 ## G8 — Polish and optional features

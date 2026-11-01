@@ -1,0 +1,2 @@
+session	date	what	result
+GS0	2026-11-01	repo + docs; cloned alchemy/gsret/Coaltergeist (no licences; alchemy ships assets); assessed; ROM verified = USA,Europe (no EU mapping); link protocol read; wasm32 syntax probe; gsret LLVM build attempt	base = alchemy; online = link transport at serial API (B'), two-instance harness for tests; G1 blocked on binutils/alchemy-gcc/binutils-2.10 approvals
