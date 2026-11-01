@@ -9,6 +9,14 @@
 // Usage: node tests/web_link.cjs [--netsim DELAY,DROP,JITTER] [--frames N] [--out DIR] [--manual [--refuse]]
 //   --manual: the copy-paste codes instead of a room; --refuse: page b claims another build id, both pages must
 //   refuse the link (the hello check) and the test stops there
+//   --odd: before linking, the awkward ways in (GS10): a wrong room code, both pages press Host, a room someone else
+//     already joined (full), Leave and Host again; each must give a clear status and leave Host/Join usable
+//   --leave F [--silent]: (--silent: page a stops sending anything, as a crashed tab or a lost network; b must see
+//     "not responding" then "partner left" from its watchdog, and the game's own disconnect after its 15 s window)
+//   --leave F: at game frame F (in the battle) page a's tab is closed: page b must say "partner left", its game must
+//     go on (the battle ends with the game's own disconnect message); then b uses "Return to title" (a fresh run of
+//     the game, the same ROM bytes), a new tab a opens, b hosts, a joins (a re-join after a leave: the partner's link
+//     epochs start again) and both play the whole link battle again from the start (frames count from the restart)
 // One Chrome at a time (waits for another headless Chrome like web_shot.cjs); kills only what it started.
 'use strict';
 const { spawn, execSync, execFileSync } = require('child_process');
@@ -24,7 +32,10 @@ const NETSIM = argOpt('--netsim', '');
 const MANUAL = process.argv.includes('--manual');    // connect with the copy-paste codes instead of a room
 const REFUSE = process.argv.includes('--refuse');    // with --manual: page b claims another build; both must refuse
 const FRAMES = +argOpt('--frames', 5200);
-const OUT = path.resolve(ROOT, argOpt('--out', 'port_work/g8/' + (NETSIM ? 'netsim' : 'clean')));
+const ODD = process.argv.includes('--odd');
+const LEAVE = +argOpt('--leave', 0);
+const SILENT = process.argv.includes('--silent');   // with --leave: page a goes silent (no bye, no frames) instead
+const OUT = path.resolve(ROOT, argOpt('--out', 'port_work/g8/' + (LEAVE ? 'leave' : NETSIM ? 'netsim' : 'clean')));
 const FLASH = path.join(ROOT, 'port_work/g7/flash_battle.sav');
 const SHOTS = [1600, 2000, 2550, 2800, 3300, 3900, 4000, 4150];
 const PORT = 8737 + (process.pid % 200), ROOM_PORT = PORT + 400, DEBUG_PORT = 9337 + (process.pid % 200);
@@ -120,13 +131,16 @@ async function main() {
       if (r.result && r.result.exceptionDetails) throw new Error(`${p.name}: ${r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text}`);
       return r.result && r.result.result ? r.result.result.value : undefined;
     };
-    for (const p of pages) {
-      const ctx = (await send('Target.createBrowserContext', { disposeOnDetach: true })).result.browserContextId;
-      const target = (await send('Target.createTarget', { url: 'about:blank', browserContextId: ctx })).result.targetId;
-      p.session = (await send('Target.attachToTarget', { targetId: target, flatten: true })).result.sessionId;
+    const openTab = async (p, url) => {
+      p.target = (await send('Target.createTarget', { url: 'about:blank', browserContextId: p.ctx })).result.targetId;
+      p.session = (await send('Target.attachToTarget', { targetId: p.target, flatten: true })).result.sessionId;
       await send('Runtime.enable', {}, p.session);
       await send('Page.enable', {}, p.session);
-      await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/setup.html` }, p.session);
+      await send('Page.navigate', { url }, p.session);
+    };
+    for (const p of pages) {
+      p.ctx = (await send('Target.createBrowserContext', { disposeOnDetach: true })).result.browserContextId;
+      await openTab(p, `http://127.0.0.1:${PORT}/setup.html`);
     }
     await sleep(600);
     for (const p of pages) {
@@ -147,6 +161,39 @@ async function main() {
       await ev(p, `window.__gsScript = ${script}; true`);
     }
     const frames = (p) => ev(p, 'window.__gsFrames || 0');
+    const netStatus = (p) => ev(p, 'document.getElementById("net-status").textContent');
+    const waitStatus = async (p, re, what, tries = 100) => {
+      for (let i = 0; i < tries; i++) { const st = await netStatus(p); if (re.test(st)) return st; await sleep(100); }
+      const st = await netStatus(p); fail.push(`${what}: status "${st}"`); return st;
+    };
+    const buttonsFree = (p) => ev(p, '!document.getElementById("net-host").disabled && !document.getElementById("net-join").disabled');
+    if (ODD) {
+      // 1. a wrong code
+      await ev(pages[1], `document.getElementById('net').open = true; document.getElementById('net-code').value = 'QQQQQ'; document.getElementById('net-join').click(); true`);
+      console.log('odd: wrong code -> b "' + await waitStatus(pages[1], /No room with the code QQQQQ/, 'wrong code') + '"');
+      if (!(await buttonsFree(pages[1]))) fail.push('wrong code: Host/Join stay disabled');
+      // 2. both press Host
+      for (const p of pages) await ev(p, `document.getElementById('net').open = true; document.getElementById('net-host').click(); true`);
+      const both = await Promise.all(pages.map((p) => waitStatus(p, /room \w+ is open/, 'both host')));
+      console.log('odd: both Host -> a "' + both[0] + '" | b "' + both[1] + '"');
+      // b sees its mistake: Leave, then Host is usable again; a pressing Host twice gets a clear refusal
+      await ev(pages[0], `document.getElementById('net-host').disabled = false; document.getElementById('net-host').click(); true`);
+      console.log('odd: a Host again while hosting -> "' + await waitStatus(pages[0], /already hosting room/, 'host twice') + '"');
+      const codeA = await ev(pages[0], `document.getElementById('net-code-show').textContent`);
+      await ev(pages[1], `document.getElementById('net-leave').click(); true`);
+      if (!(await buttonsFree(pages[1]))) fail.push('after Leave: Host/Join disabled');
+      // 3. someone else took the room's guest slot (a third player, here the test itself): b's Join -> "full"
+      const third = await (await fetch(`http://127.0.0.1:${ROOM_PORT}/api/room`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ op: 'join', code: codeA, build: await ev(pages[0], 'GSNet.buildId'), rom: '5c4695205413df7db52b9a184815a07783999971' }) })).json();
+      if (!third.token) fail.push('third join did not take the slot: ' + JSON.stringify(third));
+      await ev(pages[1], `document.getElementById('net-code').value = ${JSON.stringify(codeA)}; document.getElementById('net-join').click(); true`);
+      console.log('odd: room full -> b "' + await waitStatus(pages[1], /already has two players/, 'room full') + '"');
+      if (!(await buttonsFree(pages[1]))) fail.push('room full: Host/Join stay disabled');
+      // 4. a leaves its room and hosts a new one (below, as in a normal run)
+      await ev(pages[0], `document.getElementById('net-leave').click(); true`);
+      await sleep(300);
+      if (!(await buttonsFree(pages[0]))) fail.push('a after Leave: Host/Join disabled');
+      await ev(pages[0], `document.getElementById('net-code-show').textContent = ''; true`);
+    }
     console.log(`both pages running at frames ${await frames(pages[0])}/${await frames(pages[1])} (${T()})`);
     // the panel: touch-size buttons, host makes a room, guest joins with the code
     const small = await ev(pages[0], `(() => { document.getElementById('net').open = true;
@@ -192,21 +239,65 @@ async function main() {
       const file = path.join(OUT, `${p.name}_frame_${String(f).padStart(5, '0')}.png`);
       fs.writeFileSync(file, png(Buffer.from(b64, 'base64'), 240, 160));
     };
-    const taken = [new Set(), new Set()];
+    let taken = [new Set(), new Set()];
     let last = 0;
-    for (;;) {
-      const fr = await Promise.all(pages.map(frames));
-      for (const p of pages) for (const s of SHOTS) if (fr[p.i] >= s && !taken[p.i].has(s)) { taken[p.i].add(s); await shot(p, s); }
-      if (Date.now() - last > 10000) {
-        last = Date.now();
-        const st = await Promise.all(pages.map((p) => ev(p, 'JSON.stringify({s: GSNet.stats, last: GSNet.last, state: GSNet.state})')));
-        console.log(`[${T()}] frames ${fr.join('/')}: a ${st[0]}\n            b ${st[1]}`);
+    const play = async (until) => {
+      for (;;) {
+        const fr = await Promise.all(pages.map(frames));
+        for (const p of pages) for (const s of SHOTS) if (fr[p.i] >= s && !taken[p.i].has(s)) { taken[p.i].add(s); await shot(p, s); }
+        if (Date.now() - last > 10000) {
+          last = Date.now();
+          const st = await Promise.all(pages.map((p) => ev(p, 'JSON.stringify({s: GSNet.stats, last: GSNet.last, state: GSNet.state})')));
+          console.log(`[${T()}] frames ${fr.join('/')}: a ${st[0]}\n            b ${st[1]}`);
+        }
+        if (fr[0] >= until && fr[1] >= until) { if (until === FRAMES) for (const p of pages) await shot(p, FRAMES); break; }
+        if (Date.now() - t0 > (LEAVE ? 700000 : 400000)) { fail.push(`timeout at frames ${fr.join('/')}`); break; }
+        if (pages.some((p) => p.errors.length)) { fail.push('console errors'); break; }
+        await sleep(150);
       }
-      if (fr[0] >= FRAMES && fr[1] >= FRAMES) { for (const p of pages) await shot(p, FRAMES); break; }
-      if (Date.now() - t0 > 400000) { fail.push(`timeout at frames ${fr.join('/')}`); break; }
-      if (pages.some((p) => p.errors.length)) { fail.push('console errors'); break; }
-      await sleep(150);
+    };
+    if (LEAVE) {
+      await play(LEAVE);
+      const [a, b] = pages;
+      const fb0 = await frames(b);
+      if (SILENT) await ev(a, 'RTCDataChannel.prototype.send = function () {}; window.__gsScript = null; true');
+      else await send('Target.closeTarget', { targetId: a.target });
+      console.log(`leave: tab a ${SILENT ? 'silent' : 'closed'} at a frame >= ${LEAVE}, b at ${fb0} (${T()})`);
+      const t1 = Date.now();
+      if (SILENT) console.log(`leave: b meanwhile: "${await waitStatus(b, /not responding/, 'b: not responding', 100)}"`);
+      const st = await waitStatus(b, /partner left/, 'b after a closed its tab', 400);
+      if (SILENT) { await shot(b, 90000 + (await frames(b))); await send('Target.closeTarget', { targetId: a.target }); }
+      console.log(`leave: b saw it after ${((Date.now() - t1) / 1000).toFixed(1)} s`);
+      const note = await ev(b, 'document.getElementById("status").textContent');
+      console.log(`leave: b status "${st}" | notice "${note}"`);
+      for (let i = 0; (await frames(b)) < fb0 + 300 && i < 100; i++) await sleep(100);
+      await shot(b, 90000 + (await frames(b)));   // b's screen after the leave (the game's disconnect message)
+      const fb1 = await frames(b);
+      if (fb1 < fb0 + 250) fail.push(`b's game stalled after the leave (${fb0} -> ${fb1})`);
+      if (await ev(b, 'GSNet.ready()')) fail.push('b still linked after a left');
+      // new tab a (same browser context: the same saved game), b returns to the title, b hosts, a joins
+      await openTab(a, `http://127.0.0.1:${PORT}/index.html${q}`);
+      for (let i = 0; !(await ev(a, 'typeof window.__gs === "object" && !!window.GSNet')); i++) { if (i > 300) throw new Error('a (new tab): the game did not start'); await sleep(100); }
+      await ev(a, `window.__gsScript = ${script}; true`);
+      await ev(b, `document.getElementById('opt-title').click(); document.getElementById('opt-title').click(); true`);
+      for (let i = 0; i < 100; i++) { const f = await frames(b); if (f > 0 && f < fb1) break; await sleep(50); }
+      console.log(`return to title: b restarted (frames ${await frames(b)}), a new tab at ${await frames(a)} (${T()})`);
+      await ev(b, `document.getElementById('net-host').click(); true`);
+      let code2 = '';
+      for (let i = 0; !code2; i++) { if (i > 100) throw new Error('no second room code'); await sleep(100); code2 = await ev(b, `document.getElementById('net-code-show').textContent`); }
+      await ev(a, `document.getElementById('net').open = true; document.getElementById('net-code').value = ${JSON.stringify(code2)}; document.getElementById('net-join').click(); true`);
+      for (let i = 0; ; i++) {
+        const r = await Promise.all(pages.map((p) => ev(p, 'GSNet.ready()')));
+        if (r[0] && r[1]) break;
+        if (i > 300) throw new Error('not re-linked after 30 s: ' + (await Promise.all(pages.map((p) => ev(p, 'GSNet.state')))).join(' | '));
+        await sleep(100);
+      }
+      console.log(`re-linked (b hosts room ${code2}) at frames ${(await Promise.all(pages.map(frames))).join('/')} (${T()})`);
+      taken = [new Set(), new Set()];
+      // the second battle's hashes on b: compare only what happens from here on
+      await ev(b, 'GSNet.stats.hashOk = 0; GSNet.stats.hashBad = 0; GSNet.stats.firstBad = null; true');
     }
+    await play(FRAMES);
     const fin = await Promise.all(pages.map((p) => ev(p, `({s: GSNet.stats, last: GSNet.last, state: GSNet.state, frames: window.__gsFrames,
       fps: window.__gsFrames / (performance.now() / 1000), vis: document.visibilityState})`)));
     for (const p of pages) {

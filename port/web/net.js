@@ -19,7 +19,11 @@
   const Q = new URLSearchParams(location.search);
   const ROM_SHA1 = '5c4695205413df7db52b9a184815a07783999971';
   const EDITION = 'en';                 // the lobby signature words are per language: only tbs-en players can meet
-  const FRESH_FRAMES_ONLINE = 300;      // link.c: "both heard" held 5 s after the newest peer frame (offline 12)
+  // link.c: "both heard" held 15 s after the newest peer frame (offline 12). GS10 (docs/LINK.md section 9): with 900 a
+  // network drop of up to ~10 s anywhere in a battle resumes it (tests/link2.cjs --silence); a longer one ends it
+  // with the game's own "The link was disconnected." A partner who leaves or closes the tab is seen at once (bye /
+  // channel close -> connected() false), so the window only delays the verdict on a silent network.
+  const FRESH_FRAMES_ONLINE = 900;
   const STUN = Q.get('stun') === 'none' ? [] : [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
   const CODE_TAG = 'GS1.';
 
@@ -103,6 +107,7 @@
       dc.onopen = () => { if (S.dc[0].readyState === 'open' && S.dc[1].readyState === 'open') opened(); };
       dc.onclose = () => { if (S.pc === pc) partnerLeft('the connection closed'); };
       dc.onmessage = (e) => {
+        S.heardAt = performance.now();
         if (typeof e.data === 'string') return onCtl(e.data);
         N.stats.recv[ch]++;
         if (S.ready) S.queues[ch].push(new Uint8Array(e.data));
@@ -146,7 +151,8 @@
     status('connected: checking the other player\'s game…');
     ctl({ t: 'hello', v: 1, build: N.buildId, rom: N.romSha1, edition: EDITION, role: S.role, fresh: FRESH_FRAMES_ONLINE });
     if (S.peerHello) checkHello();
-    S.pingTimer = setInterval(() => ctl({ t: 'ping', at: performance.now() }), 2000);
+    S.heardAt = performance.now();
+    S.pingTimer = setInterval(() => { ctl({ t: 'ping', at: performance.now() }); watchdog(); }, 2000);
   }
   function checkHello() {
     const h = S.peerHello;
@@ -161,6 +167,7 @@
       return;
     }
     S.ready = true;
+    N.clearNote();
     if (N.module && N.module._Port_LinkSetFreshFrames) N.module._Port_LinkSetFreshFrames(FRESH_FRAMES_ONLINE);
     if (S.room && !S.room.guest) roomStop(true);
     status(`linked as player ${S.role === 'host' ? '1 (host)' : '2 (guest)'}: go to the Battle Arena (File Screen > Battle)`, 'ok');
@@ -177,9 +184,29 @@
     const was = S.ready;
     S.ready = false; S.left = true;
     clearInterval(S.pingTimer);
-    status(was ? `partner left (${why}): the game will report the link as lost` : 'could not connect: ' + why, 'bad');
+    // the game sees no link at once: a battle ends with "The link was disconnected." and the Battle Arena lobby
+    if (was) {
+      status(`partner left (${why}). A battle in progress ends ("The link was disconnected.") and you are back in the Battle Arena lobby. Host or Join to link again, or Return to title.`, 'bad');
+      note('Link partner left. Menu: Link battle online');
+    } else status('could not connect: ' + why, 'bad');
     emit('left');
   }
+  // a short notice in the page's status line (shown over the bottom edge while the touch pad is up); tap clears it
+  function note(s) { const el = document.getElementById('status'); if (el) { el.textContent = s; el.dataset.net = s ? '1' : ''; } }
+  N.clearNote = () => { const el = document.getElementById('status'); if (el && el.dataset.net) { el.textContent = ''; el.dataset.net = ''; } };
+  // GS10: a partner whose tab was closed (or whose network went away) may never close the channels: the frames stop.
+  // Silent 4 s -> the status says so (the game holds the link 15 s, FRESH_FRAMES_ONLINE); silent 20 s -> the session is
+  // over (partner left), past the game's own window, so a drop the game can still resume is never cut short here.
+  const SILENT_SAY_MS = 4000, SILENT_END_MS = 20000;
+  function watchdog() {
+    if (!S.ready) return;
+    const quiet = performance.now() - (S.heardAt || 0);
+    if (quiet > SILENT_END_MS) partnerLeft(`no answer for ${Math.round(quiet / 1000)} s: tab closed or network lost`);
+    else if (quiet > SILENT_SAY_MS) { S.quiet = true; status(`partner not responding for ${Math.round(quiet / 1000)} s (the game waits up to 15 s, then ends a battle)…`, 'bad'); }
+    else if (S.quiet) { S.quiet = false; status(`linked as player ${S.role === 'host' ? '1 (host)' : '2 (guest)'}: the partner answers again`, 'ok'); }
+  }
+  // closing or reloading the tab: tell the partner at once (where the browser still lets us send)
+  addEventListener('pagehide', () => { if (S.ready && S.dc[1] && S.dc[1].readyState === 'open') try { S.dc[1].send(JSON.stringify({ t: 'bye' })); } catch (e) { /* closing */ } });
   function onCtl(text) {
     let m; try { m = JSON.parse(text); } catch (e) { return; }
     switch (m.t) {
@@ -240,10 +267,14 @@
     const raw = await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
     return JSON.parse(new TextDecoder().decode(raw));
   }
-  const fresh = () => { if (S.role && !S.left) throw new Error('already in a link session (leave first)'); reset(); };
+  const fresh = () => {
+    if (S.role && !S.left) throw new Error(S.role === 'host' && S.room && !S.ready ? `you are already hosting room ${S.room.code}: give that code to the other player, or Leave first` : 'already in a link session (Leave first)');
+    if (S.pc) { const pc = S.pc; S.pc = null; try { pc.close(); } catch (e) { /* closed */ } }   // the ended session's connection
+    reset();
+  };
   function reset() {
     S.role = null; S.helloSent = false; S.peerHello = null; S.ready = false; S.left = false; S.queues = [[], []];
-    S.myHashes.clear(); S.peerHashes.clear(); S.inBattle = false; S.room = null;
+    S.myHashes.clear(); S.peerHashes.clear(); S.inBattle = false; S.room = null; S.battle = 0; S.quiet = false;   // hash keys count battles per session
   }
   N.manualHost = async function () {   // host: the offer code
     fresh(); S.role = 'host';
@@ -289,7 +320,7 @@
     const j = await roomCall({ op: 'create', build: N.buildId, rom: N.romSha1, max: 2 });
     S.role = 'host';
     const R = S.room = { code: j.code, secret: j.secret, gen: 0, accepted: false, fails: 0 };
-    status(`room ${j.code} is open: tell the other player this code`, 'ok');
+    status(`room ${j.code} is open: tell the other player this code (they press Join, not Host)`, 'ok');
     R.timer = setInterval(roomHostPoll, ROOM_POLL_MS); roomHostPoll();
     return j.code;
   };
@@ -315,18 +346,30 @@
       }
       R.fails = 0;
     } catch (e) {
-      if (e.code === 'unknown') { roomStop(false); status(`room ${R.code} has expired (rooms last 10 minutes): make a new room`, 'bad'); }
+      if (e.code === 'unknown') { roomStop(false); S.left = true; status(`room ${R.code} has expired (rooms last 10 minutes): press Host again for a new room`, 'bad'); emit('left'); }
       else if (e.code === 'gone') log('room: ' + e.message);
       else if (++R.fails === 5) status('room server: ' + e.message, 'bad');
       else log('room poll: ' + e.message);
     } finally { R.busy = false; }
   }
+  // the room server's refusals in the player's words (codes from port/netlify/functions/room/core.mjs)
+  function roomError(e, code) {
+    if (e.code === 'full') return new Error(`${e.message} Ask the host to make a new room (Leave, then Host).`);
+    return e;
+  }
+  // a failed join ends the attempt (no half-open session: Host and Join work again at once)
   N.roomJoin = async function (code) {
+    try { return await roomJoin(code); }
+    catch (e) { if (!S.ready && S.role === 'guest') { if (S.room) S.room.closed = true; S.left = true; } throw e; }
+  };
+  async function roomJoin(code) {
     fresh();
     code = String(code || '').toUpperCase().replace(/[\s-]+/g, '');
     if (!code) throw new Error('type the room code the host gave you');
     status(`joining room ${code}…`);
-    const j = await roomCall({ op: 'join', code, build: N.buildId, rom: N.romSha1 });
+    let j;
+    try { j = await roomCall({ op: 'join', code, build: N.buildId, rom: N.romSha1 }); }
+    catch (e) { S.room = null; throw roomError(e, code); }
     S.role = 'guest';
     const R = S.room = { code, token: j.token, guest: true };
     status(`in room ${code}: waiting for the host…`, 'ok');
@@ -342,7 +385,7 @@
     await roomCall({ op: 'answer', code, ch: 1, token: j.token, sdp });
     R.closed = true;
     status('connecting to the host…', 'ok');
-  };
+  }
   N.leave = function () {
     if (S.room && !S.room.guest) roomStop(true); else if (S.room) S.room.closed = true;
     if (S.dc[1] && S.dc[1].readyState === 'open') try { S.dc[1].send(JSON.stringify({ t: 'bye' })); } catch (e) { /* closed */ }
@@ -373,7 +416,7 @@
   const $ = (id) => document.getElementById(id);
   function panel() {
     const box = $('net'); if (!box) return;
-    const st = $('net-status'), err = (e) => { status(e.message || String(e), 'bad'); busy(false); };
+    const st = $('net-status'), err = (e) => { status(e.message || String(e), 'bad'); busy(N.active()); };   // a refused second Host keeps the first room
     const busy = (b) => { for (const id of ['net-host', 'net-join']) $(id).disabled = b; $('net-leave').hidden = !b; };
     N.on.status = (s, cls) => { st.textContent = s; st.className = cls; };
     N.on.left = () => { busy(false); $('net-leave').hidden = !S.left; $('net-rtt').textContent = ''; };
