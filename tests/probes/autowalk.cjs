@@ -6,7 +6,8 @@
 'use strict';
 const AT = +(process.env.WALK_AT || 0), STUCK = +(process.env.WALK_STUCK || 90);
 // a waypoint written 'vX,Z' moves along z first; 'sX,Z' walks toward X,Z until the scene changes (an exit)
-const pts = (process.env.WALK || '').split(';').filter(Boolean).map((p) => [...p.replace(/^[vs]/, '').split(',').map(Number), p[0] === 'v', p[0] === 's']);
+// 'dX,Z' (GS19) walks diagonally (both keys held) until the cell is reached
+const pts = (process.env.WALK || '').split(';').filter(Boolean).map((p) => [...p.replace(/^[vsd]/, '').split(',').map(Number), p[0] === 'v', p[0] === 's', p[0] === 'd']);
 let scene0 = -1;
 const KEY = { A: 1, B: 2, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128 };
 // WALK_TAP=N: after N frames without reaching a new cell (a cutscene, a message), tap A every 24 frames, B every
@@ -31,7 +32,7 @@ module.exports = (m, frame, keys) => {
   const u32 = (a) => (H[a] | H[a + 1] << 8 | H[a + 2] << 16 | H[a + 3] << 24) >>> 0;
   const leader = u32(u32(0x03001ebc) + 20);
   const press = (k) => {
-    m._Port_SetKeys(keys | KEY[k]);
+    m._Port_SetKeys(keys | k.split('+').reduce((a, n) => a | KEY[n], 0));
     const s = spans[spans.length - 1];
     if (s && s.k === k && s.b === frame - 1) s.b = frame; else spans.push({ k, a: frame, b: frame });
   };
@@ -48,14 +49,15 @@ module.exports = (m, frame, keys) => {
   const cx = x >> 4, cz = z >> 4, cell = cx + ',' + cz;
   if (cell !== lastCell) { lastCell = cell; lastMove = frame; }
   if (frame - lastMove > STUCK) return finish(frame, `stuck at ${cell} (waypoint ${pts[i]})`);
-  const [tx, tz, zFirst, exit] = pts[i];
+  const [tx, tz, zFirst, exit, diag] = pts[i];
   const scene = (H[0x02000400] | H[0x02000401] << 8) * 65536 + (H[0x02000402] | H[0x02000403] << 8); // gMainRoutineWork.next, .entrance (GS13: exits between rooms of one scene change only the entrance)
   if (exit && scene0 < 0) scene0 = scene;
   if (exit && scene !== scene0) { scene0 = -1; lastMove = frame; if (++i >= pts.length) return finish(frame, `exit to scene ${scene >> 16} entrance ${scene & 0xffff}`); return; }
   // aim for the cell's middle so the next leg starts clear of the edges
   const ax = tx * 16 + 8 - x, az = tz * 16 + 8 - z;
   let k = null;
-  if ((zFirst || (vert && Math.abs(cx - tx) <= 1)) && cz !== tz) k = az < 0 ? 'UP' : 'DOWN'; // slopes push sideways: keep on
+  if (diag) k = [cz !== tz ? (az < 0 ? 'UP' : 'DOWN') : '', cx !== tx ? (ax < 0 ? 'LEFT' : 'RIGHT') : ''].filter(Boolean).join('+') || null;
+  else if ((zFirst || (vert && Math.abs(cx - tx) <= 1)) && cz !== tz) k = az < 0 ? 'UP' : 'DOWN'; // slopes push sideways: keep on
   else if (cx !== tx) k = ax < 0 ? 'LEFT' : 'RIGHT';
   else if (cz !== tz) {
     if (!vert && Math.abs(ax) > 5) k = ax < 0 ? 'LEFT' : 'RIGHT'; // centre first, then keep to the vertical
