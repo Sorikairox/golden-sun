@@ -2,6 +2,43 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS15 — 2026-11-02: the Mars Star to Vault's inn by real play (eruption, Vale, World Map, Flint, Ivan); menu pause confirmed; the wipe is the game's
+
+### Done
+- **Real play, no probe** (story order from the vendor scene sources first; docs/G15.md 2), three new saves + regress cases:
+  - `mt_aleph.keys` (+ `_save`): round the captors (diagonal past Alex), the north loop to the **Mars Star**, the quake, the
+    **eruption** (floating rock, the Wise One, Saturos/Menardi take Jenna and Kraden), the Wise One's rescue, Luna/Sol rooms,
+    **Retreat** to the Sanctum's first room, Sol Entrance (off the door platform by the west steps), **Vale's eruption**, the
+    Great Healer's Sanctum (sepia account, the quest: Yes), Vale's farewell, **World Map**; save there (regress `mt_aleph`).
+  - `vault.keys` (+ `_save`): **Flint** and his Djinn lesson (Set/Standby, the lesson battle), the forest and river, a random
+    battle, **Hammet's caravan** (the falling rock), **Vault** (round the cliff: the steps at 14,10), the mayor's house:
+    **Ivan** reads Isaac's mind and joins; save (regress `vault`).
+  - `vault_inn.keys` (+ `_save`): the inn, the guests' floor: **the two suspects flee Ivan**, the plan to corner one; save
+    (regress `vault_inn`). Furthest: `port_work/g15/final/furthest_vault_inn_07300.png`; highlights in story order
+    `port_work/g15/final/sheet.png` (frames in final/frames.txt).
+- **Menu pause (trap 41) confirmed** at Sol Entrance after the eruption: `tests/probes/tasks.cjs` shows the overlay task
+  ov37f_SolSanctumEntrance_UpdateEruptionRumbles go c80 -> d80 (suspended) while the Status screen is open and back to c80
+  when it closes; main-image tasks untouched. Only the Djinn/Status/(intl) Item screens suspend; the Start pause menu and the
+  English Psynergy screen do not (by design: under the pause menu the field keeps shaking, `tests/probes/bgscroll.cjs` counts
+  the same 541 scroll changes as with no menu). G15.md 3, trap 41 note.
+- **Wipe verdict** (GS14 f23880-23900): the game's own `TRANSITION_WINDOW` variant 2 = WINDOW_TRANSITION_NOISE
+  (sol_sanctum_statue.c:369; screen_transition.c:223): our frames show exactly 16 x step + 0..15 px per line. Not a port bug.
+- **Audio per second** on sol_star_room (1253/1267 s with sound), mt_aleph (964/992), vault (462/465), vault_inn (119/122):
+  every silent stretch is power-on or a scripted SOUND_FADE_OUT_BGM (G15.md 5); no clipping.
+- **No port bug found** on any new screen; 0 distinct stubs hit. No asm/C change, so no new EQUIV spec or audit row; the wasm
+  was not rebuilt.
+
+### Next
+1. From the vault_inn save: the cornering chase on the guests' floor (block a suspect half a second), Ivan's reading, the crate
+   room (Move), the loft, the thieves' battle, the Shaman's Rod, then the way to Lunpa (G15.md 2 end).
+2. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14, so web tests not rerun): regress 23/23 OK (`--update` only for the three new
+  cases; old rows unchanged), test_arm 79/79 EQUIV, leak check PASS, code-range audit untouched (no vendor C change).
+- B answers No at Yes/No prompts; A taps say Yes (the quest, Ivan's request). A late A opens the field menu: B taps after.
+- No downloads, installs, deploys or permission denials.
+
 ## GS14 — 2026-11-02: code-range audit with a build guard (task.c overlay tasks fixed, trap 41); Sol Sanctum to the Elemental Star Room
 
 ### Done

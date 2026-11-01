@@ -47,9 +47,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 - GS14 (2026-11-02): **code-range audit** (port/tools/code_range_audit.tsv, build-time guard; task.c overlay-task fix, trap 41)
   and **Sol Sanctum by real play to the Elemental Star Room** (statues 2/6 Moved, Luna/Sol rooms, the statue puzzle, Venus,
   Mercury and Jupiter Stars, Saturos/Felix/Alex), saved before the Mars Star (sol_star_room.keys, regress 20 cases; docs/G14.md).
+- GS15 (2026-11-02): **the Mars Star to Vault's inn by real play** (mt_aleph.keys, vault.keys, vault_inn.keys; docs/G15.md): the
+  eruption and the Wise One, Retreat, Vale's eruption, the quest, the World Map, Flint and his lesson battle, Hammet's caravan,
+  **Ivan joins**, the suspects flee in the inn; three saves, regress 23 cases. Menu pause of scene tasks confirmed (probe), the
+  GS14 jagged wipe is the game's WINDOW_TRANSITION_NOISE, audio checked on all routes. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  Mars Star / eruption / Mt. Aleph onwards by real play from the sol_star_room save (G14.md 4); run tools/regress.sh after every build.
+  Vault's cornering chase, the crate, the loft and the thieves' battle by real play from the vault_inn save (G15.md 2); run
+  tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -344,3 +349,5 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     Port_CodeIsOverlay (codemap.c). Before "fixing" an address difference, check build/wasm/code_as_data.tsv: bind.py
     binds asm routines declared as data to their ROM address, so `End - (u32)Routine` is already right there
     (sprite_draw.c:66; a Port_CodeGbaOf rule broke it).
+    Only the Djinn, Status and (international) Item screens call Menu_SuspendFieldTasks; the Start pause menu and the English
+    Psynergy screen do not, so scene tasks keep running under them by design (GS15, tests/probes/tasks.cjs).
