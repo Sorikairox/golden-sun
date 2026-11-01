@@ -12,6 +12,7 @@
 //                   cell, '.' unreachable, 'J' a reachable jump cell); HPATH_W/HPATH_H window (default 64x48 around the leader)
 //   HPATH_MAP=2     the same window with every cell's centre height in layer HPATH_LAYER (reachable or not; '-' below 0)
 //   HPATH_TO_LAYER  only a path that arrives in this layer
+//   HPATH_JUMPW=20  scene step triggers that jump the leader west across a gap (Goma Cave's pillar room: behavior 20)
 //   HPATH_BLOCK='x,z;...' cells to avoid (actors), HPATH_LAYER layer (default the leader's)
 'use strict';
 const AT = +(process.env.HPATH_AT || 0);
@@ -72,6 +73,7 @@ module.exports = (m, frame) => {
     }
     return [g, cur];
   };
+  const JUMPW = new Set((process.env.HPATH_JUMPW || '').split(',').filter(Boolean).map(Number));
   const block = new Set((process.env.HPATH_BLOCK || '').split(';').filter(Boolean));
   const D = [[0, -1, 'UP'], [1, 0, 'RIGHT'], [0, 1, 'DOWN'], [-1, 0, 'LEFT']];
   const sx = Math.floor(lx / 16), sz = Math.floor(lz / 16);
@@ -98,7 +100,7 @@ module.exports = (m, frame) => {
         if ((d === 0 || d === 2) && beh(nx, nz) !== 255) push(nx, nz, layerOf(nx, nz), height(nx * 16 + 8, nz * 16 + 8), from, d + 8);
         continue;
       }
-      if (b === 254 || b === 249) { // jump two cells forward
+      if (b === 254 || b === 249 || (d === 3 && JUMPW.has(b))) { // jump two cells forward
         const mx = nx * 16 + 8, mz = nz * 16 + 8, fx = x + 2 * D[d][0], fz = z + 2 * D[d][1];
         if (beh(nx, nz) !== 255 && height(mx, mz) - g > 8) continue; // a wall in between is jumped (IMPASSABLE, not TOO_HIGH)
         if (beh(fx, fz) === 255) continue;
