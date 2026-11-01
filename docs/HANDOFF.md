@@ -2,6 +2,43 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS12 — 2026-11-02: Vale day one by real play from a reproducible save; Saturos and Menardi, Kraden, Sol Sanctum, first random battle won
+
+### Done
+- **A reproducible save start point**: `tests/routes/vale_day1_save.keys` (after vale_plaza: A through the opening,
+  the roof, Dora's send-off; Start, Save, file 1 at ~f56890) and `vale_day1_continue.keys` (power-on with
+  `--flash-in`: title, Continue, in Vale at f1958). `tools/regress.sh vale_day1_save` rebuilds the save in
+  port_work/regress/ and checks its SHA-1; later routes start from it (~2,000 frames instead of 57,000).
+- **Real play, no probe** (docs/G12.md 2, story order read from vale.c / vale_kradens_cottage.c /
+  sol_sanctum_entrance.c first): `vale_sanctum.keys`: the puppies shut the south way until the strangers are met, so the
+  north exit past the woman ("Do you need to go past here?"); **Saturos and Menardi** (f3478-6920); Kraden overheard,
+  **Kraden plans the Sol Sanctum visit**, his cottage, he sets off (f9060-14500); past the man guarding Mt. Aleph (asks
+  at his patrol pauses); **Sol Entrance** (side stairs: the platform's middle is a 16-px step); **Sol Sanctum** and
+  Kraden's introduction. `sol_sanctum.keys`: the **stepping stones** (jump cells), the corridor, the **first random
+  battle** (three Wild Mushrooms, won; f19052-21532). Furthest: SolSanctumCorridor after the battle (save-run f21800).
+  Highlights `port_work/g12/final/sheet.png`, furthest `port_work/g12/final/frame_21800.png`.
+- **No port bug found** on any new screen (cutscenes, Save list, Continue, Yes/No prompts, field menu, Kraden's cottage,
+  Sol Entrance, the Sanctum rooms and jumps, the Sol Sanctum battle background, rewards); audio present in 330/331
+  one-second windows of the route from the save; 0 distinct stubs hit. So no routine ported this session (79/79 EQUIV
+  unchanged), no runtime fix, no wasm build.
+- **tools/regress.sh**: 17 cases (+ vale_day1_save with its save SHA-1, vale_sanctum from that save); any `--flash-out`
+  case now records its save's SHA-1. Old digests unchanged (`--update` only for the two new cases).
+
+### Next
+1. Sol Sanctum on (docs/G12.md 2 end): the corridor's west exit (3,37) to the chest room and the first Small Jewel,
+   the minotaur reliefs, statues (push or Move), the maze, the Elemental Star room, the eruption, Mt. Aleph's escape;
+   then the World Map and Vault (Ivan, Move/Catch use, the Inn). Make a second save inside the Sanctum when the route
+   grows (same pattern: a `*_save.keys` + regress case with `--flash-out`).
+2. Grinding loop for levels before Vault if fights get hard (Isaac Lv 1, 11 exp now).
+3. Run `tools/regress.sh` after every build (~2.5 min now).
+
+### Notes
+- Tests at the end (on the GS11 build, unchanged): regress 17/17 OK, test_arm 79/79 EQUIV, leak check PASS, web_touch
+  ALL PASS, web_phone ALL PASS, web_link clean PASS (0 console errors).
+- Routing: A in the field opens the menu (close the last messages with B); autowalk needs a high WALK_STUCK on event
+  cells; mapdump 'J' cells are jumps (G12.md 4). Scratch helpers in port_work/g12 (run.sh, c.sh, walk.sh, probes).
+- No downloads, installs, deploys or permission denials.
+
 ## GS11 — 2026-11-01: the whole prologue by real play (four monster fights won, to Vale three years later); soft reset works
 
 ### Done

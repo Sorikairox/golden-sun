@@ -36,9 +36,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   Mushrooms, Bat + Vermin), Felix, the plaza, the Boulder sweeping them away, the strangers' battle, the title, Vale
   three years later (tests/routes/vale_monsters, vale_felix, vale_plaza.keys; docs/G11.md). The game's own soft reset
   (A+B+Select+Start) works (trap 36). tools/regress.sh 15 cases, digests rewritten on the soft-reset build (RAM only).
+- GS12 (2026-11-02): **Vale day one by real play** from a reproducible in-game save (tests/routes/vale_day1_save.keys,
+  vale_day1_continue.keys): Saturos and Menardi, Kraden's plan, Mt. Aleph, Sol Entrance, Sol Sanctum's stepping stones and
+  the **first random battle won** (vale_sanctum.keys, sol_sanctum.keys; docs/G12.md). No port bug found on the new
+  screens; regress 17 cases.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  day one in Vale by real play (G11.md); run tools/regress.sh after every build.
+  Sol Sanctum onwards by real play (G12.md 2); run tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
