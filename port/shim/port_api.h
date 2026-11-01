@@ -7,4 +7,6 @@ void Port_BiosHalt(void);             /* swi 2: wait for an interrupt; the frame
 void Port_BiosStop(void);             /* swi 3: sleep mode */
 void *Port_FrameWaitStackTop(void);   /* wait()'s stack-depth trick: report sp at the fixed top, so no copy */
 
+unsigned int Port_ReadVCount(void); /* a scanline read in a busy-wait: advances the display (port/c_rules.tsv) */
+
 #endif

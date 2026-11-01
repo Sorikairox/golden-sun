@@ -1,0 +1,167 @@
+/* Resource decoders and the overlay branch patcher (vendor src/system/decompress_tagged_lz.s), hand-ported to C
+ * (D6). The game copies each to RAM (RamCode_Load) and calls the copy; codemap.c's aliases send those calls
+ * here. Checked by tests/arm/diff.cjs on the ROM's own resources.
+ *
+ * Decompress_TaggedLzArm also completes overlay loading (D7): a stream decoded into gOverlayArea that is a scene
+ * overlay's resource makes that overlay's functions answer for overlay-area addresses (Port_CodeMapOverlay) and
+ * fills its relocated tables (Port_RelocateOverlay). */
+#include "gba.h"
+
+extern const u32 Resource_DirectoryTable[1000];
+void Port_CodeMapOverlay(u32 id);
+int Port_CodeMapHasOverlay(u32 id);
+int Port_RelocateOverlay(u32 id);
+
+/* LSB-first bit stream over bytes (the ARM reader's 32-bit buffer refilled by halfwords is the same stream) */
+struct Bits {
+  const u8 *p;
+  u32 buf;
+  int n;
+};
+
+static u32 take(struct Bits *b, int count) {
+  u32 v;
+  while (b->n < count) {
+    b->buf |= (u32)*b->p++ << b->n;
+    b->n += 8;
+  }
+  v = count == 32 ? b->buf : b->buf & ((1u << count) - 1);
+  b->buf = count == 32 ? 0 : b->buf >> count;
+  b->n -= count;
+  return v;
+}
+
+static int bit_length(u32 v) {
+  int n = 0;
+  while (v) {
+    n++;
+    v >>= 1;
+  }
+  return n;
+}
+
+/* Tagged LZ: the first byte is the form.
+ * Form 0: a bit stream. Flag 1: an 8-bit literal. Flag 0: a length code (0: 2; 10: 3; 110: 4; 1110: 5;
+ * 11110 then 0: 6, 1: 7; 11111 then 2 bits n: n + 7 (8-10), or n = 0 then 7 bits m: m + 10, m = 0 ends), then a
+ * distance: 1 + 5 bits d, or 0 + a wide distance: 12 bits + 32 while the output (minus 33, unsigned) is at least
+ * 2048, else bit_length(output - 33) bits + 32. The copy reads d bytes before the last byte written.
+ * Form 1: flag bytes (MSB first); flag 1 = a match of two bytes: distance (high nibble of byte 1, byte 2),
+ * count = low nibble (0: one more byte + 16; 0 with distance 0 ends), count + 1 bytes copied. 0 = a literal.
+ * Any other form: nothing written, returns 4. Returns the bytes written. */
+s32 Decompress_TaggedLzArm(const void *source, void *destination) {
+  const u8 *s = (const u8 *)source;
+  u8 *out = (u8 *)destination;
+  u32 form = *s++;
+  s32 result;
+  if (form == 0) {
+    struct Bits b = {s, 0, 0};
+    u32 pos = 0;
+    for (;;) {
+      u32 length, distance, k;
+      if (take(&b, 1)) {
+        out[pos++] = (u8)take(&b, 8);
+        continue;
+      }
+      if (!take(&b, 1))
+        length = 2;
+      else if (!take(&b, 1))
+        length = 3;
+      else if (!take(&b, 1))
+        length = 4;
+      else if (!take(&b, 1))
+        length = 5;
+      else if (!take(&b, 1))
+        length = take(&b, 1) ? 7 : 6;
+      else {
+        length = take(&b, 2);
+        if (length)
+          length += 7;
+        else {
+          length = take(&b, 7);
+          if (!length)
+            break;
+          length += 10;
+        }
+      }
+      if (take(&b, 1))
+        distance = take(&b, 5);
+      else {
+        u32 span = pos - 33;
+        if (span >= 2048)
+          distance = take(&b, 12) + 32;
+        else {
+          int w = bit_length(span);
+          distance = (w ? take(&b, w) : 0) + 32;
+        }
+      }
+      for (k = 0; k < length; k++, pos++)
+        out[pos] = out[pos - 1 - distance];
+    }
+    result = (s32)pos;
+  } else if (form == 1) {
+    u8 *o = out;
+    for (;;) {
+      u32 flags = *s++, i;
+      int end = 0;
+      for (i = 0; i < 8; i++, flags <<= 1) {
+        if (!(flags & 0x80)) {
+          *o++ = *s++;
+          continue;
+        }
+        {
+          u32 b1 = *s++, b2 = *s++;
+          u32 distance = (b1 & 0xF0) << 4 | b2, count = b1 & 15;
+          if (!count) {
+            if (!distance) {
+              end = 1;
+              break;
+            }
+            count = *s++ + 16u;
+          }
+          count++;
+          while (count--) {
+            *o = *(o - distance);
+            o++;
+          }
+        }
+      }
+      if (end)
+        break;
+    }
+    result = (s32)(o - out);
+  } else
+    return 4;
+
+  if ((u32)(uintptr_t)destination == 0x02008000u) {
+    u32 id;
+    for (id = 0; id < 1000; id++)
+      if (Resource_DirectoryTable[id] == (u32)(uintptr_t)source && Port_CodeMapHasOverlay(id)) {
+        Port_CodeMapOverlay(id);
+        Port_RelocateOverlay(id);
+        break;
+      }
+  }
+  return result;
+}
+
+/* Turns the overlay's stored branch targets back into pc-relative Thumb BL pairs: every halfword pair
+ * (0xF000 | hi11, 0xF800 | lo11) found from byte 2 on holds (target offset from the scan start) >> 1; it
+ * becomes the offset from the pair. Scans byteLength * 2 bytes (the ROM's routine doubles the count: the scan
+ * runs past the code, as on the GBA). */
+void Resource_PatchThumbBranch(void *code, s32 byteLength) {
+  u8 *start = (u8 *)code + 2;
+  u8 *end = (u8 *)code + 2 * byteLength;
+  u8 *p = start;
+  while (p < end) {
+    u32 second = *(u16 *)p, first, offset;
+    p += 2;
+    if ((second >> 11) != 31)
+      continue;
+    first = *(u16 *)(p - 4);
+    if ((first >> 11) != 30)
+      continue;
+    offset = (((second & 0x7FF) | (first & 0x7FF) << 11) << 1) - (u32)(p - start);
+    *(u16 *)(p - 4) = (u16)(((offset >> 12) & 0x7FF) | 0xF000);
+    *(u16 *)(p - 2) = (u16)((offset >> 1) | 0xF800);
+  }
+}

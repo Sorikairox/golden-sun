@@ -171,7 +171,7 @@ ASM_STMT = re.compile(r'__asm__\s*(?:volatile\s*|__volatile__\s*)?\(\s*"(?P<tmpl
 def load_rules(path):
     rules = {}
     for line in open(path, encoding='utf-8'):
-        if line.startswith('#') or line.startswith('template\t') or not line.strip():
+        if line.startswith('#') or line.startswith(('template\t', 'text\t')) or not line.strip():
             continue
         t, r = line.rstrip('\n').split('\t')[:2]
         rules[t] = r
@@ -299,6 +299,10 @@ def transform_text(path, log):
     out = strip_clobbers(src, log)
     rules = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/asm_rules.tsv')
     out = replace_asm(out, load_rules(rules), log)
+    for text, repl in load_rules(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/c_rules.tsv')).items():
+        if text in out:
+            log.append(f'text "{text}" -> {repl}')
+            out = out.replace(text, repl)
     nested = bool(find_nested(out))
     if nested:
         out = to_blocks(out, log)

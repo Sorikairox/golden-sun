@@ -23,6 +23,8 @@ TOKEN = re.compile(r'@(?:"([^"]+)"|([-\w$.]+))')
 DEF_GLOBAL = re.compile(r'^@(?:"([^"]+)"|([-\w$.]+)) = (.*)$')
 DEF_FUNC = re.compile(r'^define\b[^@]*@(?:"([^"]+)"|([-\w$.]+))\(')
 DECL_FUNC = re.compile(r'^declare\b[^@]*@(?:"([^"]+)"|([-\w$.]+))\(')
+# `%r = [tail ]call <type> %callee(` : an indirect call (the callee is a local value, not @function)
+INDIRECT_CALL = re.compile(r'^(\s+(?:%[-\w.]+ = )?(?:tail |notail )?call [^%@(]*(?:\([^)]*\)\s*)?)(%[-\w.]+)\(')
 COMPILER_LOCAL = re.compile(r'^(\.str|switch\.table|__block_|\.compoundliteral|__const\.|_NSConcrete|\.Lswitch|reltable)')
 
 
@@ -191,6 +193,7 @@ def run(objs, out, root):
                 if name in overlay_defs[image]:
                     repl[name] = fmt(f'ov{image}_{name}')
         new_lines = []
+        n_rc = [0]
         for line in lines:
             mf = DEF_FUNC.match(line)
             if mf and ' internal ' in line.split('@', 1)[0] + ' ':
@@ -210,9 +213,22 @@ def run(objs, out, root):
             def sub(mm):
                 n = name_of(mm)
                 return repl.get(n, mm.group(0)) if n in repl else mm.group(0)
-            new_lines.append(TOKEN.sub(sub, line))
+            line = TOKEN.sub(sub, line)
+            mc = INDIRECT_CALL.match(line)
+            if mc:
+                # an indirect call: the pointer may be a GBA code address (ROM data, the overlay entry table, a
+                # RAM copy of an ARM routine); Port_ResolveCode maps it to the wasm function (port/pc/codemap.c)
+                n_rc[0] += 1
+                tmp = f'%port.rc{n_rc[0]}'
+                indent = line[:len(line) - len(line.lstrip())]
+                new_lines.append(f'{indent}{tmp} = call ptr @Port_ResolveCode(ptr {mc.group(2)})')
+                line = line[:mc.start(2)] + tmp + line[mc.end(2):]
+                stats['indirect calls resolved'] += 1
+            new_lines.append(line)
         # relocated buffers are declared as external globals under their new name
         decls = []
+        if n_rc[0] and not any(l.startswith('declare ptr @Port_ResolveCode(') for l in new_lines):
+            decls.append('declare ptr @Port_ResolveCode(ptr)')
         for name, r in repl.items():
             if r.startswith('@reloc_') and not any(l.startswith(r + ' = ') for l in new_lines):
                 decls.append(f'{r} = external global [0 x i8], align 4')

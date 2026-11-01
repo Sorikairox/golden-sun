@@ -22,7 +22,10 @@ TYPES = ('void', 'i1', 'i8', 'i16', 'i32', 'i64', 'float', 'double', 'ptr')
 # 230400 KB = 0x0E100000: linear memory up to the end of the 64 KB flash at 0x0E000000 (D5)
 LINK_FLAGS = ['-sINITIAL_MEMORY=230400kb', '-sALLOW_MEMORY_GROWTH=0', '-sSTACK_SIZE=1048576',
               '-sERROR_ON_UNDEFINED_SYMBOLS=1', '-sEXIT_RUNTIME=0', '-sENVIRONMENT=web,node',
-              '-O1',
+              '-O2',
+              # the frame driver hands each frame to the host and may be suspended there (port/web/port_lib.js)
+              '--profiling-funcs',  # function names in traces (no data)
+              '-sASYNCIFY=1', '-sASYNCIFY_STACK_SIZE=65536',
               # a factory (GoldenSun(opts)) that does not run main by itself: the page or test harness first
               # writes the player's ROM to 0x08000000
               '-sMODULARIZE=1', '-sEXPORT_NAME=GoldenSun', '-sINVOKE_RUN=0',
@@ -129,7 +132,7 @@ def run(objs, out, root, clang, jobs, stages):
     if 'link' not in stages:
         return True
     objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
-    objects = [o for o in objects if not o.endswith(('glue.ll.o', 'reloc_table.ll.o'))]
+    objects = [o for o in objects if not o.endswith(('glue.ll.o', 'reloc_table.ll.o', 'code_map.ll.o'))]
     defined, undefined = set(), defaultdict(set)
     for o in objects:
         rc, so, _ = sh([NM, o])
@@ -139,7 +142,7 @@ def run(objs, out, root, clang, jobs, stages):
                 undefined[parts[1]].add(os.path.basename(o))
             elif len(parts) == 3 and parts[1] in 'TDBRVWtdbr':
                 defined.add(parts[2])
-    libc = {'memcpy', 'memset', 'memmove', 'printf', 'puts', 'abort', 'malloc', 'free', 'strlen', 'memcmp',
+    libc = {'memcpy', 'memset', 'memmove', 'printf', 'iprintf', 'puts', 'fflush', 'stdout', 'putchar', 'abort', 'port_frame_ready', 'abort', 'malloc', 'free', 'strlen', 'memcmp',
             '__stack_pointer', '__heap_base', '__indirect_function_table', '__memory_base', '__table_base',
             'emscripten_stack_get_current', '__stack_low', '__stack_high', '__data_end'}
     missing = {n: u for n, u in undefined.items() if n not in defined and n not in libc}
@@ -210,7 +213,9 @@ def run(objs, out, root, clang, jobs, stages):
     stub_names = {n for n, _, _ in stubs}
     veneer_names = {re.match(r'define \S+ @"([^"]+)"', l).group(1) for l in lines if l.startswith('define')}
     reloc_ll = relocs_gen.generate(out, root, sig, defined | stub_names | veneer_names)
-    for src in (glue, names_c, reloc_ll):
+    import codemap_gen
+    codemap_ll = codemap_gen.generate(out, root, sig, defined | stub_names | veneer_names)
+    for src in (glue, names_c, reloc_ll, codemap_ll):
         o, err = compile_one(src)
         if err:
             print('glue compile failed:', err)
@@ -232,7 +237,8 @@ def run(objs, out, root, clang, jobs, stages):
         if os.path.basename(o).startswith('build__wasm__bound__port__pc__'):
             rc, so, _ = sh([NM, '--defined-only', o])
             exports |= {p[2] for p in (l.split() for l in so.splitlines()) if len(p) == 3 and p[1] == 'T'}
-    flags = LINK_FLAGS + ['-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(exports))]
+    flags = LINK_FLAGS + ['--js-library', os.path.join(root, 'port/web/port_lib.js'),
+                          '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(exports))]
     rc, so, err = sh(['emcc'] + objects + flags + ['-o', os.path.join(out, 'game.js')])
     errs = [l for l in err.splitlines() if 'error' in l or 'undefined symbol' in l]
     warns = [l for l in err.splitlines() if 'warning' in l]

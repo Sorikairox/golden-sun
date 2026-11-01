@@ -1,0 +1,4 @@
+# Text rules for vendor C (applied by tools/wasm/port_src.py at build time, after the asm rules; never edits
+# vendor files). text: an exact snippet; replacement: the C that takes its place. Port_* live in port/pc.
+text	replacement	why
+*(volatile u8 *)&REG_VCOUNT	((u8)Port_ReadVCount())	busy-waits on the scanline (m4a SampleFreqSet: while VCOUNT != 159): time only passes when the PC layer runs the display, so each read advances it one event

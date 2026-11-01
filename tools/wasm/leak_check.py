@@ -1,7 +1,7 @@
 """Asset leak check (PLAN G2, orchestrator trap 6): the wasm must contain none of the ROM's data.
 
 Every 16-byte window (at 4-byte steps) of every ROM section that is not code (port/symbols/sections.tsv) and
-that is not trivial (fewer than 6 distinct bytes, a constant-step run, or the hex digits) is looked up among all 16-byte windows of
+that is not trivial (fewer than 6 distinct bytes, a constant-step run of bytes or halfwords, or the hex digits) is looked up among all 16-byte windows of
 game.wasm. A hit means game data was compiled in. The ROM is read only, in memory; nothing is written but
 counts and section names.
 Usage: leak_check.py GAME_WASM ROM ROOT   (or run(wasm, root) from build.py, ROM at /rom/baserom.gba)
@@ -20,7 +20,12 @@ def trivial(win):
     if len(set(win)) < 6 or win in COMMON:
         return True
     d = (win[1] - win[0]) & 0xff
-    return all(((win[i + 1] - win[i]) & 0xff) == d for i in range(len(win) - 1))
+    if all(((win[i + 1] - win[i]) & 0xff) == d for i in range(len(win) - 1)):
+        return True
+    # halfwords counting by a constant (index tables: the wasm's own element section encodes such runs)
+    h = [win[i] | win[i + 1] << 8 for i in range(0, len(win), 2)]
+    d = (h[1] - h[0]) & 0xffff
+    return all(((h[i + 1] - h[i]) & 0xffff) == d for i in range(len(h) - 1))
 
 
 def run(wasm_path, root, rom_path='/rom/baserom.gba'):

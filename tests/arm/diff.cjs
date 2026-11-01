@@ -165,6 +165,96 @@ function routines(h) {
         return o;
       },
     },
+    {
+      name: 'SoundMainBTM', spec: { orig: T('SoundMainBTM'), port: 'SoundMainBTM', returns: 'none' },
+      setup: () => fillRandom(EW, 0x1000),
+      cases: () => { const o = []; for (let i = 0; i < 500; i++) o.push([EW + 4 * R.range(0, 900)]); return o; },
+    },
+    {
+      name: 'RealClearChain', spec: { orig: T('RealClearChain'), port: 'RealClearChain', returns: 'none' },
+      cases: function* () {
+        // a channel at EW, a track and neighbours in a small EWRAM area; links null or set at random
+        for (let i = 0; i < 2000; i++) {
+          const ch = EW, tr = EW + 0x100, pv = EW + 0x200, nx = EW + 0x300;
+          fillRandom(EW, 0x400);
+          const dv = new DataView(h.mem.buffer);
+          dv.setUint32(ch + 44, R() & 3 ? tr : 0, true);
+          dv.setUint32(ch + 48, R() & 1 ? pv : 0, true);
+          dv.setUint32(ch + 52, R() & 1 ? nx : 0, true);
+          yield [ch];
+        }
+      },
+    },
+    {
+      // depth slots (gOamDepthLists, 256 words below gVBlankCount) with random chains of entries in EWRAM,
+      // random matrices; up to and beyond 128 sprites
+      name: 'Oam_BuildBufferKernel', spec: { orig: A('Oam_BuildBufferKernel'), port: 'Oam_BuildBufferKernel', returns: 'none' },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        const lists = h.addr('gVBlankCount') - 1024, mats = h.addr('gOamMatrices'), cnt = h.addr('gOamMatrixCount');
+        for (let i = 0; i < 400; i++) {
+          for (let k = 0; k < 256; k++) dv.setUint32(lists + 4 * k, 0, true);
+          const n = R.pick([0, 1, 5, 60, 127, 128, 129, 200]);
+          for (let k = 0; k < n; k++) {
+            const e = EW + 0x1000 + 12 * k, s = lists + 4 * R.range(0, 255);
+            dv.setUint32(e, dv.getUint32(s, true), true); dv.setUint32(e + 4, R(), true); dv.setUint32(e + 8, R(), true);
+            dv.setUint32(s, e, true);
+          }
+          for (let k = 0; k < 64; k++) dv.setUint32(mats + 4 * k, R(), true);
+          h.mem[cnt] = R.range(0, 32);
+          yield [EW + 0x8000];
+        }
+      },
+    },
+    {
+      name: 'Message_FindArm', spec: { orig: A('Message_FindArm'), port: 'Message_FindArm', returns: 'none' },
+      cases: () => { const o = []; for (let b = 0; b < 42; b++) for (let k = 0; k < 256; k += 3) o.push([EW, b * 256 + k]); return o; },
+    },
+    {
+      // real messages: position a reader with the original Message_FindArm, then compare every decode step
+      // until the message's 0 (or 400 symbols)
+      name: 'Text_DecodeSymbol', spec: { orig: A('Text_DecodeSymbol'), port: 'Text_DecodeSymbol', returns: 'u32' },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        for (let i = 0; i < 600; i++) {
+          const msg = R.range(0, 41) * 256 + R.range(0, 255);
+          h.cpu.call(A('Message_FindArm'), [EW, msg]);
+          for (let k = 0; k < 400; k++) {
+            yield [EW];
+            if (dv.getUint32(EW, true) === 0) break;
+          }
+        }
+      },
+    },
+    {
+      // every resource of the ROM's directory whose first byte is a form the decoder knows (0, 1) or not (2..);
+      // streams that are not really tagged LZ make the original run off the regions: skipped, as the game never
+      // decodes them
+      name: 'Decompress_TaggedLzArm', spec: { orig: A('Decompress_TaggedLzArm'), port: 'Decompress_TaggedLzArm', returns: 'u32' },
+      skipOriginalErrors: true,
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer), dir = A('Resource_DirectoryTable');
+        for (let id = 0; id < 1000; id++) {
+          const src = dv.getUint32(dir + 4 * id, true);
+          if (src < 0x08000000 || src >= 0x08800000) continue;
+          yield [src, 0x02004000];
+        }
+      },
+    },
+    {
+      name: 'Resource_PatchThumbBranch', spec: { orig: A('Resource_PatchThumbBranch'), port: 'Resource_PatchThumbBranch', returns: 'none' },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        for (let i = 0; i < 1000; i++) {
+          const base = EW + 2 * R.range(0, 64), n = R.range(0, 3000);
+          for (let k = 0; k < 2 * n + 8; k += 2) {
+            const r = R() & 7;
+            dv.setUint16(base + k, r === 0 ? 0xf000 | (R() & 0x7ff) : r === 1 ? 0xf800 | (R() & 0x7ff) : R() & 0xffff, true);
+          }
+          yield [base, n];
+        }
+      },
+    },
     { name: 'Bios_SoundBiasOn', spec: { orig: T('Bios_SoundBiasOn'), port: 'Bios_SoundBiasOn', returns: 'none' }, cases: () => [[], []], setup: () => { h.mem[0x04000088] = 0x55; h.mem[0x04000089] = 0xc3; } },
     { name: 'Bios_SoundBiasOff', spec: { orig: T('Bios_SoundBiasOff'), port: 'Bios_SoundBiasOff', returns: 'none' }, cases: () => [[], []] },
   ];
@@ -180,15 +270,17 @@ async function main() {
     if (filter && !r.name.includes(filter)) continue;
     if (!m['_' + r.spec.port]) { console.log(`${r.name.padEnd(26)} SKIP (port not exported)`); continue; }
     if (r.setup) r.setup();
-    let n = 0, bad = null, i = 0;
+    let n = 0, bad = null, i = 0, skipped = 0;
     for (const args of r.cases()) {
       const d = h.compare(r.spec, args, { checkMemory: !r.memoryEvery || i % r.memoryEvery === 0 });
-      i++; n++;
+      i++;
+      if (d && r.skipOriginalErrors && d.startsWith('original:')) { skipped++; continue; }
+      n++;
       if (d) { bad = `args ${fmt(args)}: ${d}`; break; }
     }
     total++;
     if (bad) fails++;
-    console.log(`${r.name.padEnd(26)} ${bad ? 'FAIL ' + bad : `EQUIV ${n} cases`}`);
+    console.log(`${r.name.padEnd(26)} ${bad ? 'FAIL ' + bad : `EQUIV ${n} cases`}${skipped ? ` (${skipped} inputs the original cannot run, skipped)` : ''}`);
   }
   const cov = [...h.cpu.used.entries()].sort().map(([k, v]) => `${k} ${v}`).join(', ');
   console.log(`interpreter coverage: ${cov}`);

@@ -1,0 +1,18 @@
+/* libgcc's _call_via_rX (bx rX): the vendor calls a routine whose address is in the last argument, with the
+ * other registers as they are. Here the address is resolved like any GBA code address (codemap.c) and the
+ * call is made with the target's own C signature: the targets the game passes are listed, anything else is
+ * called as four words in, one word out. */
+#include "gba.h"
+
+void *Port_ResolveCode(void *p);
+s32 IwramClearWords(void *destination, s32 size);
+s32 IwramCopyWords(void *destination, const void *source, s32 size);
+
+u32 _call_via_r3(u32 r0, u32 r1, u32 r2, u32 r3) {
+  void *f = Port_ResolveCode((void *)(uintptr_t)r3);
+  if (f == (void *)IwramClearWords)
+    return (u32)IwramClearWords((void *)(uintptr_t)r0, (s32)r1);
+  if (f == (void *)IwramCopyWords)
+    return (u32)IwramCopyWords((void *)(uintptr_t)r0, (const void *)(uintptr_t)r1, (s32)r2);
+  return ((u32(*)(u32, u32, u32, u32))f)(r0, r1, r2, r3);
+}
