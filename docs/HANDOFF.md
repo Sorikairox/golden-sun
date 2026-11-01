@@ -2,6 +2,37 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS14 — 2026-11-02: code-range audit with a build guard (task.c overlay tasks fixed, trap 41); Sol Sanctum to the Elemental Star Room
+
+### Done
+- **Audit** (docs/G14.md 1): `tools/wasm/code_range_audit.py` + `port/tools/code_range_audit.tsv` (file:line + pattern id +
+  verdict, no code text): 46 hits in the vendor C, 29 data, 8 safe, 7 fixed, 2 replaced. Runs as build stage `audit`; a
+  new unaudited hit fails the build (negative control done). **Real fix**: task.c Task_Suspend/ResumeOverlayTasks
+  (`func >> 24 == 2`) never matched a wasm index, so menus never suspended scene tasks; c_rules.tsv + Port_CodeIsOverlay
+  (codemap.c). Old regress digests unchanged (no tested path suspends an overlay task). A sprite_draw.c "code-difference"
+  rule was tried and reverted (bind.py already binds that routine to its ROM address; trap 41 note).
+- **Real play** (`sol_star_room.keys`, story order from the scene sources first; G14.md 3): statue 2 Moved, the round
+  passage (a loop; battle), statue 6 Moved to the doorway the second jewel opened, Luna/Sol rooms (Kraden's two events),
+  **the statue puzzle** (both beam statues pushed, centre statue Moved into the hole, four seals, Kraden's trap-disarmed
+  visit), the Luna/Sol pictures and floor symbol, **rise into the Elemental Star Room**, Venus, Mercury and **Jupiter Stars**
+  (Saturos, Menardi, Felix unmasked, Alex). **Save** there (`sol_star_room_save.keys`, regress `sol_star_room`, SHA-1
+  571a90a0...). Furthest: Elemental Star Room after the Jupiter event (save-run f75700). Highlights
+  `port_work/g14/final/sheet.png`, furthest `port_work/g14/final/frame_75700.png`.
+- **No new port bug** on the new screens (G14.md 4); 0 stubs hit.
+
+### Next
+1. Mars Star (route in G14.md 3 end: north loop to 19,12 then 14,9), the eruption, Mt. Aleph escape (save + regress case),
+   World Map, Vault (Ivan, Inn; save + regress case).
+2. Confirm on screen that a menu now freezes a scene task (e.g. the statue room clouds or the World Map), or with a probe.
+3. Audio per-second check of the sol_star_room route (tests/probes/wav.cjs + tools/audio_check.cjs) was not run.
+
+### Notes
+- Tests at the end (one wasm build kept, probe builds reverted): regress 20/20 OK (`--update` only for sol_star_room; the
+  other 19 cases' rows unchanged), test_arm 79/79 EQUIV, leak check PASS, web_touch ALL PASS, web_phone ALL PASS, web_link
+  clean PASS (0 console errors).
+- B answers No at Yes/No prompts (loops in the star room intro): use A taps through events, B once after.
+- No downloads, installs, deploys or permission denials.
+
 ## GS13 — 2026-11-02: Sol Sanctum by real play to both Small Jewels; examine events fixed (trap 40)
 
 ### Done

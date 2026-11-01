@@ -44,9 +44,12 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   (sol_sanctum_save.keys, sol_jewels.keys, sol_jewels_save.keys; docs/G13.md): pillar room, chest, first relief, Kraden,
   **Move** on statues (incl. from a pillar across water), the maze, the second relief. **Port bug fixed**: examine events ran
   as locked chests (trap 40). Regress 19 cases.
+- GS14 (2026-11-02): **code-range audit** (port/tools/code_range_audit.tsv, build-time guard; task.c overlay-task fix, trap 41)
+  and **Sol Sanctum by real play to the Elemental Star Room** (statues 2/6 Moved, Luna/Sol rooms, the statue puzzle, Venus,
+  Mercury and Jupiter Stars, Saturos/Felix/Alex), saved before the Mars Star (sol_star_room.keys, regress 20 cases; docs/G14.md).
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  Sol Sanctum onwards by real play from the sol_jewels save (G13.md 2 end); run tools/regress.sh after every build.
+  Mars Star / eruption / Mt. Aleph onwards by real play from the sol_star_room save (G14.md 4); run tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -333,7 +336,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     minotaur reliefs) ran as a locked chest ("but Isaac can't open it..."). GS13: c_rules.tsv adds PORT_IS_CODE_INDEX (port_api.h)
     to that test. Look for the same pattern when an event shows the wrong message (task.c `func >> 24 == 2` is another one).
 41. Code-range audit (GS14): every vendor C test of a value's range/high bits that may see code is listed in
-    `port/tools/code_range_audit.tsv` (46 hits: 30 data, 9 safe, 5 fixed, 2 replaced); `tools/wasm/code_range_audit.py`
+    `port/tools/code_range_audit.tsv` (46 hits: 29 data, 8 safe, 7 fixed, 2 replaced; the 7 fixed are Cart_Start (trap 36), FIND_FUNCTION_BITS
+    and its two tests (trap 40) and task.c's two tests); `tools/wasm/code_range_audit.py`
     runs as the build's first stage and fails on a hit with no row (re-pin or new pattern). Real fix: task.c's
     `(task->func >> 24) == 2` (overlay tasks suspended while a menu is open) never matched a table index, so scene
     tasks (World Map, Luna/Sol rooms' falling lights, eruption...) kept running under menus; c_rules.tsv adds
