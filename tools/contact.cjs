@@ -35,12 +35,17 @@ function write(file, px, w, h) {
 }
 
 const [out, colsArg, ...files] = process.argv.slice(2);
-const cols = +colsArg, imgs = files.map(read), W = 240, H = 160, G = 2;
+// SCALE=N (env, GS13): each frame N times larger (nearest), CROP=x,y,w,h: only that part of each frame
+const S = +(process.env.SCALE || 1), [cx, cy, cw, ch] = (process.env.CROP || '0,0,240,160').split(',').map(Number);
+const cols = +colsArg, imgs = files.map(read), W = cw * S, H = ch * S, G = 2;
 const rows = Math.ceil(imgs.length / cols), sw = cols * (W + G), sh = rows * (H + G);
 const sheet = Buffer.alloc(sw * sh * 4, 255);
 imgs.forEach((im, i) => {
   const ox = (i % cols) * (W + G), oy = Math.floor(i / cols) * (H + G);
-  for (let y = 0; y < Math.min(H, im.h); y++) im.px.copy(sheet, ((oy + y) * sw + ox) * 4, y * im.w * 4, (y * im.w + Math.min(W, im.w)) * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const sx = cx + Math.floor(x / S), sy = cy + Math.floor(y / S);
+    if (sx < im.w && sy < im.h) im.px.copy(sheet, ((oy + y) * sw + ox + x) * 4, (sy * im.w + sx) * 4, (sy * im.w + sx) * 4 + 4);
+  }
 });
 write(out, sheet, sw, sh);
 console.log(`${out}: ${imgs.length} frames, ${cols} columns`);
