@@ -1,6 +1,7 @@
 #!/bin/sh
 # Clone the three reference projects into vendor/ at the pinned commits (read-only references; see docs/VENDOR.md).
 # vendor/ is gitignored: none of the three has a licence and alchemy ships game-derived assets.
+# alchemy-gcc (alchemy's compiler submodule) is fetched inside Docker by `tools/build_ref.sh fetch`.
 set -eu
 cd "$(dirname "$0")/.."
 mkdir -p vendor

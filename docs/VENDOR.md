@@ -9,7 +9,10 @@ Cloned shallow on 2026-11-01 (GS0) into `vendor/<name>`; `tools/vendor_fetch.sh`
 | goldensun | github.com/gsret/goldensun | `0fa7b312199c10b96544e825be86cfc476493eb7` (2025-06-04) | **none** | 12 MB |
 | goldensun-decomp | github.com/Coaltergeist/goldensun-decomp | `d8f140af2524babf5d4a2bd2123b7df156d8ac84` (2026-10-28) | **none** (ATTRIBUTION.md says it "does not introduce a project-wide license") | 35 MB |
 
-Submodules not fetched: alchemy-gcc (GPL-2.0, 18.7 MB), alchemy-devtools (no licence, 4.9 MB).
+Submodules: alchemy-gcc fetched in GS1 (approved, GPL-2.0) at alchemy's gitlink `9bc4e65a` into
+`vendor/alchemy-gcc` (32 MB checkout), from inside Docker by `tools/build_ref.sh fetch`. Its own nested submodule
+`agbcc` (pret/agbcc `da598c1d`) and the `gcc-2.95.2.tar.gz` its `arm/Makefile` downloads are **not** fetched
+(await approval). alchemy-devtools: not approved, not fetched.
 
 ## Licences: what we may do
 
@@ -62,8 +65,8 @@ the other five editions (its `rom.sha1`):
   and flash, GAS 2.10; `make bootstrap` builds them (needs `arm-none-eabi` binutils, libpng, utf8proc,
   pkg-config, and downloads binutils-2.10 from ftp.gnu.org). `make modern` compiles all tbs C with a current
   `arm-none-eabi-gcc` (`-DMODERN=1`) — the path we build on.
-- **Matching:** yes (its claim, checked by its CI from a clean clone). Not verified here yet: needs the toolchain
-  approval in HANDOFF.
+- **Matching:** yes (its claim). GS1: with two of its four compilers stood in for (sources await approval), our
+  build equals the ROM except 11,596 bytes inside the ten objects those compilers build (docs/G1.md).
 - **Symbols/structure:** the best of the three by far: modules by credits division (system, gamepak, field,
   battle, battle_effect, window, menu, shop, game, sound, graphics, map, scene, debug), `Module_PascalCase`
   names from evidence, typed structs, extensive per-folder READMEs, `objects.tsv` link order, one linker

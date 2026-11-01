@@ -14,10 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS0 (2026-11-01): repo, vendor clones, assessment, plan. No code yet. Base chosen: **alchemy**.
-- User's ROM present and verified: `~/roms/Golden_Sun_USA_Europe.gba`, SHA-1 matches every vendor target.
-- Blocked on approvals: GNU arm-none-eabi binutils (+ alchemy bootstrap downloads) for the matching-build
-  check and the address map. See HANDOFF "Approvals".
+- GS1 (2026-11-01): G1 done except the last matching step. Toolchain image `golden-sun-tools` (602 MB) and
+  `tools/build_ref.sh`. **gsret matches** (ROM + 96 overlays). **alchemy tbs-en equals the ROM except 11,596
+  bytes** inside the ten objects of two compilers not yet built (old_agbcc, GCC 2.95.2: their sources need
+  approval). Address map committed (`port/symbols/`, 99.18 % of the ROM in sections). wasm census: 159/166
+  linked C objects compile with `port/shim`. Details: `docs/G1.md`.
+- Waiting on the user: approve `pret/agbcc` (nested submodule of alchemy-gcc) and `gcc-2.95.2.tar.gz`
+  (ftp.gnu.org) for the full `compare-tbs-en: OK`. G2 can start without it.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -117,10 +120,29 @@ that edition's address map, not a port. Out of scope until asked.
   DirectSound PCM in its buffers; the PC layer feeds FIFO A/B to WebAudio (AudioWorklet), and synthesizes the 4
   PSG channels from SOUND1-4 registers. Timer 0/1-driven sample rate from the registers.
 - **D11 Online link battle: link transport, not input lockstep** (see section 6).
-- **D12 Toolchain:** host Homebrew LLVM (clang 23, wasm32 target) for probes; builds in Docker with the local
-  `emscripten/emsdk:4.0.15-arm64` image (as GoldenEye/Conker). Docker CLI: `/Applications/Docker.app/Contents/
-  Resources/bin/docker` (`/usr/local/bin/docker` is a dangling OrbStack link). The matching alchemy build runs in
-  a `golden-sun-tools` image (ubuntu:24.04 + binutils-arm-none-eabi, libpng, utf8proc) once approved.
+- **D12 Toolchain:** host Homebrew LLVM (clang 23, wasm32 target) for probes and the census; builds in Docker
+  with the local `emscripten/emsdk:4.0.15-arm64` image (as GoldenEye/Conker). Docker CLI: `/Applications/
+  Docker.app/Contents/Resources/bin/docker` (`/usr/local/bin/docker` is a dangling OrbStack link). The reference
+  builds run in `golden-sun-tools` (`tools/docker/Dockerfile.tools`, ubuntu:24.04 + Ubuntu packages) on the
+  Docker volume `golden-sun-ref`, via `tools/build_ref.sh`.
+- **D13 Downloads (user, 2026-11-01):** approved, all inside Docker, nothing on the host: (a) the Ubuntu apt
+  packages of `golden-sun-tools` (binutils-arm-none-eabi build-essential pkg-config libpng-dev libutf8proc-dev
+  curl patch git), image FROM the local ubuntu:24.04; (b) the `PascalPixel/alchemy-gcc` submodule (GPL-2.0);
+  (c) `binutils-2.10.tar.gz` from ftp.gnu.org as fetched by alchemy's `make bootstrap`. Nothing else: any other
+  download needs approval (stop and report). `alchemy-devtools` is **not** approved. Still pending (GS1):
+  `pret/agbcc` (alchemy-gcc's nested submodule) and `gcc-2.95.2.tar.gz` (alchemy-gcc `arm/`).
+- **D14 Licence (user, 2026-11-01):** none of the vendor projects has a licence. Build privately. Before the
+  first **public** deploy the user asks alchemy's author for permission or a licence, so G5 is gated on that.
+  Never copy vendor code into our tree: our tree holds our headers, shims and tools and builds from the pinned
+  vendor checkout. (Supersedes the open question in D2.)
+- **D15 Online without TURN (user, 2026-11-01):** STUN only, no TURN server, the same as GoldenEye.
+- **D16 Stand-ins until approved (GS1):** while old_agbcc and GCC 2.95.2 are not built, `tools/build_ref.sh`
+  compiles their ten objects with alchemy GCC and fits them to the original layout (`tools/ref/standin_fix.py`,
+  docs/G1.md); every other byte of the ROM is verified equal. The address map marks those symbols
+  `standin-xref`/`standin-offset`. When the sources are approved the script uses the real compilers.
+- **D17 Shims by include guard (GS1):** the wasm build forces `port/shim/prelude.h` first; it includes our PC
+  versions of hardware-bound vendor headers and defines the vendor include guards, so vendor headers are never
+  edited or copied. Whole-file replacements are listed in `port/overrides.tsv`.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
@@ -166,8 +188,7 @@ Options:
 
 Decision: **B'** for play; keep **A** (two instances in one page, in-memory link) as the **offline test
 harness** for link battles and e2e replays, where determinism is exact. Transport/signaling as Conker: WebRTC
-DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fallback, STUN only (no TURN unless
-the user decides), local room server for tests, in-page netsim (`?netsim=lat:MS,jit:MS,loss:PCT`).
+DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fallback, STUN only (no TURN: D15), local room server for tests, in-page netsim (`?netsim=lat:MS,jit:MS,loss:PCT`).
 
 ## 7. Traps (add as found)
 
@@ -185,3 +206,13 @@ the user decides), local room server for tests, in-page netsim (`?netsim=lat:MS,
    all supported by clang; the shim must rewrite or patch them. Nested functions: ~11-22 in 8 files (turn.c,
    action.c, enemy_ai.c, playback.c, particle_streams.c, battle_djinn_preview.c, battle_party_commands.c,
    windows.c) need hand-lifted replacements (D3 override list).
+9. alchemy-gcc has a **nested submodule** (`agbcc` -> pret/agbcc) and its `arm/Makefile` **downloads
+   gcc-2.95.2.tar.gz**: `make bootstrap` needs both, beyond the three GS0 listed. Never run plain
+   `make bootstrap` or `git submodule update --recursive` until approved; `tools/build_ref.sh` avoids both.
+10. The Broken Seal builds with **no ROM** (alchemy ships its assets); the ROM is only the comparison target.
+11. GAS 2.10 marks Thumb functions `STT_ARM_TFUNC` (type 13), not `STT_FUNC`; GCC 2.96 puts const data in
+    `.text` where old_agbcc uses `.rodata`.
+12. A vendor header that includes `"dma.h"` finds the vendor copy next to it before any `-I` path: override
+    headers by include guard (D17), not by include order.
+13. Do not copy `out/<ed>/text/messages.inc` anywhere outside the Docker volume: it is the game's text.
+    `port_work/g1/gen/text/msg_ids.h` (ids only) is enough for the census.

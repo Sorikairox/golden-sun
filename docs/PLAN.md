@@ -3,7 +3,7 @@
 Each phase has exit criteria that a fresh agent can check. Decisions and rules: `orchestrator.md`.
 One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the end of each.
 
-## G1 — Toolchain and address map (needs approval, see HANDOFF)
+## G1 — Toolchain and address map (GS1: done but for the final match; see docs/G1.md)
 
 - Build a `golden-sun-tools` Docker image (ubuntu:24.04 + binutils-arm-none-eabi, gcc, make, libpng-dev,
   libutf8proc-dev, pkg-config). Fetch alchemy's `alchemy-gcc` submodule; `make bootstrap`; `make compare-tbs-en`
@@ -12,11 +12,15 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   and the object list; classify every object as code, code-pointer table, or asset.
 - `tools/build_ref.sh` runs it all with compact output.
 - **Exit:** `compare-tbs-en: OK`; the symbol table committed (no bytes); counts of code vs data objects recorded.
+- GS1 status: table, counts and gsret match done. alchemy equals the ROM except the 11,596 bytes of the ten
+  objects built by stand-ins for old_agbcc/GCC 2.95.2, whose sources (pret/agbcc, gcc-2.95.2.tar.gz) await
+  approval; then rerun `tools/build_ref.sh` for `compare-tbs-en: OK`.
 
 ## G2 — Compile everything to wasm (link with stubs)
 
 - `port/shim/` headers (dma, iwram_call, transform, io_reg, irq...) and the override list; lift the nested
-  functions; fix cast-as-lvalue sites; namespaced overlays (D7).
+  functions; fix cast-as-lvalue sites; namespaced overlays (D7). GS1 started it: 159/166 linked C objects
+  compile for wasm32 (`tools/wasm_census.py --compile`); the 7 left are in `port/overrides.tsv`.
 - Emscripten build in the local `emscripten/emsdk:4.0.15-arm64` image (`tools/web_build.sh`), identity memory
   map (D5), data symbols bound to ROM addresses (D4), logged stubs for every unresolved symbol and asm routine.
 - Leak check: no asset object compiled, and the wasm contains none of a list of ROM strings.
@@ -46,7 +50,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 ## G5 — First public build
 
 - Deploy to Netlify (private site name until the user decides); fan-project framing, bring-your-own-ROM.
-- Licence question settled with the user before publishing (D2).
+- **Gated (D14):** the user asks alchemy's author for permission or a licence before the first public deploy.
 - **Exit:** the deployed site plays on desktop Chrome and on a phone (touch controls), from ROM pick to battle.
 
 ## G6 — Local link battle (two instances)

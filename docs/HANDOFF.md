@@ -2,6 +2,46 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS1 — 2026-11-01: toolchain, reference builds, address map (G1)
+
+### Done
+- User decisions recorded in orchestrator.md (D13 downloads, D14 licence/G5 gate, D15 no TURN; D16-D17 this
+  session's method). Full write-up: `docs/G1.md`.
+- `tools/docker/Dockerfile.tools` -> image `golden-sun-tools` (602 MB, native arm64). `tools/build_ref.sh`
+  [image|fetch|bootstrap|alchemy|gsret|symbols|all] runs everything in Docker on volume `golden-sun-ref`
+  (vendor read only, ROM mounted read only, outputs in `port_work/g1/`).
+- Downloads (approved, in Docker): Ubuntu packages (+ `ca-certificates` for https, same archive);
+  alchemy-gcc `9bc4e65a` -> `vendor/alchemy-gcc`; binutils-2.10.tar.gz.
+- **gsret `make compare`: OK** (ROM SHA-1 matches; 96 overlays equal).
+- **alchemy tbs-en: not yet SHA-1 equal.** `make bootstrap` also needs `pret/agbcc` (alchemy-gcc's nested
+  submodule: old_agbcc for the sound and flash libraries) and `gcc-2.95.2.tar.gz` (ftp.gnu.org: three ARM C
+  files). Not approved, not fetched. With stand-ins for those two compilers plus a layout fit
+  (`tools/ref/standin_fix.py`), the build equals the ROM in every byte except 11,596 (0.14 %), all inside the
+  ten objects those compilers build. Cause = missing steps; toolchain version and platform are fine.
+- **Address map** `port/symbols/`: tbs-en.tsv (16,744 symbols), tbs-en-overlays.tsv (10,583), sections.tsv
+  (1,104), objects.tsv (924: main 50 code / 23 mixed / 542 data / 3 ram; overlays 192 / 96 / 7 / 11),
+  code_pointer_tables.tsv (372: 20 main, 352 overlay). 99.18 % of the ROM is in sections: data 84.4 %, code
+  6.6 %, overlay streams 6.5 %, music 1.8 %; the rest is bank fill and the 8 MB pad. 649 of 663 ROM sections
+  verified byte-identical; 14 are the stand-ins'.
+- **wasm census** (`tools/wasm_census.py`): shims in `port/shim/` (prelude forced first; dma, iwram_call,
+  transform, mul_q16, FIXED_ADDRESS, return address). Linked C objects: 105 -> 160/166 parse, 159/166 compile to
+  wasm objects; all .c: 373/394 compile. Remaining 7 listed in `port/overrides.tsv`.
+
+### Approvals needed (nothing below was downloaded)
+1. `https://github.com/pret/agbcc` at `da598c1d918402c42c0c0d7128ba14567f3175e9` (alchemy-gcc's nested
+   submodule, used unmodified; GPL). Fetched inside Docker into the volume's alchemy-gcc/agbcc.
+2. `https://ftp.gnu.org/gnu/gcc/gcc-2.95.2.tar.gz` (~12 MB, SHA-256 `064e1cb0...7d72482` pinned by
+   alchemy-gcc's `arm/Makefile`), fetched by `make -C alchemy-gcc arm` inside Docker.
+With both, `tools/build_ref.sh bootstrap alchemy` builds the real compilers (it detects the sources) and should
+print `MATCH`; then `tools/build_ref.sh symbols` refreshes the 108 stand-in rows of the address map.
+
+### Next
+1. If approved: the two fetches above (adapt `fetch` in build_ref.sh), rerun, expect MATCH.
+2. G2: the 7 overrides (nested functions, IWRAM-offset calls, frame.c -> fiber yield), then the emscripten
+   link with stubs: identity memory map (D5), data symbols from `port/symbols` (data objects never compiled),
+   overlays namespaced (D7), leak check.
+3. Notes: `port_work/g1/gen/text/msg_ids.h` comes from the build (ids only); messages.inc stays in the volume.
+
 ## GS0 — 2026-11-01: project start (planning, no code)
 
 ### Done

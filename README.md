@@ -16,5 +16,5 @@ cartridge:
 Put it in `~/roms/` (read-only); `tools/check_rom.sh <path>` verifies it. The web page asks for the ROM
 file and reads every asset from it in the browser.
 
-Status: planning (session GS0). See [orchestrator.md](orchestrator.md), [docs/PLAN.md](docs/PLAN.md) and
+Status: phase G1 (toolchain and address map, session GS1; see [docs/G1.md](docs/G1.md)). See [orchestrator.md](orchestrator.md), [docs/PLAN.md](docs/PLAN.md) and
 [docs/HANDOFF.md](docs/HANDOFF.md).
