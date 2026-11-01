@@ -36,7 +36,7 @@ module.exports = (m, frame, keys) => {
   // aim for the cell's middle so the next leg starts clear of the edges
   const ax = tx * 16 + 8 - x, az = tz * 16 + 8 - z;
   let k = null;
-  if (zFirst && cz !== tz) k = az < 0 ? 'UP' : 'DOWN';
+  if ((zFirst || (vert && Math.abs(cx - tx) <= 1)) && cz !== tz) k = az < 0 ? 'UP' : 'DOWN'; // slopes push sideways: keep on
   else if (cx !== tx) k = ax < 0 ? 'LEFT' : 'RIGHT';
   else if (cz !== tz) {
     if (!vert && Math.abs(ax) > 5) k = ax < 0 ? 'LEFT' : 'RIGHT'; // centre first, then keep to the vertical
