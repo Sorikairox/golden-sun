@@ -2,6 +2,41 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS5 — 2026-11-01: storm colours checked (game logic, EQUIV), RAM position readout, route into CottageRoomsA
+
+### Done
+- **Storm night (task 1)**: not a port bug. The bright yellow-green night is the ROM's own PALETTE_TINT_WARM
+  (Weather_StartLightning): palette RAM = the tint of the scene's source palette, 224/224 colours (house and Vale),
+  and **PaletteFade_Build (vendor C) is EQUIV to the ROM's code** (new diff spec, 1200 cases, every per-colour
+  mode; negative control fails as it should). No BLDY/brightness or window darkening is set; the lightning flashes
+  and fades play. A real GBA's unlit LCD makes it look much darker: if wanted, an optional "GBA LCD colours"
+  page filter (rule 7, default off): a user decision, not done. Frames: `port_work/g5/storm/frame_05470.png`
+  (night), `frame_05478.png` (flash), `sheet.png`. Notes: docs/G5.md section 1.
+- **Test hook** `Port_CallCode4(gba, a, b, c, d)` (port/pc/call_via.c): calls the vendor C function at a GBA
+  address, so diff.cjs can check vendor C against the ROM (harness `spec.call`). **43/43 EQUIV.**
+- **Routing tools (task 2, test only)**: boot.cjs `--probe` hooks; `tests/probes/where.cjs` (scene + name,
+  entrance, map id, leader x/y/z and cell from RAM); `tests/probes/mapdump.cjs` (cell behaviors or heights as
+  ASCII); `tools/route.sh`. RAM offsets in docs/G5.md section 2.
+- **Route (task 3)**: `tests/routes/vale_cottage.keys`: past the first rock, north past Isaac's house, east up the
+  slope, into **CottageRoomsA** by its east door (scene 7, f~5755) and back out; no new stubs or unknown
+  addresses. Furthest: `port_work/g5/furthest_cottage.png`. No battle reached.
+- **Touch test (task 4)**: `tests/web_touch.cjs` on the current game.wasm: **ALL PASS**, 0 console errors; no test
+  fallout, nothing changed.
+
+### Next
+1. Route on: through CottageRoomsA's other doors back into Vale, toward Garet (step triggers 30/31 near cells
+   19-21,38-42) and the plaza exit (trigger 5 at 30,86); plan with mapdump/where (docs/G5.md section 3).
+2. Before the first battle: BitDecoder_DecodeImage and the battle blitters (not hit yet).
+3. Ask the user about an optional LCD colour filter for the page.
+
+### Notes
+- Build: leak check PASS; 0 linker warnings; 12 logged stubs (10 asm). The build compiled whatever was in
+  port/pc at the time, including the audio session's untracked m4a.c/mixer.c (not committed by GS5).
+- Trap 28 (new): bind.py routes every indirect call in port/pc through Port_ResolveCode, so codemap.c (which
+  defines it) cannot hold an indirect call ("invalid redefinition"); test hooks that call through pointers live
+  in call_via.c.
+- No downloads, no installs, no permission denials. port/web/ not touched.
+
 ## GS4 — 2026-11-01: G3 exit met (title + file menu from an in-game save); prologue plays, Isaac walks in Vale
 
 ### Done

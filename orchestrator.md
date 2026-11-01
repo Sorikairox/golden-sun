@@ -259,3 +259,5 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     PORT_IS_TABLE_INDEX), or a routine shows as a message.
 27. Indirect calls with another type than the target (routines called as void(s32) taking nothing) trap in
     wasm: -sEMULATE_FUNCTION_POINTER_CASTS=1 (ARM-like tolerance). Do not drop it without another answer.
+28. bind.py routes every indirect call in port/pc through Port_ResolveCode: the file that defines it (codemap.c)
+    cannot contain an indirect call (IR "invalid redefinition"); put pointer-calling hooks elsewhere (call_via.c).
