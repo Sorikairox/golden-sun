@@ -1,0 +1,16 @@
+// Test-only probe for tests/boot.cjs --probe (tools/regress.sh): at the frames DIGEST_AT (env, comma separated)
+// prints a SHA-1 of the GBA RAM and video state (EWRAM, IWRAM, palette, VRAM, OAM) and one of the frame picture:
+//   digest f6000 ram 1a2b3c4d5e6f7a8b pic 0f1e2d3c4b5a6978
+// Digests only (16 hex digits each): nothing of the game is written anywhere.
+'use strict';
+const crypto = require('crypto');
+const AT = new Set((process.env.DIGEST_AT || '').split(',').filter(Boolean).map(Number));
+module.exports = (m, frame) => {
+  if (!AT.has(frame)) return;
+  const H = m.HEAPU8, h = crypto.createHash('sha1');
+  for (const [a, n] of [[0x02000000, 0x40000], [0x03000000, 0x8000], [0x05000000, 0x400], [0x06000000, 0x18000], [0x07000000, 0x400]])
+    h.update(H.subarray(a, a + n));
+  const p = m._Port_FrameBuffer();
+  const pic = crypto.createHash('sha1').update(H.subarray(p, p + 240 * 160 * 4)).digest('hex').slice(0, 16);
+  console.log(`digest f${frame} ram ${h.digest('hex').slice(0, 16)} pic ${pic}`);
+};
