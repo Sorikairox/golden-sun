@@ -26,8 +26,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   (re-join after a partner restart works); page: partner-left notice, silence watchdog, clear Host/Join errors,
   "Return to title" (fresh module, same ROM bytes), optional "GBA screen colours" (default off); tests/web_phone.cjs
   (phone emulation of the whole page, ALL PASS). Memory: 225 MiB fixed linear memory, ~10 MiB of it touched. LINK.md 9.
+- GS9 (2026-11-01): prologue by real play to Garet joining, the elders holding back the Boulder and into
+  ValeKradensCottage (tests/routes/vale_garet.keys, vale_boulder.keys); the prologue's monster fights are not reached
+  yet (rocks and Garet wall every way found: docs/G9.md 1). Test-only probes through the game's own routines: 3-member
+  party, Psynergy (battle + field Move/Catch/Cure), Djinn unleash, Mars summon, a lost battle (wakes at home), World
+  Map (warp), credits slides. Fixed the World Map idle-camera garbage (trap 38); ported TileMap_DrawRows and
+  Credits_DecodeBackground (78/78 EQUIV). tools/regress.sh: 11 cases with stored digests, all OK.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
-  across two networks; tests for partner-leaves mid-battle and failed exchange + retry; route to a real prologue fight.
+  across two networks; tests for partner-leaves mid-battle and failed exchange + retry; route to a real prologue fight (G9.md 1);
+  run tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -297,3 +304,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     port, so Port_ResolveCode would abort on it anyway. The page's "Return to title" restarts the module instead (GS10).
 37. `offsetParent` is null for `position: fixed` elements (the picture and pad in play): page tests must test
     visibility with `getClientRects().length`, not offsetParent.
+38. The PPU must reload an affine reference point (BG2X/Y, BG3X/Y) on every write, not only when the value changes: the
+    World Map's per-line HBlank DMA can write a line's value equal to the previous one, and stepping by BG2PD there
+    shows garbage (GS9: hw.c reports DMA writes to I/O, ppu.c Port_PpuIoWritten).
+39. Routing on the field: a cell's height is shape byte 1 x 8 pixels; shape kinds 1/2 are walkable west->east slopes,
+    kinds 3/4/7 behave as cliff edges (the game slides the leader off). tests/probes/pathfind.cjs models it roughly;
+    trust a walk (tests/probes/autowalk.cjs) over the model.

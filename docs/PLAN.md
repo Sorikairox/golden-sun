@@ -48,6 +48,9 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   keyboard/gamepad, setting Auto/On/Off storing only the explicit choice; gamepad API support.
 - **Exit:** a recorded e2e run from power-on through the first battle and a save replays with identical hashes;
   phone emulation tests pass (CDP touch, mobile UA, 390x844, 412x915, 844x390, rotation).
+- GS9 (docs/G9.md): real play to Garet joining and past the Boulder; no real-play route to a fight yet. Battles with a
+  3-member party, Psynergy, Djinn, summons, a defeat, field Psynergy and the World Map run (test-only probes);
+  tools/regress.sh replays them with stored digests.
 
 ## G5 — First public build
 

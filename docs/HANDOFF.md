@@ -2,6 +2,42 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS9 — 2026-11-01: prologue to the Boulder by real play; Psynergy/Djinn/summon/defeat/World Map exercised; regress.sh
+
+### Done
+- **Real play** (no probe): `tests/routes/vale_garet.keys` (Garet heard, drops his chest, joins: 2-member party,
+  f~6650), `vale_boulder.keys` (the elders hold back the Boulder with Psynergy, the third rock falls, out west into
+  ValeKradensCottage, to 17,22 by the rocks, f~9772). Furthest: `port_work/g9/route/frame_10200.png`, sheet
+  `port_work/g9/route/sheet.png`. **The prologue's monster fights are not reached by real play**: every way found is
+  walled by the story's rocks, Garet's turn-back, or a level step the game refuses (docs/G9.md section 1).
+- **Unported paths exercised** with test-only probes through the game's own routines (Port_CallCode4):
+  `tests/probes/party.cjs` (Party_AddMember Garet+Ivan, Unit_LevelUpTo, Unit_LearnPsynergy, Djinn_Give/Set/
+  PutOnStandby), `warp.cjs` (Event_SetDestination), `credits.cjs` (Credits_LoadBackground). Played: Quake, Forge
+  unleashed, Ray, Mars summon, enemies calling allies, a party member downed, a lost battle (Isaac wakes at home,
+  coins 0), field Move/Catch/Cure, World Map walking/idle/menu/random encounter (Zombie), credits slide decoding.
+  Routes `battle_party.keys`, `battle_summon.keys`, `battle_lost.keys`, `field_psynergy.keys`, `worldmap.keys`.
+- **Fixes/ports**: World Map garbage when standing still (ppu.c reloads BG2/3 X/Y on every DMA write, not only on a
+  changed value; trap 38); `TileMap_DrawRows` (menu still picture on the World Map) in C, EQUIV 120;
+  `Credits_DecodeBackground` in C (BitDecoder's body with the offset as argument), EQUIV 300. **78/78 EQUIV.**
+- **tools/regress.sh**: 11 cases (prologue_save, garet, boulder, battle_fight, battle_party, battle_summon,
+  battle_lost, field_psynergy, worldmap, credits, link2), RAM + picture digests (tests/probes/digest.cjs) vs
+  `tests/regress/expected.tsv` (digests only); `--update` rewrites; ~32 s; all OK twice (deterministic).
+- Routing tools: `tests/probes/pathfind.cjs`, `autowalk.cjs` (records keys; commit them as .keys), `actors.cjs`,
+  `tools/path2keys.sh`; `tools/g6run.sh` takes `BIN=`.
+
+### Next
+1. Real route to a prologue fight: work out the story order (plaza? survivor in ValeKradensCottage at 4-5,21?) from
+   the scene sources before walking; then the plaza, Jenna's family, the river, the next day (G9.md 1).
+2. Credits as the game plays them (the ending) and Decompress_HalfwordLz (debug palette editor only) remain unhit.
+3. Run `tools/regress.sh` after every build; `--update` only for intended changes (say which case changed and why).
+
+### Notes
+- Stubs: 0 distinct hit in every run; 1 logged stub as before. Leak check PASS on every build (4 builds), 0 linker
+  warnings. Prologue save byte-identical to GS4's. tools/link2.sh 20/20 agree, b won.
+- ppu.c/hw.c are shared with the page: the World Map fix applies there too. port/web, link.c, netlify and
+  tests/web_* not touched. tests/web_touch.cjs / web_phone.cjs not run this session (GS10's Chrome runs).
+- No downloads, no installs, nothing deployed, no permission denials.
+
 ## GS10 — 2026-11-01: link robustness, Return to title, phone check + memory, optional GBA screen colours
 
 ### Done
