@@ -1,6 +1,6 @@
 """Object and link stages of the wasm build (tools/wasm/build.py).
 
-obj:  each bound module (build/wasm/bound/*.ll) -> wasm object; port/pc/*.c and build/wasm/gen/*.c too.
+obj:  each bound module (build/wasm/bound/*.ll, the game's and port/pc's) -> wasm object; build/wasm/gen too.
 link: works out what is still undefined (llvm-nm), then generates build/wasm/gen/glue.ll:
   - far-call veneers: the game calls another bank's routine through a stub NAMEFar (gamepak/far_call/*.s
     `export NAME, TARGET`), and overlays call the main image through import stubs
@@ -22,7 +22,11 @@ TYPES = ('void', 'i1', 'i8', 'i16', 'i32', 'i64', 'float', 'double', 'ptr')
 # 230400 KB = 0x0E100000: linear memory up to the end of the 64 KB flash at 0x0E000000 (D5)
 LINK_FLAGS = ['-sINITIAL_MEMORY=230400kb', '-sALLOW_MEMORY_GROWTH=0', '-sSTACK_SIZE=1048576',
               '-sERROR_ON_UNDEFINED_SYMBOLS=1', '-sEXIT_RUNTIME=0', '-sENVIRONMENT=web,node',
-              '-sEXPORTED_FUNCTIONS=_main,_Port_StubHits', '-O1',
+              '-sEXPORTED_FUNCTIONS=_main,_Port_StubHits,_Port_RelocateAll,_Port_RelocCheck', '-O1',
+              # a factory (GoldenSun(opts)) that does not run main by itself: the page or test harness first
+              # writes the player's ROM to 0x08000000
+              '-sMODULARIZE=1', '-sEXPORT_NAME=GoldenSun', '-sINVOKE_RUN=0',
+              '-sEXPORTED_RUNTIME_METHODS=HEAPU8,ccall,callMain',
               # keep every game function and overlay even before anything calls it: the G2 check is that all
               # of them link; G3's boot path will make them reachable
               '-Wl,--no-gc-sections']
@@ -99,7 +103,7 @@ def run(objs, out, root, clang, jobs, stages):
     obj_dir = os.path.join(out, 'obj')
     os.makedirs(obj_dir, exist_ok=True)
     bound = [os.path.join(out, 'bound', o + '.ll') for _, o in objs]
-    cfiles = sorted(glob.glob(os.path.join(root, 'port/pc/*.c'))) + [os.path.join(out, 'gen/relocated.c')]
+    cfiles = [os.path.join(out, 'gen/relocated.c')]
 
     def compile_one(src):
         rel = os.path.relpath(src, root).replace('/', '__')
@@ -125,7 +129,7 @@ def run(objs, out, root, clang, jobs, stages):
     if 'link' not in stages:
         return True
     objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
-    objects = [o for o in objects if not o.endswith('glue.ll.o')]
+    objects = [o for o in objects if not o.endswith(('glue.ll.o', 'reloc_table.ll.o'))]
     defined, undefined = set(), defaultdict(set)
     for o in objects:
         rc, so, _ = sh([NM, o])
@@ -202,7 +206,11 @@ def run(objs, out, root, clang, jobs, stages):
         f.write('  0};\n' + f'const int gPortStubCount = {len(stubs)};\n')
     glue = os.path.join(out, 'gen', 'glue.ll')
     open(glue, 'w').write('\n'.join(lines) + '\n')
-    for src in (glue, names_c):
+    import relocs_gen
+    stub_names = {n for n, _, _ in stubs}
+    veneer_names = {re.match(r'define \S+ @"([^"]+)"', l).group(1) for l in lines if l.startswith('define')}
+    reloc_ll = relocs_gen.generate(out, root, sig, defined | stub_names | veneer_names)
+    for src in (glue, names_c, reloc_ll):
         o, err = compile_one(src)
         if err:
             print('glue compile failed:', err)

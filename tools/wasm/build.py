@@ -14,6 +14,7 @@ Usage (inside the container): python3 tools/wasm/build.py [--jobs N] [--only STA
 """
 import argparse
 import concurrent.futures as cf
+import glob
 import os
 import re
 import subprocess
@@ -48,11 +49,15 @@ def read_tsv(path):
 
 
 def code_objects():
-    """[(image, object path under games/tbs without extension)] of C objects with code, in link order."""
+    """[(image, object)] of C objects with code, in link order: the game's (path under games/tbs without
+    extension), then the PC layer's ('port/pc/NAME'), which goes through the same binding so it can name game
+    data (gIrqHandlers, Trig_SineTable...) and get their GBA addresses."""
     out = []
     for r in read_tsv(os.path.join(ROOT, 'port/symbols/objects.tsv')):
         if r['class'] in ('code', 'mixed') and os.path.exists(os.path.join(TBS, r['object'] + '.c')):
             out.append((r['image'], r['object']))
+    for p in sorted(glob.glob(os.path.join(ROOT, 'port/pc/*.c'))):
+        out.append(('main', 'port/pc/' + os.path.basename(p)[:-2]))
     return out
 
 
@@ -84,6 +89,8 @@ def stage_src_ll(objs, jobs):
     # translation units that include a file with nested functions: mark their captures (sequential: the edits
     # land in shared included files)
     for image, obj in objs:
+        if obj.startswith('port/'):
+            continue
         top = src_of(obj)
         if set(nested) & port_src.includes_closure(top):
             rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/port_src.py'), '--captures', top,
@@ -95,10 +102,13 @@ def stage_src_ll(objs, jobs):
 
     def one(item):
         image, obj = item
-        src = src_of(obj)
         ll = os.path.join(OUT, 'll', obj + '.ll')
         os.makedirs(os.path.dirname(ll), exist_ok=True)
-        rc, _, se = run([CLANG] + CFLAGS + ['-S', '-emit-llvm', '-o', ll, src])
+        if obj.startswith('port/'):  # the PC layer: emscripten's libc headers, the game's types via port/pc
+            rc, _, se = run(['emcc', '-O2', '-S', '-emit-llvm', '-I' + os.path.join(ROOT, 'port/pc'),
+                             '-o', ll, os.path.join(ROOT, obj + '.c')])
+        else:
+            rc, _, se = run([CLANG] + CFLAGS + ['-S', '-emit-llvm', '-o', ll, src_of(obj)])
         return obj, (se[-2000:] if rc else None)
     fails = []
     with cf.ThreadPoolExecutor(jobs) as ex:

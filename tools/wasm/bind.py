@@ -132,6 +132,7 @@ def run(objs, out, root):
                             not (rx is DEF_GLOBAL and m.group(3).startswith('external')):
                         overlay_defs[image].add(name_of(m))
     stats = defaultdict(int)
+    code_targets = {r['target'] for r in t.relocs if r['target_kind'] == 'code' and not r['overlay']}
     relocated_used = {}     # bound name -> (overlay, symbol, size)
     kept, unresolved, code_as_data = [], defaultdict(set), defaultdict(set)
     for image, obj, text in modules:
@@ -191,6 +192,15 @@ def run(objs, out, root):
                     repl[name] = fmt(f'ov{image}_{name}')
         new_lines = []
         for line in lines:
+            mf = DEF_FUNC.match(line)
+            if mf and ' internal ' in line.split('@', 1)[0] + ' ':
+                fname = name_of(mf)
+                # an overlay's static functions are renamed ovNNN_ (unique), and a main-image static a
+                # relocated table points to must be reachable from the generated relocation table: both
+                # become external
+                if (image != 'main' and fname in repl) or (image == 'main' and fname in code_targets):
+                    line = line.replace('define internal ', 'define ', 1)
+                    stats['static functions made external'] += 1
             m = DEF_GLOBAL.match(line)
             if m and name_of(m) in drop:
                 continue
