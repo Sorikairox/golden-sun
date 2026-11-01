@@ -25,7 +25,8 @@
 # goma_pillar, the pond room, Move on the west pillar and the stump, across the pond, Forge's battle won; save), bilibin (GS18: from goma_forge,
 # the stream room's stump Moved into the stream, the bridge, the World Map to Bilibin; save), mccoy (GS18: from
 # bilibin, Mind Read on the tree man, the palace gate, McCoy's audience, the captain's hint; save), kolima (GS18: from mccoy, the
-# Bilibin Barricade's crates Moved, the World Map to Kolima, the forest curse scene; save), battle_fight,
+# Bilibin Barricade's crates Moved, the World Map to Kolima, the forest curse scene; save), kolima_forest (GS18: from
+# kolima, Cure, the World Map to Kolima Forest; save), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -72,9 +73,10 @@ CASES=(
   "bilibin|7200|2227,3430,3950,4927,5600,5930,6019,6320,6900,7200||$R/vale_day1_continue.keys,$R/bilibin.keys,$R/bilibin_save.keys||--flash-in $W/goma_forge.sav --flash-out $W/bilibin.sav"
   "mccoy|14000|2700,2800,3606,3900,4500,5100,5400,6600,8400,10500,12000,12900,13750,14000||$R/vale_day1_continue.keys,$R/mccoy.keys,$R/mccoy_save.keys||--flash-in $W/bilibin.sav --flash-out $W/mccoy.sav"
   "kolima|24000|2272,2971,6253,6800,7705,9477,11000,12500,14000,16000,18000,20000,22700,23700,24000||$R/vale_day1_continue.keys,$R/kolima.keys,$R/kolima_save.keys||--flash-in $W/mccoy.sav --flash-out $W/kolima.sav"
+  "kolima_forest|5150|2500,3200,3580,4263,4400,4900,5150||$R/vale_day1_continue.keys,$R/kolima_forest.keys,$R/kolima_forest_save.keys||--flash-in $W/kolima.sav --flash-out $W/kolima_forest.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected

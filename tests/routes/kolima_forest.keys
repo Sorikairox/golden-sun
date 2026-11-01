@@ -1,0 +1,6 @@
+# GS18: from the kolima save (Kolima, after the curse scene; continue with vale_day1_continue.keys + --flash-in). Cure
+# five times (Isaac twice, Garet twice, Ivan), out of the village west (f3580), the World Map north-west into Kolima
+# Forest's entrance (f4263).
+A@2100-2103,A@2150-2153,A@2200-2203,A@2250-2253,A@2300-2303,A@2400-2403,A@2470-2473,RIGHT@2520-2523,A@2550-2553
+A@2650-2653,A@2720-2723,A@2800-2803,A@2900-2903,A@2970-2973,RIGHT@3020-3023,A@3050-3053,A@3150-3153,B@3250-3253
+B@3300-3303,B@3350-3353,B@3400-3403,DOWN@3450-3453,LEFT@3455-3562,LEFT@3600-3888,UP@3890-4247,RIGHT@4248-4262
