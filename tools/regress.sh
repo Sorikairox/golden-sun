@@ -4,6 +4,10 @@
 #   tools/regress.sh            run all cases, print OK/DIFF per case, exit 1 on any DIFF
 #   tools/regress.sh --update   rewrite expected.tsv from this build (after a change that is meant to alter results)
 #   tools/regress.sh CASE...    run only these cases
+#   tools/regress.sh --quick    core probe cases + the newest QUICK_N (default 3) story cases, reusing the saves an
+#                               earlier run left in port_work/regress (REUSE=1); ~1 min. The full run (~5+ min) stays the
+#                               end-of-session check.
+#   REUSE=1 tools/regress.sh CASE...  keep a start save an earlier run made instead of replaying its maker chain
 # Cases: prologue_save (+ cmp of the saved flash with the stored SHA-1), soft_reset (the game's own reset, title,
 # Continue), garet, boulder, vale_monsters, vale_felix,
 # vale_plaza (real play: GS11, the prologue's four monster fights to Vale three years later), vale_day1_save (GS12:
@@ -27,6 +31,7 @@ EXP=tests/regress/expected.tsv
 W=port_work/regress; BIN=$W/bin; mkdir -p $BIN
 cp build/wasm/game.js build/wasm/game.wasm $BIN/
 update=0; [ "${1:-}" = --update ] && { update=1; shift; }
+quick=0; [ "${1:-}" = --quick ] && { quick=1; shift; }
 R=tests/routes; P=tests/probes
 PRO=$R/prologue.keys; ROCK=$R/prologue.keys,$R/first_rock.keys
 # name | frames | digest frames | env | keys | probes (digest added) | extra
@@ -75,6 +80,12 @@ premake() { # the save this case starts from, written by its maker case (and tha
 }
 want() { [ $# -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 SEL=("$@")
+if [ $quick = 1 ]; then # --quick (GS17): the core probe cases + the newest QUICK_N (3) story cases, saves reused
+  export REUSE=1
+  SEL=(prologue_save soft_reset battle_fight battle_summon field_psynergy worldmap)
+  story=(); for c in "${CASES[@]}"; do [[ "$c" == *--flash-in* ]] && story+=("${c%%|*}"); done
+  n=${#story[@]}; for ((i = n - ${QUICK_N:-3}; i < n; i++)); do [ $i -ge 0 ] && SEL+=("${story[$i]}"); done
+fi
 out=$W/actual.tsv; : > $out
 fail=0
 for c in "${CASES[@]}"; do
