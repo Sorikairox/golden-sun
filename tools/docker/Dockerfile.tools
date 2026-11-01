@@ -1,0 +1,14 @@
+# golden-sun-tools: the reference (matching) build environment for alchemy and gsret.
+# Built FROM the local ubuntu:24.04 image; the only download is these packages from the Ubuntu archive
+# (user approval 2026-11-01, decision D13). alchemy's `make bootstrap` later fetches binutils-2.10 from
+# ftp.gnu.org inside the container (also approved); nothing else is fetched.
+#   docker build -t golden-sun-tools -f tools/docker/Dockerfile.tools tools/docker
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      binutils-arm-none-eabi build-essential pkg-config libpng-dev libutf8proc-dev curl patch git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+# Run builds as the host user's uid so files in bind mounts stay ours; HOME for git's config.
+ENV HOME=/tmp
+WORKDIR /work
