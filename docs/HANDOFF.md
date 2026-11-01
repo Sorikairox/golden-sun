@@ -2,6 +2,44 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS-audio — 2026-11-01: sound: m4a sequencer and Camelot's mixer in C, GBA sound output, page AudioWorklet
+
+### Done
+- **Ports (D6/D20)**: `port/pc/m4a.c` (MPlayMain, ply_note, ply_* commands, ply_endtie, TrackStop,
+  m4aSoundVSync) and `port/pc/mixer.c` (Mixer_Enter + the resident IWRAM mixer: envelopes, block mixer, three
+  resampler kernels and the general loop, synth waves, clipping, render to the DirectSound buffers, the five
+  reverb codes). The 9 audio asm stubs are gone (2 stubs left: BitDecoder_DecodeImage, _call_via_r0).
+  **EQUIV**: the 20 ply_* commands + TrackStop (1500 random tracks each) and **Mixer_Enter on 300 whole VBlanks**
+  (1-12 channels, every path, every reverb code). **67/67 EQUIV**, negative controls detected. Two bugs found by
+  the specs and fixed (ply_rept's untruncated count; kernel group mul).
+- **GBA sound output** (`port/pc/apu.c`, hooks in hw.c, CpuSet guard in bios.c): FIFO A/B popped on Timer 0/1
+  overflow, refilled by the sound DMAs (timing 3); PSG 1-4; SOUNDCNT_L/H/X mix; 32768 Hz stereo s16 ring.
+- **Page** (`port/web/audio.js`, small edits to main.js/index.html/site.sh): AudioWorklet (ScriptProcessor
+  fallback), first-gesture start (window capture listeners, touch pad counts; touch.js untouched), Mute + Volume
+  in the page menu (localStorage `gs-audio`), never paces the game.
+- **Plays**: title music (from the Golden Sun logo on), title with a save, menu SEs, the prologue's music.
+  WAVs (gitignored): `port_work/audio/boot.wav` (900 frames, SHA-1 b0e0c62d.. on two runs), `title.wav`,
+  `title_menu.wav`. Spectral check: no clipping, peaks <= 23808, steady tones ~248/80/664 Hz.
+- **Chrome** (muted, `node tests/web_shot.cjs 300,900 --flash port_work/g4/flash.sav --press 60:KeyZ --audio`):
+  worklet running at 48 kHz, 82 % of received samples non-zero, 0 dropped, 60 fps over 4 s, 0 console errors.
+  `tests/web_touch.cjs` ALL PASS. Leak check PASS on every build.
+- Tools: `tests/probes/wav.cjs` (boot.cjs --probe, `WAV=`, `WAV_FROM=`), `tools/audio_check.cjs`, web_shot `--audio`,
+  harness `spec.sp`. Notes: **docs/AUDIO.md**.
+
+### Next
+1. EQUIV specs for ply_note, MPlayMain, m4aSoundVSync (need SoundInfo + voice tables + channel pools in the
+   harness).
+2. Listen on a real browser (the user) for pitch/balance; compare a WAV with an emulator recording if one is
+   allowed. PSG details (wave RAM banks, zombie envelopes) if something sounds off.
+3. A gamepad-free mobile check of the Mute control on a real phone (iOS needs the gesture: touchend counts).
+
+### Notes
+- No downloads, no installs, no permission denials. Shared files touched additively: hw.c (timer/DMA hooks),
+  bios.c (CpuSet skips wasm-function sources), web_shot.cjs (`--audio`), harness.js (`spec.sp`), overrides.tsv rows.
+- Trap: the resampler kernels are patched code; their "mulne" keeps a stale product when the previous delta is 0
+  (kept in C). The original DMAs sample data onto its stack when the sample does not end in the frame: tests run
+  it with sp in IWRAM so it never does (pure speed trick, same values).
+
 ## GS5 — 2026-11-01: storm colours checked (game logic, EQUIV), RAM position readout, route into CottageRoomsA
 
 ### Done
