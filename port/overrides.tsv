@@ -27,10 +27,11 @@ games/tbs/src/system/heap_release.s	asm	port/pc/asm_small.c	done	Heap_Release, H
 games/tbs/src/sound/umul_high.s	asm	port/pc/asm_small.c	partial	umul3232H32 EQUIV; SoundMain still a stub (audio is G4)
 games/tbs/src/system/bios.s	asm	port/pc/bios.c	done	CpuSet and SoundBias from GBATEK: EQUIV against the harness's GBATEK reference
 games/tbs/src/sound/clear_buffer.s	asm	port/pc/sound_asm.c	partial	SoundMainBTM, RealClearChain EQUIV; MPlayJumpTableCopy copies the relocated template; MPlayMain, TrackStop, ply_* still stubs (G4)
-games/tbs/src/system/decompress_byte_lz.s	asm	port/pc/oam_kernel.c	partial	Oam_BuildBufferKernel EQUIV; Decompress_ByteLzArm, palette fade kernels todo
+games/tbs/src/system/decompress_byte_lz.s	asm	port/pc/oam_kernel.c,port/pc/decompress.c	partial	Oam_BuildBufferKernel, Decompress_ByteLzArm EQUIV; palette fade kernels, Decompress_HalfwordLz todo
 games/tbs/src/system/decompress_tagged_lz.s	asm	port/pc/decompress.c	done	tagged LZ (forms 0/1), move-to-front LZ (form 2), Resource_PatchThumbBranch, Resource_ExecuteTransfer: EQUIV (all ROM resources)
 games/tbs/src/window/message_decode.s	asm	port/pc/text_asm.c	done	Message_FindArm, Text_DecodeSymbol: EQUIV on real messages
 games/tbs/src/window/decompress_4bpp.s	asm	port/pc/window_asm.c	done	Tile_Decompress4bpp, Tile_ExpandMasked: EQUIV
 games/tbs/src/window/expand_opaque.s	asm	port/pc/window_asm.c	done	Tile_ExpandOpaque: EQUIV
-games/tbs/src/field/map_grid_convert.s	asm	port/pc/field_asm.c	partial	Tile_ConvertMapGrid EQUIV; Tile_CopyStrided todo
+games/tbs/src/field/map_grid_convert.s	asm	port/pc/field_asm.c	done	Tile_ConvertMapGrid, Tile_CopyStrided EQUIV
 games/tbs/src/gamepak/flash/*.c	function	port/pc/flash.c	done	flash driver replaced at its API (port/fn_overrides.tsv): the emulated chip is an SST 39VF512
+games/tbs/src/field/picture_decode.s	asm	port/pc/field_asm.c	partial	Render_DecodePicture EQUIV (its table cache in the RAM copy not kept: the tables are ROM); TileMap_DrawRows (World Map) todo

@@ -32,3 +32,72 @@ void Tile_ConvertMapGrid(const u16 *pictures, u16 *cells, const u32 *planes) {
     o += 8;
   }
 }
+
+/* gDecodeFillByte (IWRAM) and the colour tables of the sprite pictures (ROM, 256 bytes each) */
+extern u8 gDecodeFillByte;
+extern const u8 gSpriteColorTables[];
+
+/* Draws a sprite animation's picture (vendor field/picture_decode.s, run from RAM): a byte stream ending at a 0
+ * byte; a byte above 223 skips (byte - 223) destination bytes, any other byte puts one. What it puts depends on
+ * `mode`: 0 the byte itself; 1-6 and 9-12 the byte through colour table (mode, or mode - 2 for 9-12), counted
+ * from 1; 7, 8 the value 15; 13 gDecodeFillByte; 14 the value 1; 15 the value 0. The original keeps a copy of
+ * the table last used inside its RAM copy (a cache: same bytes as the ROM's, since the tables are const). */
+void Render_DecodePicture(const u8 *src, u8 *dst, s32 mode) {
+  const u8 *map = 0;
+  u32 fill = 0, b;
+  if (mode >= 1 && mode <= 12 && mode != 7 && mode != 8)
+    map = gSpriteColorTables + ((mode <= 6 ? mode : mode - 2) - 1) * 256;
+  else if (mode == 7 || mode == 8)
+    fill = 15;
+  else if (mode == 13)
+    fill = gDecodeFillByte;
+  else if (mode == 14)
+    fill = 1;
+  else if (mode == 15)
+    fill = 0;
+  for (;;) {
+    b = *src++;
+    if (b == 0)
+      return;
+    if (b > 223)
+      dst += b - 223;
+    else
+      *dst++ = mode == 0 ? (u8)b : map ? map[b] : (u8)fill;
+  }
+}
+
+/* Uploads an 8bpp sprite buffer (w x h pixels, both rounded down to multiples of 8; nothing if either is 0) as
+ * 8x8 tiles, row of tiles by row of tiles, to `vram` (vendor field/map_grid_convert.s, run from RAM). Word reads
+ * at word-aligned addresses, as LDM does; the counters are signed, as the ARM's subs/bgt. */
+void Tile_CopyStrided(const void *src, u32 w, u32 h, void *vram) {
+  u32 s = (u32)(uintptr_t)src;
+  u32 *d = (u32 *)vram;
+  s32 cols, rows;
+  w &= ~7u;
+  if (!w)
+    return;
+  h &= ~7u;
+  if (!h)
+    return;
+  rows = (s32)h;
+  do {
+    cols = (s32)w;
+    for (;;) {
+      int r;
+      for (r = 0; r < 8; r++) {
+        const u32 *p = (const u32 *)(uintptr_t)(s & ~3u);
+        *d++ = p[0];
+        *d++ = p[1];
+        s += w;
+        if (r == 7)
+          s += 8;
+      }
+      cols -= 8;
+      if (cols <= 0)
+        break;
+      s -= w << 3;
+    }
+    s -= w;
+    rows -= 8;
+  } while (rows > 0);
+}

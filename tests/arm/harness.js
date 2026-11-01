@@ -96,7 +96,13 @@ class Harness {
     if (err) return err;
     if (spec.returns !== 'none' && ro !== rp) return `result original 0x${ro.toString(16)} port 0x${rp.toString(16)}`;
     if (checkMemory) {
-      const d = this.diff(afterOrig, this.snapshot());
+      const afterPort = this.snapshot();
+      // spec.ignore: [[address, bytes]] the original writes into its own RAM copy (caches): not compared
+      for (const [a, n] of spec.ignore || []) {
+        const i = RAM.findIndex(([b, m]) => a >= b && a + n <= b + m);
+        afterOrig[i].fill(0, a - RAM[i][0], a - RAM[i][0] + n); afterPort[i].fill(0, a - RAM[i][0], a - RAM[i][0] + n);
+      }
+      const d = this.diff(afterOrig, afterPort);
       if (d) return d;
     }
     return null;

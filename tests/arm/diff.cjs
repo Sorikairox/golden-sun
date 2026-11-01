@@ -337,6 +337,67 @@ function routines(h) {
         }
       },
     },
+    {
+      // run from a RAM copy at 0x03003400 as the game does (the code reads its data words pc-relative and keeps
+      // its table cache there: that area is not compared); random streams of puts and skips in every mode, the
+      // source at every alignment, gDecodeFillByte random
+      name: 'Render_DecodePicture', spec: { orig: 0x03003400, port: 'Render_DecodePicture', returns: 'none', ignore: [[0x03003400, 0x1e4 + 224]] },
+      setup: () => { const a = A('Render_DecodePicture'); h.mem.copyWithin(0x03003400, a, a + 0x1e4 + 224); },
+      cases: function* () {
+        const fill = A('gDecodeFillByte');
+        for (let i = 0; i < 4000; i++) {
+          const src = EW + 0x8000 + R.range(0, 255), n = R.range(0, 600);
+          for (let k = 0; k < n; k++) h.mem[src + k] = R() & 3 ? R.range(1, 223) : R.range(1, 255);
+          h.mem[src + n] = 0;
+          h.mem[fill] = R() & 0xff;
+          yield [src, EW + R.range(0, 255), i < 32 ? i % 16 : R.range(0, 15)];
+        }
+      },
+    },
+    {
+      name: 'Tile_CopyStrided', spec: { orig: A('Tile_CopyStrided'), port: 'Tile_CopyStrided', returns: 'none' },
+      setup: () => fillRandom(EW + 0x8000, 0x8000),
+      cases: () => {
+        const o = [];
+        for (let i = 0; i < 1500; i++) {
+          const w = R() & 3 ? 8 * R.range(0, 8) : R.range(0, 70), hh = R() & 3 ? 8 * R.range(0, 8) : R.range(0, 70);
+          o.push([EW + 0x8000 + 4 * R.range(0, 64), w, hh, R() & 1 ? 0x06010000 + 32 * R.range(0, 100) : EW + 4 * R.range(0, 64)]);
+        }
+        return o;
+      },
+    },
+    {
+      // random valid streams: zero flag bytes (eight literals), literals, short matches (n 1-15), long matches
+      // (count byte), distances reaching before the output (into earlier random bytes), the end marker; the
+      // source at every alignment
+      name: 'Decompress_ByteLzArm', spec: { orig: A('Decompress_ByteLzArm'), port: 'Decompress_ByteLzArm', returns: 'u32' },
+      cases: function* () {
+        for (let i = 0; i < 2500; i++) {
+          const out = [];
+          let items = R.range(0, 200);
+          while (items > 0) {
+            if ((R() & 7) === 0) { out.push(0); for (let k = 0; k < 8; k++) out.push(R() & 0xff); items -= 8; continue; }
+            const bits = []; let flags = 0;
+            for (let k = 0; k < 8; k++) {
+              const isMatch = k === 0 || (R() & 1); // bit 7 set: a mixed flag byte (0 is the eight-literal form)
+              flags |= isMatch << (7 - k);
+              if (!isMatch) bits.push(R() & 0xff);
+              else {
+                const dist = R.range(1, 0xfff), len = R.range(0, 15);
+                bits.push(((dist >> 8) << 4) | len, dist & 0xff);
+                if (len === 0) bits.push(R() & 0xff);
+              }
+            }
+            out.push(flags, ...bits); items -= 8;
+          }
+          out.push(0x80, 0x00, 0x00); // a match of n 0 at distance 0: the end
+          const src = EW + 0x10000 + R.range(0, 255);
+          h.mem.set(out, src);
+          fillRandom(EW, 0x1000);
+          yield [src, EW + 0x1000 + R.range(0, 64)];
+        }
+      },
+    },
     { name: 'Bios_SoundBiasOn', spec: { orig: T('Bios_SoundBiasOn'), port: 'Bios_SoundBiasOn', returns: 'none' }, cases: () => [[], []], setup: () => { h.mem[0x04000088] = 0x55; h.mem[0x04000089] = 0xc3; } },
     { name: 'Bios_SoundBiasOff', spec: { orig: T('Bios_SoundBiasOff'), port: 'Bios_SoundBiasOff', returns: 'none' }, cases: () => [[], []] },
   ];

@@ -270,3 +270,44 @@ void Resource_ExecuteTransfer(void *queue, s32 count) {
       *(volatile u32 *)(uintptr_t)address = value;
   } while (--count > 0);
 }
+
+/* Byte-oriented LZ (vendor system/decompress_byte_lz.s, run from RAM): flag bytes, read MSB first, 0 a literal
+ * byte, 1 a match of two bytes b0 b1: from dst - ((b0 & 0xf0) << 4 | b1), b0 & 15 = n gives n + 1 bytes; n = 0
+ * reads a count byte c for c + 17 bytes, or, at distance 0, ends the stream. Copies run byte by byte (overlaps
+ * repeat). A flag byte of 0 is eight literals. Returns the bytes written. */
+s32 Decompress_ByteLzArm(const u8 *src, u8 *dst) {
+  u8 *start = dst;
+  for (;;) {
+    u32 flags = *src++, lr;
+    int k;
+    if (!flags) {
+      for (k = 0; k < 8; k++)
+        *dst++ = *src++;
+      continue;
+    }
+    lr = flags << 24 | 0x800000u;
+    for (;;) {
+      u32 carry = lr >> 31, b0, n;
+      const u8 *from;
+      lr <<= 1;
+      if (!carry) {
+        *dst++ = *src++;
+        continue;
+      }
+      if (!lr)
+        break;
+      b0 = *src++;
+      from = dst - *src++ - ((b0 & 0xF0) << 4);
+      n = b0 & 15;
+      if (n) {
+        n += 1;
+      } else {
+        if (from == dst)
+          return (s32)(dst - start);
+        n = *src++ + 17u;
+      }
+      while (n--)
+        *dst++ = *from++;
+    }
+  }
+}
