@@ -3,9 +3,13 @@
 // enemy right of the default target); anything else (messages) -> A every 40 frames. From BB_AT to BB_END, then prints
 // "bb keys: ...". The two hashes are of the English build's rendering; a renderer change that alters them shows as a
 // bot that only taps A.
+// BB_SEQ (GS17): macros for the next member command boxes, in order, ';' between boxes, keys by space, e.g.
+// "RIGHT RIGHT A;A;RIGHT A" (Isaac: Djinn list, Garet: Attack, Ivan: Psynergy list); each key is pressed 25 frames
+// apart, then the A taps choose the first entry and its target. An empty macro ("") is the default attack.
 'use strict';
 const crypto = require('crypto');
 const AT = +process.env.BB_AT, END = +process.env.BB_END, R = +(process.env.BB_R || 1);
+const SEQ = process.env.BB_SEQ ? process.env.BB_SEQ.split(';') : [];
 const FIGHT = 'f2a3d0a7', ATTACK = '7cce568c';
 const KEY = { A: 1, B: 2, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128 };
 let spans = [], seq = null, t0 = 0, lastTap = 0, stable = 0, lastLab = '', done = false;
@@ -19,6 +23,7 @@ module.exports = (m, frame, keys) => {
   if (lab === lastLab) stable++; else { stable = 0; lastLab = lab; }
   if (seq) { const d = frame - t0; const st = seq.find((s) => d >= s[0] && d < s[0] + 4); if (st) press(st[1]); if (d > seq[seq.length - 1][0] + 10) seq = null; return; }
   if (lab === FIGHT && stable === 10) { seq = [[0, 'A']]; t0 = frame; return; }
-  if (lab === ATTACK && stable === 10) { seq = [[0, 'A']]; for (let i = 0; i < R; i++) seq.push([25 + 20 * i, 'RIGHT']); seq.push([45 + 20 * R, 'A']); t0 = frame; return; }
+  if (lab === ATTACK && stable === 10 && SEQ.length && SEQ[0].trim()) { seq = SEQ.shift().trim().split(/\s+/).map((k, i) => [25 * i, k]); t0 = frame; return; }
+  if (lab === ATTACK && stable === 10) { SEQ.shift(); seq = [[0, 'A']]; for (let i = 0; i < R; i++) seq.push([25 + 20 * i, 'RIGHT']); seq.push([45 + 20 * R, 'A']); t0 = frame; return; }
   if (lab !== FIGHT && lab !== ATTACK && frame - lastTap >= 40) { lastTap = frame; seq = [[0, 'A']]; t0 = frame; }
 };

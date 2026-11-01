@@ -58,9 +58,10 @@ CASES=(
   "vault_thieves|35300|2200,3300,3700,8400,12000,16000,20100,24000,28000,32000,35300||$R/vale_day1_continue.keys,$R/vault_thieves.keys,$R/vault_thieves_save.keys||--flash-in $W/vault_grind.sav --flash-out $W/vault_thieves.sav"
   "goma_entrance|9400|2700,3500,4600,5200,6600,7720,8300,9400||$R/vale_day1_continue.keys,$R/goma_entrance.keys,$R/goma_entrance_save.keys||--flash-in $W/vault_thieves.sav --flash-out $W/goma_entrance.sav"
   "goma_ivan|13100|2560,3700,4100,5300,7000,9400,10900,11900,12200,13100||$R/vale_day1_continue.keys,$R/goma_ivan.keys,$R/goma_ivan_save.keys||--flash-in $W/goma_entrance.sav --flash-out $W/goma_ivan.sav"
+  "goma_pillar|10500|2700,3530,4970,6700,7700,8440,9600,10500||$R/vale_day1_continue.keys,$R/goma_pillar.keys,$R/goma_pillar_save.keys||--flash-in $W/goma_ivan.sav --flash-out $W/goma_pillar.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected
