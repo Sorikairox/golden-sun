@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Golden Sun (web port)</title>
+<style>
+  :root { --bg: #101014; --fg: #e8e6df; --dim: #8a8780; --accent: #d9a62b; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%;
+    padding: 16px; box-sizing: border-box; gap: 16px; }
+  #screen { width: min(100%, 720px); aspect-ratio: 3 / 2; image-rendering: pixelated; background: #000;
+    display: none; }
+  #picker { max-width: 34em; text-align: center; }
+  #picker h1 { font-size: 1.4em; margin: 0 0 .5em; color: var(--accent); }
+  #picker p { color: var(--dim); margin: .4em 0; }
+  label.button { display: inline-block; margin-top: .8em; padding: .7em 1.4em; border-radius: 8px;
+    background: var(--accent); color: #1a1406; font-weight: 600; cursor: pointer; min-height: 44px;
+    box-sizing: border-box; }
+  input[type=file] { display: none; }
+  #status { color: var(--dim); min-height: 1.4em; }
+  #keys { color: var(--dim); font-size: .85em; display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="picker">
+    <h1>Golden Sun</h1>
+    <p>A source port of the Game Boy Advance game for the browser. It needs your own copy of the cartridge:
+      choose the ROM file (Golden Sun, USA/Europe). It stays on this device.</p>
+    <label class="button">Choose ROM file<input id="file" type="file" accept=".gba,.bin,application/octet-stream"></label>
+  </div>
+  <canvas id="screen" width="240" height="160"></canvas>
+  <div id="status"></div>
+  <div id="keys">Keys: arrows = D-pad, X = A, Z = B, Enter = Start, Backspace = Select, A = L, S = R</div>
+</div>
+<script src="main.js"></script>
+</body>
+</html>

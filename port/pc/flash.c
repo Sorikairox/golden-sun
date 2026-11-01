@@ -14,8 +14,16 @@ static u32 generation;
 u32 Port_FlashGeneration(void) { return generation; }
 u8 *Port_FlashMemory(void) { return FLASH; }
 
-/* A blank chip (power-on with no save) */
-void Port_FlashReset(void) { memset(FLASH, 0xFF, 16 * SECTOR); }
+static int keep;
+
+/* The host has written a save into the flash region: keep it at power-on */
+void Port_KeepFlash(void) { keep = 1; }
+
+/* Power-on: a blank chip unless the host loaded a save */
+void Port_FlashReset(void) {
+  if (!keep)
+    memset(FLASH, 0xFF, 16 * SECTOR);
+}
 
 s32 ReadFlashId(void) { return 0xD4BF; }
 
