@@ -1,0 +1,7 @@
+# GS11, after prologue.keys + first_save.keys (the prologue save written at f5150): the game's own soft reset
+# (A+B+Select+Start held, f5500): Input_HandleKeyInterrupt sets gResetRequested, System_SoftReset jumps to Cart_Start
+# (port: Port_SystemEntry restarts System_Entry, trap 36): Camelot logo, the title screen (a save exists), Start, the
+# File Screen: Continue, file 1 loads the save back into Vale (f7352).
+A@5500-5506,B@5500-5506,SELECT@5500-5506,START@5500-5506
+START@7000-7002
+A@7300-7302,A@7350-7352

@@ -1,0 +1,10 @@
+# GS11, after vale_monsters.keys: south on the west bank, across the slope (2,65 -> 5,63 -> 7,62 ... 3,66) and down
+# the ramp along z 66 to Felix (behavior 35 at 9,66): ValePrologue_WatchAttemptToSaveFelix and DoraGoesForHelp, A
+# through it (Jenna's mother: "You saw what happened?" Yes; f15276-19100); south on the west bank (x 10 to z 89, up
+# the slope along z 89, 7,86) and east over the south bridge to the fourth monster cell (behavior 17 at 21,86): Bat
+# and Vermin, won (f20159-21727); out by the plaza exit (behavior 5 at 29,86) into ValePlaza (f21906).
+# Note: the corridor x 25-27 south of 25,66 is a dead end from the north (the fourth rock falls at 26-28,70-72).
+DOWN@14800-14928,RIGHT@14930-14999,DOWN@15001-15046,LEFT@15048-15106,DOWN@15107-15112,DOWN@15114-15133
+RIGHT@15135-15275,A@15300-19150/40,DOWN@19250-19277,LEFT@19279-19366,DOWN@19368-19450,RIGHT@19452-19508
+DOWN@19510-19521,RIGHT@19523-19573,DOWN@19575-19780,LEFT@19782-19873,UP@19875-19882,RIGHT@19884-19904
+UP@19906-19935,RIGHT@19937-20157,A@20215-21710/40,RIGHT@21760-21905

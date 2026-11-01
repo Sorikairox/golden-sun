@@ -4,7 +4,9 @@
 #   tools/regress.sh            run all cases, print OK/DIFF per case, exit 1 on any DIFF
 #   tools/regress.sh --update   rewrite expected.tsv from this build (after a change that is meant to alter results)
 #   tools/regress.sh CASE...    run only these cases
-# Cases: prologue_save (+ cmp of the saved flash with the stored SHA-1), garet, boulder (real play), battle_fight,
+# Cases: prologue_save (+ cmp of the saved flash with the stored SHA-1), soft_reset (the game's own reset, title,
+# Continue), garet, boulder, vale_monsters, vale_felix,
+# vale_plaza (real play: GS11, the prologue's four monster fights to Vale three years later), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -28,6 +30,10 @@ CASES=(
   "field_psynergy|6600|5950,6300||$ROCK,$R/field_psynergy.keys|$P/party.cjs|"
   "worldmap|6400|5750,5900,6400|WARP_AT=5400|$ROCK,$R/worldmap.keys|$P/warp.cjs|"
   "credits|5700|5650|CRED_AT=5400|$ROCK|$P/credits.cjs|"
+  "soft_reset|8000|5700,7000,8000||$PRO,$R/first_save.keys,$R/soft_reset.keys||"
+  "vale_monsters|14800|11600,12400,14800||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys||"
+  "vale_felix|21950|17000,20300,21950||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys,$R/vale_felix.keys||"
+  "vale_plaza|40000|30000,35500,36900,40000||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys,$R/vale_felix.keys,$R/vale_plaza.keys||"
 )
 want() { [ $# -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 SEL=("$@")
