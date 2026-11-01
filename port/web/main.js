@@ -79,6 +79,7 @@ async function start(rom) {
   const canvas = $('screen');
   const ctx = canvas.getContext('2d');
   const image = ctx.createImageData(240, 160);
+  const pixels = new Uint32Array(image.data.buffer);
   let m;
   let frames = 0;
   let next = performance.now();
@@ -92,6 +93,7 @@ async function start(rom) {
     frames++;
     const p = m._Port_FrameBuffer();
     image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
+    if (lcd.on) lcd.apply(pixels);   // optional "GBA screen colours": presentation only, game memory untouched
     ctx.putImageData(image, 0, 0);
     m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0) | scriptKeys(frames));   // keyboard + touch pad: one key state
     if (window.GSAudio) GSAudio.feed(m);   // this frame's samples to the audio worklet (never waits)
@@ -189,6 +191,50 @@ async function start(rom) {
   await launch(savedFlash);
 }
 
+// ---- optional "GBA screen colours" (GS10, orchestrator rule 7: default off, stored per browser): the picture as the
+// original unlit GBA LCD showed it, darker and less saturated. Applied to the RGBA picture only (a 32768-entry LUT from
+// the 15-bit colour), never to game memory, so game state, hashes and online sessions are unchanged. The transform is
+// the widely used GBA colour emulation of higan/bsnes (Talarubi's curve): LCD gamma 4.0, channel mixing, output gamma
+// 2.2, white at 255/280.
+const lcd = {
+  on: false,
+  lut: null,
+  build() {
+    const lut = new Uint32Array(32768);
+    const lcdG = 4.0, outG = 1 / 2.2, top = 255 * 255 / 280;
+    for (let c = 0; c < 32768; c++) {
+      const lr = Math.pow((c & 31) / 31, lcdG), lg = Math.pow((c >> 5 & 31) / 31, lcdG), lb = Math.pow((c >> 10 & 31) / 31, lcdG);
+      const r = Math.round(Math.pow((0 * lb + 50 * lg + 255 * lr) / 255, outG) * top);
+      const g = Math.round(Math.pow((30 * lb + 230 * lg + 10 * lr) / 255, outG) * top);
+      const b = Math.round(Math.pow((220 * lb + 10 * lg + 50 * lr) / 255, outG) * top);
+      lut[c] = 0xff000000 | Math.min(b, 255) << 16 | Math.min(g, 255) << 8 | Math.min(r, 255);   // little-endian RGBA
+    }
+    this.lut = lut;
+  },
+  // the renderer expands each 5-bit channel to 8 bits; its top 5 bits are the GBA's value again
+  apply(px) {
+    const lut = this.lut;
+    for (let i = 0; i < px.length; i++) {
+      const v = px[i];
+      px[i] = lut[(v >> 3 & 31) | (v >> 11 & 31) << 5 | (v >> 19 & 31) << 10];
+    }
+  },
+  set(on) {
+    this.on = !!on;
+    if (this.on && !this.lut) this.build();
+    try { if (on) localStorage.setItem('gs-lcd', '1'); else localStorage.removeItem('gs-lcd'); } catch (e) { /* storage blocked */ }
+  },
+};
+{
+  let saved = false;
+  try { saved = localStorage.getItem('gs-lcd') === '1'; } catch (e) { /* storage blocked: default off */ }
+  if (params.get('lcd') !== null) saved = params.get('lcd') === '1';   // tests: ?lcd=1 / ?lcd=0 (not stored)
+  lcd.on = saved;
+  if (saved) lcd.build();
+  const box = $('opt-lcd');
+  if (box) { box.checked = saved; box.addEventListener('change', () => lcd.set(box.checked)); }
+}
+window.GSLcd = lcd;
 
 async function useFile(file) {
   status('Checking the ROM...');

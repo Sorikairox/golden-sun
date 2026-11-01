@@ -3,6 +3,7 @@
 // screenshots of the canvas to port_work/g3/web_*.png. Prints console errors. One Chrome at a time: the script
 // refuses to start while another headless Chrome runs, and kills only the processes it started.
 // Usage: node tests/web_shot.cjs [frames,frames,...] (default 200,600,1000) [--flash FILE] [--press FRAME:CODE,...] [--audio]
+//   --query K=V[&K=V] adds page URL parameters (e.g. lcd=1: the optional GBA screen colours, GS10);
 //   --audio prints the page's audio state (GSAudio.stats(): worklet running, samples sent/received non-zero) at the end;
 //   --flash puts a 64 KB save (port_work/, never committed) into the page's IndexedDB before it starts;
 //   --press holds a key (KeyboardEvent.code, e.g. Enter for Start) for 6 frames from that game frame.
@@ -100,7 +101,7 @@ async function main() {
       } catch (e) { return 'failed: ' + (e && (e.message || (e.target && e.target.error) || e.type)); } })()` });
       console.log(`flash: ${r.result.result.value}`);
     }
-    await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba` });
+    await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba${argOpt('--query') ? '&' + argOpt('--query') : ''}` });
     const key = (type, code) => send('Input.dispatchKeyEvent', { type, code, key: code === 'Enter' ? 'Enter' : code, windowsVirtualKeyCode: code === 'Enter' ? 13 : 0 });
     const frames = async () => (await send('Runtime.evaluate', { expression: 'window.__gsFrames || 0', returnByValue: true })).result.result.value;
     for (const f of shots) {
