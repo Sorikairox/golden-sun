@@ -101,3 +101,51 @@ void Tile_CopyStrided(const void *src, u32 w, u32 h, void *vram) {
     rows -= 8;
   } while (rows > 0);
 }
+
+/* field/picture_decode.s TileMap_DrawRows (GS9): WorldMap_StartStillPicture (a menu or event opening on the World
+ * Map) copies it to HEAP_SLOT_RAM_CODE_TEMP and calls (lines, pixels, tiles, map) to freeze the perspective view
+ * as a 240x160 8bpp picture in tile order. Per screen line: BG2's affine line (32-byte pairs: pa at +0, pc at +4,
+ * x at +8, y at +12, 20.8 fixed point) steps a point across the 512x512 ground: map byte = map[(y>>11 & 63) * 64 +
+ * (x>>11 & 63)], pixel = tiles[map byte * 64 + ((y>>8) & 7) * 8 + ((x>>8) & 7)] (8bpp tiles); where the map byte
+ * or that pixel is 0 it falls back to BG3: the map 4096 bytes lower and the tiles 16384 bytes lower (that pixel
+ * is taken even when 0). Output: 30 tiles a row of 64 bytes, 8 rows of 8 pixels each, rows of tiles 1920 bytes. */
+static inline u32 drawrows_pixel(u32 *x, u32 *y, s32 pa, s32 pc, const u8 *tiles, const u8 *map) {
+  const u8 *m = map + (*x >> 26) + ((*y >> 26) << 6);
+  const u8 *t = tiles + ((*y >> 20) & 0x38) + ((*x << 6) >> 29);
+  u32 c = *m;
+  if (c)
+    c = t[c << 6];
+  if (!c) {
+    c = m[-4096];
+    c = (t - 16384)[c << 6];
+  }
+  *x += (u32)pa << 15;
+  *y += (u32)pc << 15;
+  return c;
+}
+
+void TileMap_DrawRows(const u8 *lines, u8 *pixels, const u8 *tiles, const u8 *map) {
+  u32 counters = 0xFFA00038u; /* r4: the tile counter in bits 24-31, the line counter (160) in bits 16-23 */
+  u8 *out = pixels;
+  do {
+    s32 pc = *(const s16 *)(lines + 4), pa = *(const s16 *)lines;
+    u32 x = *(const u32 *)(lines + 8) << 15, y = *(const u32 *)(lines + 12) << 15;
+    lines += 32;
+    counters += 0x1E000000u;
+    do {
+      int k;
+      for (k = 0; k < 4; k++) {
+        u32 lo = drawrows_pixel(&x, &y, pa, pc, tiles, map);
+        u32 hi = drawrows_pixel(&x, &y, pa, pc, tiles, map);
+        *(u16 *)out = (u16)(lo | hi << 8);
+        out += 2;
+      }
+      out += 56;
+      counters -= 0x01000000u;
+    } while (!(counters & 0x80000000u));
+    out -= 1920 - 8;
+    counters -= 0x10000u;
+    if (!(counters & 0x70000u))
+      out += 1856;
+  } while (counters & 0xFF0000u);
+}

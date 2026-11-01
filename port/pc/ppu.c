@@ -32,6 +32,22 @@ static u8 objWin[W];          /* inside the OBJ window */
 /* affine BG internal reference points (BG2, BG3) */
 static s32 refX[2], refY[2];
 static u32 lastX[2], lastY[2];
+static u8 wroteX[2], wroteY[2]; /* a DMA wrote BGxX/Y since the last line (GBA: any write reloads the reference) */
+
+/* hw.c's DMA wrote the I/O word or halfword at `addr`: note BG2X/Y, BG3X/Y writes. A per-line HBlank DMA that
+ * writes the same value as the line before must still reload the reference point (the World Map's perspective
+ * view when the camera faces north: refY would otherwise step by BG2PD, which that page leaves as garbage). */
+void Port_PpuIoWritten(u32 addr) {
+  u32 off = addr - IO_BASE;
+  int i;
+  for (i = 0; i < 2; i++) {
+    u32 base = R_BG2X + 0x10 * i;
+    if (off >= base && off < base + 4)
+      wroteX[i] = 1;
+    else if (off >= base + 4 && off < base + 8)
+      wroteY[i] = 1;
+  }
+}
 
 static inline u16 rd16(u32 off) { return IO16(off); }
 
@@ -43,6 +59,7 @@ void Port_PpuVBlank(void) {
     refY[i] = (s32)(y << 4) >> 4;
     lastX[i] = x;
     lastY[i] = y;
+    wroteX[i] = wroteY[i] = 0;
   }
 }
 
@@ -242,14 +259,15 @@ void Port_PpuLine(int line) {
   /* affine reference points: reloaded when the game rewrote BGxX/Y since the last line */
   for (i = 0; i < 2; i++) {
     u32 xr = IO32(R_BG2X + 0x10 * i), yr = IO32(R_BG2X + 4 + 0x10 * i);
-    if (xr != lastX[i]) {
+    if (xr != lastX[i] || wroteX[i]) {
       refX[i] = (s32)(xr << 4) >> 4;
       lastX[i] = xr;
     }
-    if (yr != lastY[i]) {
+    if (yr != lastY[i] || wroteY[i]) {
       refY[i] = (s32)(yr << 4) >> 4;
       lastY[i] = yr;
     }
+    wroteX[i] = wroteY[i] = 0;
   }
   if (dispcnt & 0x80) { /* forced blank: white */
     for (x = 0; x < W; x++)

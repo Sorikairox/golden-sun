@@ -439,6 +439,29 @@ function routines(h) {
       },
     },
     {
+      // World Map still picture (field/picture_decode.s, GS9): 160 random affine lines (pa/pc small, large and
+      // 0; x/y anywhere), a 64x64 BG2 map over a BG3 map 4096 bytes lower and 8bpp tiles over BG3's 16384 bytes
+      // lower, both with many zeros (the fallback); the whole 240x160 output is compared
+      name: 'TileMap_DrawRows', spec: { orig: A('TileMap_DrawRows'), port: 'TileMap_DrawRows', returns: 'none' },
+      memoryEvery: 1,
+      cases: function* () {
+        const lines = EW, map = EW + 0x3000, tiles = EW + 0x8000, out = EW + 0xc000;
+        for (let i = 0; i < 120; i++) {
+          const zeros = [0, 2, 8, 32][i & 3];
+          for (let k = 0; k < 0x2000; k++) h.mem[EW + 0x2000 + k] = R.range(0, 99) < zeros ? 0 : R() & 0xff;
+          for (let k = 0; k < 0x8000; k++) h.mem[EW + 0x4000 + k] = R.range(0, 99) < zeros ? 0 : R() & 0xff;
+          const big = i % 5 === 0, still = i % 7 === 0;
+          for (let l = 0; l < 160; l++) {
+            const a = lines + 32 * l;
+            for (let k = 0; k < 32; k++) h.mem[a + k] = R() & 0xff;
+            const pa = still ? 0 : big ? R() & 0xffff : R.range(-600, 600) & 0xffff, pc = i % 3 === 0 ? 0 : big ? R() & 0xffff : R.range(-600, 600) & 0xffff;
+            h.mem[a] = pa & 0xff; h.mem[a + 1] = pa >> 8; h.mem[a + 4] = pc & 0xff; h.mem[a + 5] = pc >> 8;
+          }
+          yield [lines, out, tiles, map];
+        }
+      },
+    },
+    {
       // random valid streams: zero flag bytes (eight literals), literals, short matches (n 1-15), long matches
       // (count byte), distances reaching before the output (into earlier random bytes), the end marker; the
       // source at every alignment

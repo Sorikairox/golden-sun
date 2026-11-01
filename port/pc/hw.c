@@ -17,6 +17,7 @@
 
 void Port_PpuLine(int line);
 void Port_PpuVBlank(void);
+void Port_PpuIoWritten(u32 addr);
 void *Port_ResolveCode(void *p);
 void *Port_CodeAt(u32 gba);
 void Port_CodeAlias(u32 to, u32 from);
@@ -81,6 +82,8 @@ static void dma_run(int ch) {
       *(volatile u32 *)(uintptr_t)d = *(volatile u32 *)(uintptr_t)s;
     else
       *(volatile u16 *)(uintptr_t)d = *(volatile u16 *)(uintptr_t)s;
+    if ((d >> 24) == 4)
+      Port_PpuIoWritten(d); /* affine reference writes reload (ppu.c) */
     s += sstep;
     d += dstep;
   }
