@@ -1,0 +1,6 @@
+# GS14: save in the Elemental Star Room after the Jupiter Star event (after sol_star_room.keys, from the sol_jewels save):
+# Start, Save, file 1, "OK to save over this file?" LEFT to Yes, A (written ~f75470). tools/regress.sh sol_star_room keeps its SHA-1.
+START@75100-75102,A@75190-75192   # pause menu, Save
+A@75290-75292                     # file 1
+LEFT@75390-75392,A@75440-75442    # Yes: save over it
+A@75550-75552                     # close
