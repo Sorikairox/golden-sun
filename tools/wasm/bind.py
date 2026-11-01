@@ -118,8 +118,39 @@ def fmt(name):
     return '@' + (name if re.fullmatch(r'[-\w$.]+', name) else f'"{name}"')
 
 
+def fn_overrides(root):
+    """Vendor functions replaced by port/pc (port/fn_overrides.tsv): their definitions are dropped."""
+    names = set()
+    for r in read_tsv(os.path.join(root, 'port/fn_overrides.tsv')):
+        names.add(r['function'])
+    return names
+
+
+def drop_bodies(lines, names):
+    """`define ... @f(...) {` .. `}` -> `declare ... @f(...)` for f in names (vendor modules only)."""
+    out, skipping, dropped = [], False, 0
+    for line in lines:
+        if skipping:
+            if line == '}':
+                skipping = False
+            continue
+        m = DEF_FUNC.match(line)
+        if m and name_of(m) in names:
+            head = line.rsplit('{', 1)[0]
+            head = re.sub(r'^define\s+(?:(?:internal|private|dso_local|hidden)\s+)*', 'declare ', head)
+            head = re.sub(r'\)\s*(?:local_unnamed_addr|unnamed_addr)?\s*(?:#\d+)?\s*$', ')', head.rstrip())
+            head = re.sub(r'\s%[-\w.]+(?=[,)])', '', head)  # parameter names
+            out.append(head)
+            skipping = True
+            dropped += 1
+            continue
+        out.append(line)
+    return out, dropped
+
+
 def run(objs, out, root):
     t = Tables(root)
+    overrides = fn_overrides(root)
     os.makedirs(os.path.join(out, 'gen'), exist_ok=True)
     overlay_defs = defaultdict(set)   # overlay -> names its modules define (external linkage)
     modules = []
@@ -139,6 +170,9 @@ def run(objs, out, root):
     kept, unresolved, code_as_data = [], defaultdict(set), defaultdict(set)
     for image, obj, text in modules:
         lines = text.split('\n')
+        if not obj.startswith('port/'):
+            lines, nd = drop_bodies(lines, overrides)
+            stats['functions overridden by port/pc'] += nd
         funcs = set()
         globals_ = {}
         for line in lines:

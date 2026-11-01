@@ -178,6 +178,16 @@ def load_rules(path):
     return rules
 
 
+def load_overrides():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/fn_overrides.tsv')
+    names = []
+    for line in open(path, encoding='utf-8'):
+        if line.startswith('#') or line.startswith('function\t') or not line.strip():
+            continue
+        names.append(line.split('\t')[0])
+    return names
+
+
 def replace_asm(src, rules, log):
     def fix(m):
         tmpl = m.group('tmpl')
@@ -303,6 +313,13 @@ def transform_text(path, log):
         if text in out:
             log.append(f'text "{text}" -> {repl}')
             out = out.replace(text, repl)
+    # functions port/pc replaces (port/fn_overrides.tsv; bind.py drops their bodies) must not be inlined into
+    # their vendor callers first: mark each definition noinline
+    for name in load_overrides():
+        rx = re.compile(r'^(?=[A-Za-z_][\w \t*]*\b' + re.escape(name) + r'\s*\([^;]*$)', re.M)
+        if rx.search(out):
+            out = rx.sub('__attribute__((noinline)) ', out, count=1)
+            log.append(f'{name}: noinline (replaced by port/pc)')
     nested = bool(find_nested(out))
     if nested:
         out = to_blocks(out, log)

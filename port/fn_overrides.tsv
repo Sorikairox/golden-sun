@@ -1,0 +1,10 @@
+# Vendor C functions whose definitions the wasm build drops (tools/wasm/bind.py turns them into declarations)
+# because port/pc defines a replacement with the same name and signature (orchestrator D3). Vendor files are
+# never edited or copied.
+function	ours	why
+ReadFlashId	port/pc/flash.c	reads the chip id through a RAM copy of a Thumb routine in flash command mode; our flash answers as an SST chip
+ProgramFlashSectorWithEraseRetry	port/pc/flash.c	programs through flash command sequences and status polling of the chip; ours writes the 4 KB sector of the emulated flash
+EraseFlashChip	port/pc/flash.c	chip command sequence + polling; ours fills the 64 KB with 0xff
+EraseFlashSector	port/pc/flash.c	sector command sequence + polling; ours fills the sector with 0xff
+ReadFlash	port/pc/flash.c	runs ReadFlashCore from a halfword copy on the stack (no wasm function there); ours copies directly
+Flash_VerifySector	port/pc/flash.c	runs VerifyFlashCore from a stack copy; ours compares directly, same result

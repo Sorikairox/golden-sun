@@ -298,8 +298,11 @@ u32 Port_FrameCount(void) { return frames; }
 int Port_Line(void) { return line; }
 
 /* Power-on state of the registers the layer reads */
+void Port_FlashReset(void);
+
 void Port_HwReset(void) {
   int i;
+  Port_FlashReset();
   line = 0;
   phase = 0;
   irqFlags = 0;

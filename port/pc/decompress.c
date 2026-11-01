@@ -144,6 +144,78 @@ s32 Decompress_TaggedLzArm(const void *source, void *destination) {
   return result;
 }
 
+/* Move-to-front LZ (form 2): the same bit stream, lengths and distances as form 0, but a literal is two
+ * nibbles, each an index into a move-to-front list of the 16 nibble values (initially 0..15); the indexed value
+ * is taken and moved to the front, low nibble first. Literal index codes: 1 + two 2-bit indices, 01 + two 3-bit,
+ * 00 + two 4-bit. Any other form: nothing written, returns 4. Returns the bytes written. */
+s32 Decompress_MoveToFrontLzCommands(const void *source, void *destination) {
+  const u8 *s = (const u8 *)source;
+  u8 *out = (u8 *)destination;
+  u8 list[16];
+  struct Bits b;
+  u32 pos = 0;
+  int i;
+  if (*s++ != 2)
+    return 4;
+  for (i = 0; i < 16; i++)
+    list[i] = (u8)i;
+  b.p = s;
+  b.buf = 0;
+  b.n = 0;
+  for (;;) {
+    u32 length, distance, k;
+    if (take(&b, 1)) {
+      int width = take(&b, 1) ? 2 : take(&b, 1) ? 3 : 4;
+      u32 v = 0;
+      int half;
+      for (half = 0; half < 2; half++) {
+        u32 idx = take(&b, width), nib = list[idx];
+        for (k = idx; k > 0; k--)
+          list[k] = list[k - 1];
+        list[0] = (u8)nib;
+        v |= nib << (4 * half);
+      }
+      out[pos++] = (u8)v;
+      continue;
+    }
+    if (!take(&b, 1))
+      length = 2;
+    else if (!take(&b, 1))
+      length = 3;
+    else if (!take(&b, 1))
+      length = 4;
+    else if (!take(&b, 1))
+      length = 5;
+    else if (!take(&b, 1))
+      length = take(&b, 1) ? 7 : 6;
+    else {
+      length = take(&b, 2);
+      if (length)
+        length += 7;
+      else {
+        length = take(&b, 7);
+        if (!length)
+          break;
+        length += 10;
+      }
+    }
+    if (take(&b, 1))
+      distance = take(&b, 5);
+    else {
+      u32 span = pos - 33;
+      if (span >= 2048)
+        distance = take(&b, 12) + 32;
+      else {
+        int w = bit_length(span);
+        distance = (w ? take(&b, w) : 0) + 32;
+      }
+    }
+    for (k = 0; k < length; k++, pos++)
+      out[pos] = out[pos - 1 - distance];
+  }
+  return (s32)pos;
+}
+
 /* Turns the overlay's stored branch targets back into pc-relative Thumb BL pairs: every halfword pair
  * (0xF000 | hi11, 0xF800 | lo11) found from byte 2 on holds (target offset from the scan start) >> 1; it
  * becomes the offset from the pair. Scans byteLength * 2 bytes (the ROM's routine doubles the count: the scan
@@ -164,4 +236,37 @@ void Resource_PatchThumbBranch(void *code, s32 byteLength) {
     *(u16 *)(p - 4) = (u16)(((offset >> 12) & 0x7FF) | 0xF000);
     *(u16 *)(p - 2) = (u16)((offset >> 1) | 0xF800);
   }
+}
+
+void Port_DmaWritten(volatile u32 *channel);
+
+/* Runs the queued register writes (IoWriteQueue_FlushPending): `count` entries of { value, address, control }
+ * from queue + 4 (at least one: the loop tests after). Control bits 16-17: size (0: the three words go to DMA3
+ * as a transfer, 1 byte, 2 halfword, 3 word); bits 18-19 zero: plain store, else read-modify: bit 18 set ORs
+ * the value in, clear clears its bits. */
+void Resource_ExecuteTransfer(void *queue, s32 count) {
+  u32 *e = (u32 *)queue + 1;
+  do {
+    u32 value = e[0], address = e[1], control = e[2], size = control & 0x30000u;
+    e += 3;
+    if (!size) {
+      volatile u32 *dma3 = (volatile u32 *)(uintptr_t)(IO_BASE + 0xD4);
+      dma3[0] = value;
+      dma3[1] = address;
+      dma3[2] = control;
+      Port_DmaWritten(dma3);
+      continue;
+    }
+    if (control & 0xC0000u) {
+      u32 old = size < 0x20000u ? *(volatile u8 *)(uintptr_t)address
+              : size == 0x20000u ? *(volatile u16 *)(uintptr_t)address : *(volatile u32 *)(uintptr_t)address;
+      value = (control & 0x40000u) ? old | value : old & ~value;
+    }
+    if (size < 0x20000u)
+      *(volatile u8 *)(uintptr_t)address = (u8)value;
+    else if (size == 0x20000u)
+      *(volatile u16 *)(uintptr_t)address = (u16)value;
+    else
+      *(volatile u32 *)(uintptr_t)address = value;
+  } while (--count > 0);
 }

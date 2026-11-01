@@ -242,6 +242,18 @@ function routines(h) {
       },
     },
     {
+      name: 'Decompress_MoveToFrontLzCommands', spec: { orig: A('Decompress_MoveToFrontLzCommands'), port: 'Decompress_MoveToFrontLzCommands', returns: 'u32' },
+      skipOriginalErrors: true,
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer), dir = A('Resource_DirectoryTable');
+        for (let id = 0; id < 1000; id++) {
+          const src = dv.getUint32(dir + 4 * id, true);
+          if (src < 0x08000000 || src >= 0x08800000) continue;
+          yield [src, 0x02004000];
+        }
+      },
+    },
+    {
       name: 'Resource_PatchThumbBranch', spec: { orig: A('Resource_PatchThumbBranch'), port: 'Resource_PatchThumbBranch', returns: 'none' },
       cases: function* () {
         const dv = new DataView(h.mem.buffer);
@@ -252,6 +264,76 @@ function routines(h) {
             dv.setUint16(base + k, r === 0 ? 0xf000 | (R() & 0x7ff) : r === 1 ? 0xf800 | (R() & 0x7ff) : R() & 0xffff, true);
           }
           yield [base, n];
+        }
+      },
+    },
+    {
+      // random planes with many placeholder pictures (low 12 bits 0xfff); 128 KB of EWRAM in all
+      name: 'Tile_ConvertMapGrid', spec: { orig: A('Tile_ConvertMapGrid'), port: 'Tile_ConvertMapGrid', returns: 'none' },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        for (let i = 0; i < 12; i++) {
+          const pics = 0x02000000, cells = 0x02010000, planes = 0x02030000;
+          fillRandom(planes, 0x8000);
+          const p = R.pick([2, 4, 50]);
+          for (let k = 0; k < 16384; k++) dv.setUint16(pics + 2 * k, R() % p === 0 ? (R() & 0xf000) | 0xfff : R() & 0xffff, true);
+          yield [pics, cells, planes];
+        }
+      },
+    },
+    {
+      // queues of random entries: byte/halfword/word stores, OR/clear read-modify-writes, and DMA entries with the
+      // enable bit clear (register writes only: the interpreter runs no DMA) into EWRAM scratch
+      name: 'Resource_ExecuteTransfer', spec: { orig: A('Resource_ExecuteTransfer'), port: 'Resource_ExecuteTransfer', returns: 'none' },
+      setup: () => fillRandom(EW, 0x1000),
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer), q = EW + 0x2000;
+        for (let i = 0; i < 1500; i++) {
+          const n = R.range(1, 20);
+          for (let k = 0; k < n; k++) {
+            const size = R.range(0, 3);
+            const e = q + 4 + 12 * k;
+            dv.setUint32(e, R(), true);
+            dv.setUint32(e + 4, size === 0 ? 0 : EW + (R.range(0, 0x3f0) & ~(size === 3 ? 3 : size === 2 ? 1 : 0)), true);
+            dv.setUint32(e + 8, size === 0 ? ((R() & 0x7ff0) << 16 | (R() & 0xffff)) >>> 0 : (size << 16) | (R.range(0, 3) << 18) | (R() & 0xffff), true);
+          }
+          yield [q, n];
+        }
+      },
+    },
+    {
+      // the ROM's own icons (resource Icons: offsets table, entries + 32) and random streams
+      name: 'Tile_Decompress4bpp', spec: { orig: A('Tile_Decompress4bpp'), port: 'Tile_Decompress4bpp', returns: 'none' },
+      skipOriginalErrors: true,
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        const dir = A('Resource_DirectoryTable'), icons = dv.getUint32(dir + 4 * 0xf0, true) // ResourceId_Icons (absolute.tsv);
+        for (let i = 0; i < 200; i++) {
+          const off = dv.getUint16(icons + 2 * i, true);
+          yield [icons + off + 32, EW + R.range(0, 64)];
+        }
+        for (let i = 0; i < 300; i++) { const src = EW + 0x8000 + R.range(0, 255); fillRandom(src, 512); yield [src, EW + R.range(0, 64)]; }
+      },
+    },
+    {
+      name: 'Tile_ExpandOpaque', spec: { orig: A('Tile_ExpandOpaque'), port: 'Tile_ExpandOpaque', returns: 'none' },
+      cases: function* () {
+        for (let i = 0; i < 500; i++) {
+          const w = R.range(1, 8), hh = R.range(1, 6);
+          fillRandom(EW + 0x8000, w * hh * 64 + 8);
+          if (R() & 1) for (let k = 0; k < w * hh * 64; k++) h.mem[EW + 0x8000 + k] &= 15;
+          yield [EW + 0x8000, EW + 4 * R.range(0, 32), w, hh];
+        }
+      },
+    },
+    {
+      name: 'Tile_ExpandMasked', spec: { orig: A('Tile_ExpandMasked'), port: 'Tile_ExpandMasked', returns: 'none' },
+      cases: function* () {
+        for (let i = 0; i < 500; i++) {
+          const w = R.range(1, 8), hh = R.range(1, 6);
+          fillRandom(EW, 0x9000);
+          for (let k = 0; k < w * hh * 64; k++) { const v = h.mem[EW + 0x8000 + k]; h.mem[EW + 0x8000 + k] = R() & 1 ? 0 : (R() & 3 ? v & 15 : v); }
+          yield [EW + 0x8000, EW + 4 * R.range(0, 32), w, hh];
         }
       },
     },
