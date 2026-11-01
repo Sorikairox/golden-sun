@@ -14,13 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS3 (2026-11-01): **G3 partial**. Test interpreter + differential harness (D20): 39/39 hand ports EQUIV.
-  Boot in node and muted headless Chrome (same frames): Nintendo, Camelot and Golden Sun logos, then the File
-  Screen's name entry (a blank save skips the title intro, as on the real game); A enters the first field scene,
-  where the next unported ARM routine (Render_DecodePicture) stops it. Page v1 (picker, SHA-1, IndexedDB ROM and
-  save, keyboard, 59.73 Hz). 10 asm stubs left (9 sound, 1 battle). Details: docs/G3.md.
-- Next: field sprite/tile ARM routines (code_as_data.tsv) to play the prologue; a save to reach the title
-  screen; then G4 (audio, renderer completion, touch controls).
+- GS4 (2026-11-01): **G3 exit met**; G4 started. 42/42 hand ports EQUIV (D20). From a blank save the prologue
+  plays: name entry, Isaac's house, Vale in the storm, free walking; the Pause menu saves; with that save the
+  boot shows the real title intro, title (PRESS START, copyright) and the File Screen menu, in node and muted
+  headless Chrome. 0 linker warnings (K&R/veneer adapters). Touch controls in the page (GS-touch). No audio.
+  Details: docs/G4.md (field), docs/G3.md (boot).
+- Next: script the rest of the prologue to the plaza; palette fade kernels and the battle routines before the
+  first battle; m4a audio; mosaic.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -247,3 +247,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 21. With no save file the game skips the title intro (Title_Run: Save_ScanFileSummaries() > 0): logos, Golden
     Sun logo, then the File Screen. The full title screen needs a save.
 22. Busy-waits on VCOUNT (m4a SampleFreqSet) never end unless reading VCOUNT advances time: port/c_rules.tsv.
+23. A vendor C routine copied to RAM to run (`RamCode_Load(r, Tile_BuildCellPictures, n)`) has a wasm table index
+    as its address: the DMA must copy the function's ROM bytes and alias the copy (hw.c, Port_CodeGbaOf).
+24. Calls of K&R-declared functions (`f()`) with other argument counts than the definition become traps in
+    wasm-ld (signature mismatch): link.py routes them through per-signature adapters; keep "0 linker warnings".
+25. Headless Chrome shows its own error page (another origin) for an empty 404: a test that needs the page's
+    origin before start (IndexedDB) loads a real page of the test server (web_shot.cjs setup.html).

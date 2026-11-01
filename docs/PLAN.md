@@ -24,7 +24,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 - Leak check: no asset object compiled, and the wasm contains none of a list of ROM strings.
 - **Exit:** all tbs-en code objects compile and link to one `.wasm`; stub count reported; leak check passes.
 
-## G3 — Boot to the title screen (partial, GS3; see docs/G3.md)
+## G3 — Boot to the title screen (done, GS4; see docs/G3.md, docs/G4.md)
 
 - PC layer core: frame driver + fibers (D8), IRQ dispatch (VBlank/HBlank/timers/serial), DMA (immediate,
   VBlank, HBlank, sound FIFO), timers, KEYINPUT, BIOS SWIs in C, the LZ/RL decompressors, flash emulation backed
@@ -35,6 +35,8 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   file menu; captures in `port_work/g3/` match an emulator capture of the same frames by eye.
 - GS3: logos -> Golden Sun logo -> File Screen name entry in node and Chrome (no emulator here: compared with the
   vendor's own title assets); the title intro needs a save file (trap 21).
+- GS4: **exit met**: a save made in the game (Pause menu, prologue) -> title intro, title, File Screen menu in node
+  and Chrome, matching the vendor's `screen.png`/`intro_clouds.png` by eye (docs/G4.md).
 
 ## G4 — Playable single player
 

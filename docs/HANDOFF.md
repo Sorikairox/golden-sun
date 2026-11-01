@@ -2,6 +2,40 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS4 — 2026-11-01: G3 exit met (title + file menu from an in-game save); prologue plays, Isaac walks in Vale
+
+### Done
+- **Ports (D6/D20)**: Render_DecodePicture, Tile_CopyStrided, Decompress_ByteLzArm in C, each EQUIV against the
+  ROM's own code (diff.cjs specs; harness `spec.ignore` for a routine's writes into its own RAM copy). **42/42
+  EQUIV**, negative controls detected. 16 of the 51 code-as-data routines ported.
+- **Runtime**: DMA copies of vendor C routines by wasm function pointer now copy the ROM's bytes and alias the copy
+  (Tile_BuildCellPictures); link.py adapters for K&R calls with differing argument counts and for veneers with
+  differing signatures (0 linker warnings, was 8; START no longer traps); `_call_via_r3` fixed (c_rules.tsv +
+  call_via.c, also the flash program call of Save_WriteSector).
+- **Plays**: name entry -> Isaac's house (Dora, Kyle, lightning) -> outside in the rain -> Yes to Dora -> free
+  walking in Vale (ValePrologue, stage SENT_TO_PLAZA). Start -> Pause menu -> Save your quest -> file 1 ->
+  "Your game was saved." (frame 5170, deterministic bytes). Reboot with that flash: **the real title intro and
+  title** (Mt. Aleph, clouds, sun, PRESS START, (c)2001 Nintendo / CAMELOT) and the File Screen icon menu with
+  Continue, in node and in muted headless Chrome (58 fps, 0 console errors). Matches the vendor's `screen.png` and
+  `intro_clouds.png` by eye.
+- Tools: boot.cjs key taps (`A@700-4400/40`), `--keys-file a,b`, `--every`, `--flash-in/--flash-out`, `--regs`;
+  web_shot.cjs `--flash` (IndexedDB before start), `--press FRAME:CODE`, `OUT=`; `tools/contact.cjs` sheets;
+  routes `tests/routes/prologue.keys`, `first_save.keys` (inputs only).
+- Captures (gitignored): `port_work/g4/sheet1.png` (logos -> house -> Vale), `sheet7.png` (save), title
+  `port_work/g4/title/frame_00900.png`, file menu `title/frame_01200.png`, Chrome `port_work/g4/web/web_00901.png`
+  (title), `web_01201.png` (file menu); flash `port_work/g4/flash.sav`. Notes: docs/G4.md.
+
+### Next
+1. Script the rest of the prologue (route north of Isaac's house, then the plaza; stages in vale_prologue.c's
+   header). A RAM position readout for the leader would make routing much faster than blind key scripts.
+2. Check the "Power" window that Right opens just south of Isaac's house (docs/G4.md gap 2): event or port bug.
+3. G4: palette fade kernels, BitDecoder_DecodeImage + battle blitters before the first battle; m4a audio; mosaic.
+
+### Notes
+- Tests: `tools/test_arm.sh` 42/42 EQUIV; leak check PASS on every build; web_shot 0 console errors. No downloads,
+  no installs, no permission denials. `port/web/` not touched (the touch agent's); no page change needed: the save
+  is put into IndexedDB by the test before the page starts.
+
 ## GS-touch — 2026-11-01: touch controls (orchestrator rule 11)
 
 ### Done
