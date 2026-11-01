@@ -1,0 +1,17 @@
+# GS19: from the kolima_cliff save (Kolima Forest's floodgate, from the cliff; continue with vale_day1_continue.keys +
+# --flash-in). South to the Floodgate Switch (19,28; beside the sign "Do not touch Floodgate Switch!"): examining it from
+# 19,27 opens the floodgate (spray, the top lines shake) and the river falls; down the slope (row 20) onto the riverbed,
+# round to the north-south log's east side (12,10): walking west rolls it to column 10 (KolimaForestFloodgate_RollLog);
+# back to the switch, which closes the gate (churning spray) and the river rises with the logs floating (jump cells):
+# over the west-east log (row 18), up the north-south log (column 13), along row 12 to the moved log (column 10), the
+# jump north from 10,9 to the bank (10,7), north to the exit (9,2): the scene where Tret stands (f6280). Battles by
+# autowalk's A taps.
+RIGHT@2100-2115,RIGHT@2117-2121,DOWN@2122-2136,RIGHT@2138-2155,RIGHT@2157-2162,DOWN@2163-2167,RIGHT@2169-2391
+RIGHT@2393-2397,DOWN@2398-2424,DOWN@2430-2433,A@2455-2458,B@2825-2828,UP@3025-3045,LEFT@3047-3259,LEFT@3261-3264
+UP@3265-3283,LEFT@3285-3292,LEFT@3294-3298,UP@3299-3362,RIGHT@3364-3518,RIGHT@3520-3523,UP@3524-3534,RIGHT@3536-3548
+RIGHT@3550-3554,UP@3555-3650,RIGHT@3652-3679,RIGHT@3681-3685,UP@3686-3733,LEFT@3735-3790,LEFT@3796-3941,DOWN@4091-4158
+RIGHT@4160-4171,RIGHT@4173-4177,DOWN@4178-4204,RIGHT@4206-4237,RIGHT@4239-4242,DOWN@4243-4285,LEFT@4287-4458
+LEFT@4460-4463,DOWN@4464-4522,RIGHT@4524-4535,RIGHT@4537-4541,DOWN@4542-4546,RIGHT@4548-4771,RIGHT@4773-4776
+DOWN@4777-4803,DOWN@4809-4812,A@4834-4837,B@5204-5207,UP@5404-5424,LEFT@5426-5638,LEFT@5640-5643,UP@5644-5662
+LEFT@5664-5671,LEFT@5673-5677,UP@5678-5773,RIGHT@5775-5911,RIGHT@5913-5916,UP@5917-5947,UP@5949-6021,LEFT@6023-6034
+LEFT@6036-6073,UP@6075-6122,UP@6124-6162,UP@6164-6228,LEFT@6230-6239,LEFT@6241-6245,UP@6246-6279
