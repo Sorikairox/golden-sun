@@ -148,6 +148,14 @@ that edition's address map, not a port. Out of scope until asked.
 - **D19 Data binding in IR (GS2):** data symbols are bound to their GBA addresses by rewriting the IR
   (`tools/wasm/bind.py`); data holding code pointers (and data pointing to it) is copied from the ROM into wasm
   buffers at run time with its pointer slots patched (`port/symbols/relocs.tsv`).
+- **D20 Test interpreter for the asm ports (coordinator, GS3):** the hand ports of D6 are proven against the
+  original code by our own small ARM7TDMI interpreter (ARM + Thumb, ARMv4T), test-only, no download:
+  `tests/arm/arm7.js` runs the original routine's bytes from the player's ROM (or where the game copies them,
+  e.g. IWRAM) on the game module's identity-mapped memory; `tests/arm/diff.cjs` runs it and our C port on the
+  same random and edge-case inputs and compares results and every byte of the GBA RAM regions (EQUIV or the
+  first difference); `tests/arm/selftest.cjs` holds negative controls. Unimplemented opcodes throw a clear
+  error. BIOS calls in original code use a GBATEK reference in the harness (no BIOS image). Lives in tests/,
+  never shipped in the site.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 

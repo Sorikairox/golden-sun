@@ -22,11 +22,11 @@ TYPES = ('void', 'i1', 'i8', 'i16', 'i32', 'i64', 'float', 'double', 'ptr')
 # 230400 KB = 0x0E100000: linear memory up to the end of the 64 KB flash at 0x0E000000 (D5)
 LINK_FLAGS = ['-sINITIAL_MEMORY=230400kb', '-sALLOW_MEMORY_GROWTH=0', '-sSTACK_SIZE=1048576',
               '-sERROR_ON_UNDEFINED_SYMBOLS=1', '-sEXIT_RUNTIME=0', '-sENVIRONMENT=web,node',
-              '-sEXPORTED_FUNCTIONS=_main,_Port_StubHits,_Port_RelocateAll,_Port_RelocCheck', '-O1',
+              '-O1',
               # a factory (GoldenSun(opts)) that does not run main by itself: the page or test harness first
               # writes the player's ROM to 0x08000000
               '-sMODULARIZE=1', '-sEXPORT_NAME=GoldenSun', '-sINVOKE_RUN=0',
-              '-sEXPORTED_RUNTIME_METHODS=HEAPU8,ccall,callMain',
+              '-sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAP32,HEAPU32,ccall,callMain',
               # keep every game function and overlay even before anything calls it: the G2 check is that all
               # of them link; G3's boot path will make them reachable
               '-Wl,--no-gc-sections']
@@ -225,7 +225,15 @@ def run(objs, out, root, clang, jobs, stages):
     print(f'link: {veneers} veneers ({mismatched} with differing signatures), {len(stubs)} logged stubs '
           f'({", ".join(f"{k} {v}" for k, v in sorted(kinds.items()))})')
     objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
-    rc, so, err = sh(['emcc'] + objects + LINK_FLAGS + ['-o', os.path.join(out, 'game.js')])
+    # exports: main and every function the PC layer defines (the page, node runners and the differential tests
+    # of tests/arm call them)
+    exports = {'main'}
+    for o in objects:
+        if os.path.basename(o).startswith('build__wasm__bound__port__pc__'):
+            rc, so, _ = sh([NM, '--defined-only', o])
+            exports |= {p[2] for p in (l.split() for l in so.splitlines()) if len(p) == 3 and p[1] == 'T'}
+    flags = LINK_FLAGS + ['-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(exports))]
+    rc, so, err = sh(['emcc'] + objects + flags + ['-o', os.path.join(out, 'game.js')])
     errs = [l for l in err.splitlines() if 'error' in l or 'undefined symbol' in l]
     warns = [l for l in err.splitlines() if 'warning' in l]
     if rc:
