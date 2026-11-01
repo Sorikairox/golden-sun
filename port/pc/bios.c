@@ -8,6 +8,8 @@
  * Addresses are forced to the unit's alignment. A count of 0 copies nothing. */
 void Bios_CpuSet(const void *source, void *destination, u32 control) {
   u32 count = control & 0x1FFFFF;
+  if (PORT_IS_TABLE_INDEX((uintptr_t)source & ~1u))
+    return; /* a wasm function (m4aSoundInit copies SoundMainRAM_Rom, the library mixer, to IWRAM): no GBA bytes */
   int fixed = (control >> 24) & 1;
   if (control & (1u << 26)) {
     const u32 *s = (const u32 *)((uintptr_t)source & ~(uintptr_t)3);

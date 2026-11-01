@@ -132,7 +132,35 @@ void Port_DmaWritten(volatile u32 *channel) {
     dma_run(ch);
 }
 
+/* Sound FIFO DMA (start timing 3, apu.c asks when a FIFO runs low): four words into the FIFO from the source,
+ * destination fixed. */
+void Port_ApuFifoWrite(int which, u32 word);
+void Port_DmaSoundFifo(int ch) {
+  u32 ctl = dma_reg(ch, 2) >> 16;
+  int k, sctl = (ctl >> 7) & 3;
+  if (!(ctl & 0x8000) || ((ctl >> 12) & 3) != 3)
+    return;
+  if (!dma[ch].latched)
+    dma_latch(ch);
+  for (k = 0; k < 4; k++) {
+    Port_ApuFifoWrite((dma[ch].dst & 0xFF) == 0xA4 ? 1 : 0, *(volatile u32 *)(uintptr_t)(dma[ch].src & ~3u));
+    dma[ch].src += sctl == 0 || sctl == 3 ? 4 : sctl == 1 ? (u32)-4 : 0;
+  }
+  if ((ctl >> 14) & 1)
+    irqFlags |= 1u << (8 + ch);
+  if (!((ctl >> 9) & 1)) {
+    *(volatile u16 *)(uintptr_t)(IO_BASE + R_DMA0SAD + 12 * ch + 10) &= 0x7FFF;
+    dma[ch].latched = 0;
+  }
+}
+
+/* m4aSoundVSync restarted a sound DMA by register writes (m4a.c): read its source again at the next request. */
+void Port_ApuDmaRestart(int ch) { dma[ch].latched = 0; }
+
 /* ---------------- timers ---------------- */
+void Port_ApuTimerOverflow(int t, u32 n);
+void Port_ApuRun(u32 cycles);
+void Port_ApuReset(void);
 
 struct TimerState {
   int on;
@@ -176,8 +204,11 @@ static void timers_step(u32 cycles) {
     }
     if (overflows && (cnt & 0x40))
       irqFlags |= 1u << (3 + t);
+    if (overflows && t < 2)
+      Port_ApuTimerOverflow(t, overflows); /* DirectSound FIFOs (apu.c) */
     overflowPrev = (int)overflows;
   }
+  Port_ApuRun(cycles);
 }
 
 /* ---------------- interrupts ---------------- */
@@ -319,6 +350,7 @@ void Port_HwReset(void) {
     dma[i].latched = 0;
     timers[i].on = 0;
   }
+  Port_ApuReset();
   IO16(R_KEYINPUT) = 0x3FF;
   IO16(R_VCOUNT) = 0;
   IO16(R_DISPSTAT) = 0;
