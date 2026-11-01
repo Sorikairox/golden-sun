@@ -1,0 +1,1109 @@
+# Golden Sun (USA, Europe) tbs-en address map, from alchemy 24b72a32 built by tools/build_ref.sh.
+# Addresses and names only (no ROM bytes). check: rom = section byte-identical to the player's ROM;
+# standin-xref / standin-offset = object built by a stand-in compiler, address from cross-references
+# / from its offset (see docs/G1.md).
+overlay	address	rom	size	section	object	kind	code_ptrs	check
+	0x02000000		229376	.sym_ewram	src/system/ewram	ram	0	
+	0x03000000	0x08000770	224	.text	src/system/irq	code	0	rom
+	0x030000e0	0x08000850	56	.data	src/system/irq_table	data	0	rom
+	0x03000118	0x08000888	568	.text	src/system/iwram_routines	code	0	rom
+	0x03000350	0x08000ac0	48	.data	src/system/iwram_routines	data	0	rom
+	0x03000380	0x08000af0	728	.text.iwram_divide	src/system/iwram_routines	code	0	rom
+	0x03000658	0x08000dc8	632	.text	src/sound/resident_mixer	code	0	rom
+	0x030008d0	0x08001040	4	.data	src/sound/resident_mixer	data	0	rom
+	0x030008d4	0x08001044	200	.text	src/sound/resident_mixer_interpolate	code	0	rom
+	0x0300099c	0x0800110c	12	.data	src/sound/resident_mixer_interpolate	data	0	rom
+	0x030009a8	0x08001118	440	.text.sound_mixer_channel	src/sound/resident_mixer_interpolate	code	0	rom
+	0x03000b60	0x080012d0	664	.text	src/sound/resident_mixer_render	code	0	rom
+	0x03000df8	0x08001568	1424	.data	src/sound/resident_mixer_render	data	0	rom
+	0x03001388	0x08001af8	120	.text.iwram_copy_words	src/sound/resident_mixer_render	code	0	rom
+	0x03001400		3072	.sym_iwram	src/system/iwram	ram	0	
+	0x03007000	0x080f9674	932	.text	src/sound/mixer	code	0	rom
+	0x030073a4		3160	.sym_iwram_high	src/system/iwram_high	ram	0	
+	0x08000000	0x08000000	192	.rodata	src/gamepak/rom_header	data	0	rom
+	0x080000c0	0x080000c0	768	.text	src/gamepak/far_call/SYSTEM	code	96	rom
+	0x080003c0	0x080003c0	192	.text	src/system/entry	code	1	rom
+	0x08000480	0x08000480	28	.padding	src/system/entry	data	0	rom
+	0x0800049c	0x0800049c	140	.text.resampler_kernels_1	src/system/entry	code	0	rom
+	0x08000528	0x08000528	12	.padding.resampler_kernels_pad_1	src/system/entry	data	0	rom
+	0x08000534	0x08000534	456	.text.resampler_kernels_2	src/system/entry	code	0	rom
+	0x080006fc	0x080006fc	116	.text	src/sound/channel_update_entry	code	1	rom
+	0x08001b70	0x08001b70	1916	.text	src/system/decompress_byte_lz	code	0	rom
+	0x080022ec	0x080022ec	32	.text	src/system/iwram_entry	code	0	rom
+	0x0800230c	0x0800230c	56	.text	src/system/trig	code	0	rom
+	0x08002344	0x08002344	512	.rodata	src/system/trig	data	0	rom
+	0x08002544	0x08002544	772	.text	src/system/decompress_tagged_lz	code	0	rom
+	0x08002848	0x08002848	8	.rodata	src/system/decompress_tagged_lz	data	0	rom
+	0x08002850	0x08002850	1416	.text.decode_2_loop	src/system/decompress_tagged_lz	code	0	rom
+	0x08002dd8	0x08002dd8	22	.text.release	src/system/heap_release	code	0	rom
+	0x08002df0	0x08002df0	16	.text.free	src/system/heap_release	code	0	rom
+	0x08002e00	0x08002e00	14948	.text	src/system/system	code	3	rom
+	0x08006864	0x08006864	10	.text	src/system/bios	code	0	rom
+	0x08006870	0x08006870	6	.text.sound_vsync_on	src/system/bios	code	0	rom
+	0x08006878	0x08006878	1124	.text	src/gamepak/flash/flash	code	0	standin
+	0x08006cdc	0x08006cdc	680	.text	src/gamepak/flash/sst	code	0	standin
+	0x08006f84	0x08006f84	164	.text	src/gamepak/flash/program_flash_sector	code	0	standin
+	0x08007028	0x08007028	700	.text	src/gamepak/flash/atmel	code	0	standin
+	0x080072e4	0x080072e4	60	.text	tools/out/compiler-runtime/libgcc.a(_call_via_rX.o)	code	0	rom
+	0x08007320	0x08007320	40	.rodata.irq_head	src/system/irq_table	data	10	rom
+	0x08007348	0x08007348	8	.rodata.irq_middle	src/system/irq_table	data	2	rom
+	0x08007350	0x08007350	8	.rodata.irq_tail	src/system/irq_table	data	2	rom
+	0x08007358	0x08007358	1060	.rodata	src/system/math_table	data	0	rom
+	0x0800777c	0x0800777c	480	.rodata	src/graphics/palettes/palettes	data	0	rom
+	0x0800795c	0x0800795c	56	.rodata	src/system/number_text	data	0	rom
+	0x08007994	0x08007994	28	.text	src/system/q16_dot_product	code	0	rom
+	0x080079b0	0x080079b0	79	.rodata	src/system/savedata	data	0	rom
+	0x08007a00	0x08007a00	32	.rodata	src/gamepak/flash/flashtab	data	0	rom
+	0x08007a20	0x08007a20	132	.rodata	src/gamepak/flash/flash	data	0	standin
+	0x08007aa4	0x08007aa4	112	.rodata	src/gamepak/flash/flashsst	data	8	rom
+	0x08007b14	0x08007b14	40	.rodata	src/gamepak/flash/sst	data	0	standin
+	0x08007b3c	0x08007b3c	136	.rodata	src/gamepak/flash/flashmx	data	8	rom
+	0x08007bc4	0x08007bc4	8	.rodata	src/gamepak/flash/program_flash_sector	data	0	standin
+	0x08007bcc	0x08007bcc	112	.rodata	src/gamepak/flash/flashat	data	8	rom
+	0x08007c3c	0x08007c3c	40	.rodata	src/gamepak/flash/atmel	data	0	standin
+	0x08009000	0x08009000	696	.text	src/gamepak/far_call/FIELD	code	87	rom
+	0x080092b8	0x080092b8	1280	.rodata	src/field/sprite_color_tables	data	0	rom
+	0x080097b8	0x080097b8	1024	.rodata	src/field/sprite_color_remap	data	0	rom
+	0x08009bb8	0x08009bb8	472	.text	src/field/picture_decode	code	0	rom
+	0x08009d90	0x08009d90	236	.data	src/field/picture_decode	data	0	rom
+	0x08009e7c	0x08009e7c	636	.text.draw_map	src/field/picture_decode	code	0	rom
+	0x0800a0f8	0x0800a0f8	644	.text	src/field/world_map_lines	code	0	standin
+	0x0800a37c	0x0800a37c	280	.text	src/field/map_grid_convert	code	0	rom
+	0x0800a494	0x0800a494	1220	.text	src/field/actor_update_arm	code	0	standin
+	0x0800a958	0x0800a958	36	.text	src/field/actor_update_far	code	1	rom
+	0x0800a97c	0x0800a97c	34212	.text	src/field/field	code	135	rom
+	0x08012f20	0x08012f20	348	.rodata	src/field/actor_shadow	data	0	rom
+	0x0801307c	0x0801307c	592	.rodata	src/field/facing	data	0	rom
+	0x080132cc	0x080132cc	48	.data	src/field/world_map_resources	data	0	rom
+	0x080132fc	0x080132fc	512	.rodata	src/field/terrain_tables	data	0	rom
+	0x080134fc	0x080134fc	136	.rodata	src/field/map_grid_data	data	16	rom
+	0x08013584	0x08013584	8	.rodata	src/field/sprite_viewer_scale	data	0	rom
+	0x0801358c	0x0801358c	340	.rodata	src/field/actor_script	data	47	rom
+	0x080136e0	0x080136e0	164	.rodata	src/field/actor_script_operands	data	41	rom
+	0x08013784	0x08013784	2248	.rodata	src/map/maps	data	0	rom
+	0x08015000	0x08015000	1072	.text	src/gamepak/far_call/WINDOW	code	134	rom
+	0x08015430	0x08015430	416	.text	src/window/message_decode	code	0	rom
+	0x080155d0	0x080155d0	1324	.text	src/window/glyph_arm	code	0	standin
+	0x08015afc	0x08015afc	52	.text	src/window/decompress_4bpp	code	0	rom
+	0x08015b30	0x08015b30	8	.rodata	src/window/decompress_4bpp	data	0	rom
+	0x08015b38	0x08015b38	728	.text.decompress_4bpp_loop	src/window/decompress_4bpp	code	0	rom
+	0x08015e10	0x08015e10	112	.text	src/window/expand_opaque	code	0	rom
+	0x08015e80	0x08015e80	12	.rodata	src/window/expand_opaque	data	0	rom
+	0x08015e8c	0x08015e8c	35920	.text	src/window/window	code	323	rom
+	0x0801eadc	0x0801eadc	44596	.text	src/window/screens	code	79	rom
+	0x08029910	0x08029910	256	.rodata	src/graphics/ui/slider	data	0	rom
+	0x08029a10	0x08029a10	1236	.rodata	src/graphics/ui/marks	data	0	rom
+	0x08029ee4	0x08029ee4	29116	.rodata	src/graphics/ui/menu_icons	data	0	rom
+	0x080310a0	0x080310a0	1988	.rodata	src/graphics/ui/pointing_hand	data	0	rom
+	0x08031864	0x08031864	2496	.rodata	src/graphics/ui/menu_titles	data	0	rom
+	0x08032224	0x08032224	7168	.rodata	src/graphics/font/text	data	0	rom
+	0x08033e24	0x08033e24	212	.rodata	src/window/articles	data	0	rom
+	0x08033ef8	0x08033ef8	10240	.rodata	src/graphics/ui/sprite_cursors	data	0	rom
+	0x080366f8	0x080366f8	476	.rodata	src/window/scales	data	0	rom
+	0x080368d4	0x080368d4	2960	.rodata	src/window/window_tables	data	0	rom
+	0x08037464	0x08037464	246692	.rodata	text/messages	data	0	rom
+	0x08073808	0x08073808	9	.rodata	src/window/message_speed	data	0	rom
+	0x08073812	0x08073812	64	.rodata	src/graphics/ui/slider_palette	data	0	rom
+	0x08073854	0x08073854	280	.rodata	src/window/keyboard	data	0	rom
+	0x08077000	0x08077000	800	.text	src/gamepak/far_call/GAME	code	100	rom
+	0x08077320	0x08077320	13576	.text	src/game/game	code	95	rom
+	0x0807a828	0x0807a828	3176	.rodata	src/game/experience_table	data	0	rom
+	0x0807b490	0x0807b490	512	.rodata	src/game/artifact_slots	data	0	rom
+	0x0807b690	0x0807b690	24	.rodata	src/game/starting_equipment	data	0	rom
+	0x0807b6a8	0x0807b6a8	14256	.rodata	src/game/item_table	data	0	rom
+	0x0807ee58	0x0807ee58	8304	.rodata	src/game/ability_table	data	0	rom
+	0x08080ec8	0x08080ec8	13860	.rodata	src/game/enemy_table	data	0	rom
+	0x080844ec	0x080844ec	1440	.rodata	src/game/character_table	data	0	rom
+	0x08084a8c	0x08084a8c	144	.rodata	src/game/summon_table	data	0	rom
+	0x08084b1c	0x08084b1c	17052	.rodata	src/game/class_table	data	0	rom
+	0x08088db8	0x08088db8	1204	.rodata	src/game/element_table	data	0	rom
+	0x0808926c	0x0808926c	960	.rodata	src/game/djinn_table	data	0	rom
+	0x0808a000	0x0808a000	1528	.text	src/gamepak/far_call/FIELD_SEQUENCE	code	191	rom
+	0x0808a5f8	0x0808a5f8	1768	.text	src/system/main_routine	code	0	rom
+	0x0808ace0	0x0808ace0	26892	.text	src/field/field_sequence	code	139	rom
+	0x080915ec	0x080915ec	44580	.text	src/field/event_commands	code	139	rom
+	0x0809c410	0x0809c410	512	.rodata	src/graphics/field_effects/spark_tiles	data	0	rom
+	0x0809c610	0x0809c610	2912	.rodata	src/field/encounter_zones	data	0	rom
+	0x0809d170	0x0809d170	1592	.rodata	src/field/encounter_rules	data	0	rom
+	0x0809d7a8	0x0809d7a8	584	.rodata	src/field/world_map_encounter_rules	data	0	rom
+	0x0809d9f0	0x0809d9f0	2712	.rodata	src/field/scene_rules	data	0	rom
+	0x0809e488	0x0809e488	70	.rodata	src/field/battle_music	data	0	rom
+	0x0809e4ce	0x0809e4ce	434	.rodata	src/graphics/palette_editor/swatch	data	0	rom
+	0x0809e680	0x0809e680	2856	.rodata	src/field/field_sequence_tables	data	2	rom
+	0x0809f1a8	0x0809f1a8	1608	.rodata	src/field/scenes	data	0	rom
+	0x0809f7f0	0x0809f7f0	2712	.rodata	src/field/scripts	data	5	rom
+	0x080a1000	0x080a1000	80	.text	src/gamepak/far_call/MENU	code	10	rom
+	0x080a1050	0x080a1050	55804	.text	src/menu/menu	code	280	rom
+	0x080aea4c	0x080aea4c	1984	.rodata	src/graphics/ui/menu_sprites	data	0	rom
+	0x080af20c	0x080af20c	136	.rodata	src/menu/menu_strings	data	0	rom
+	0x080af294	0x080af294	128	.data	src/menu/menu_tables	data	0	rom
+	0x080b0000	0x080b0000	112	.text	src/gamepak/far_call/SHOP	code	14	rom
+	0x080b0070	0x080b0070	14544	.text	src/shop/shop	code	4	rom
+	0x080b3940	0x080b3940	1984	.rodata	src/graphics/ui/shop_sprites	data	0	rom
+	0x080b4100	0x080b4100	2498	.rodata	src/shop/shop	data	0	rom
+	0x080b5000	0x080b5000	312	.text	src/gamepak/far_call/BATTLE	code	39	rom
+	0x080b5138	0x080b5138	204	.text	src/battle/background_decode	code	0	rom
+	0x080b5204	0x080b5204	8	.rodata	src/battle/background_decode	data	0	rom
+	0x080b520c	0x080b520c	12	.text.bit_dispatch	src/battle/background_decode	code	0	rom
+	0x080b5218	0x080b5218	64	.data	src/battle/background_decode	data	0	rom
+	0x080b5258	0x080b5258	272	.text.bit_commands	src/battle/background_decode	code	0	rom
+	0x080b5368	0x080b5368	54946	.text	src/battle/battle	code	520	rom
+	0x080c2a0c	0x080c2a0c	396	.rodata	src/battle/battle_tables	data	0	rom
+	0x080c2b98	0x080c2b98	2596	.rodata	src/battle/ability_staging	data	0	rom
+	0x080c35bc	0x080c35bc	2424	.rodata	src/battle/element_glow_tables	data	0	rom
+	0x080c3f34	0x080c3f34	6660	.rodata	src/battle/debug_parameter_sets	data	0	rom
+	0x080c5938	0x080c5938	768	.rodata	src/battle/knockback_tables	data	0	rom
+	0x080c5c38	0x080c5c38	6120	.rodata	src/battle/formations	data	0	rom
+	0x080c7420	0x080c7420	1376	.rodata	src/battle/battle_sprites	data	0	rom
+	0x080c9000	0x080c9000	72	.text	src/gamepak/far_call/BATTLE_EFFECT	code	9	rom
+	0x080c9048	0x080c9048	150064	.text	src/battle_effect/battle_effect	code	385	rom
+	0x080eda78	0x080eda78	120	.data	src/battle_effect/battle_effect	data	0	rom
+	0x080edaf0	0x080edaf0	856	.text	src/battle_effect/blitter_fragments	code	0	rom
+	0x080ede48	0x080ede48	4444	.data	src/battle_effect/battle_effect_table	data	162	rom
+	0x080eefa4	0x080eefa4	112	.text	src/battle_effect/blitter_color_fragments	code	0	rom
+	0x080ef014	0x080ef014	64	.data	src/battle_effect/blitter_operands	data	0	rom
+	0x080f0000	0x080f0000	8	.text	src/gamepak/far_call/CREDITS	code	1	rom
+	0x080f0008	0x080f0008	232	.text	src/menu/credits_background_decode	code	0	rom
+	0x080f00f0	0x080f00f0	8	.rodata	src/menu/credits_background_expand	data	0	rom
+	0x080f00f8	0x080f00f8	12	.text	src/menu/credits_background_expand	code	0	rom
+	0x080f0104	0x080f0104	64	.data	src/menu/credits_background_expand	data	0	rom
+	0x080f0144	0x080f0144	272	.text.credits_background_expand_commands	src/menu/credits_background_expand	code	0	rom
+	0x080f0254	0x080f0254	2056	.text	src/menu/credits	code	3	rom
+	0x080f0a5c	0x080f0a5c	1985	.rodata	src/menu/credits	data	0	rom
+	0x080f1220	0x080f1220	1360	.data	src/menu/credits	data	0	rom
+	0x080f1770	0x080f1770	768	.rodata	src/graphics/credits/font	data	0	rom
+	0x080f2000	0x080f2000	40	.text	src/gamepak/far_call/TITLE	code	5	rom
+	0x080f2028	0x080f2028	6292	.text	src/menu/title_intro	code	12	rom
+	0x080f38bc	0x080f38bc	239	.rodata	src/graphics/title/prompt	data	0	rom
+	0x080f39ab	0x080f39ab	66	.rodata	src/menu/title_intro	data	0	rom
+	0x080f39ee	0x080f39ee	192	.data	src/menu/title_intro	data	0	rom
+	0x080f4000	0x080f4000	8	.text	src/gamepak/far_call/LUCKY_DICE	code	1	rom
+	0x080f4008	0x080f4008	5076	.text	src/field/lucky_dice	code	0	rom
+	0x080f53dc	0x080f53dc	74	.rodata	src/field/lucky_dice	data	0	rom
+	0x080f6000	0x080f6000	8	.text	src/gamepak/far_call/LUCKY_WHEELS	code	1	rom
+	0x080f6008	0x080f6008	9968	.text	src/field/lucky_wheels	code	4	rom
+	0x080f86f8	0x080f86f8	70	.rodata	src/field/lucky_wheels	data	0	rom
+	0x080f9000	0x080f9000	128	.text	src/gamepak/far_call/SOUND	code	16	rom
+	0x080f9080	0x080f9080	1376	.text	src/sound/sound	code	0	rom
+	0x080f95e0	0x080f95e0	148	.text	src/sound/umul_high	code	1	rom
+	0x080f9a18	0x080f9a18	1968	.text	src/sound/clear_buffer	code	0	rom
+	0x080fa1c8	0x080fa1c8	10	.text.command_byte_reader	src/sound/clear_buffer	code	0	rom
+	0x080fa1d4	0x080fa1d4	40	.text.command_byte_setters	src/sound/clear_buffer	code	0	rom
+	0x080fa1fc	0x080fa1fc	1144	.text	src/sound/audio	code	0	standin
+	0x080fa674	0x080fa674	4	.text	src/sound/sound_get_jump_list	code	0	rom
+	0x080fa678	0x080fa678	4376	.text	src/sound/driver	code	0	standin
+	0x080fb790	0x080fb790	2	.text	src/sound/empty_callback	code	0	rom
+	0x080fb794	0x080fb794	12	.rodata	src/sound/sound	data	0	rom
+	0x080fb7a0	0x080fb7a0	728	.rodata	src/sound/tables	data	48	standin
+	0x080fba78	0x080fba78	2844	.rodata	sound/voice_groups	data	0	rom
+	0x080fc594	0x080fc594	144	.rodata	sound/programmable_wave_samples	data	0	rom
+	0x080fc624	0x080fc624	96	.rodata	sound/music_player_table	data	0	rom
+	0x080fc684	0x080fc684	2500	.rodata	sound/song_table	data	0	rom
+	0x080fd048	0x080fd048	404272	.rodata	sound/direct_sound_samples	data	0	rom
+	0x0815fb78	0x0815fb78	2396	.rodata	sound/songs/mus_vale	sound	0	rom
+	0x081604d4	0x081604d4	2796	.rodata	sound/songs/mus_town	sound	0	rom
+	0x08160fc0	0x08160fc0	1468	.rodata	sound/songs/mus_town_in_trouble	sound	0	rom
+	0x0816157c	0x0816157c	1868	.rodata	sound/songs/mus_palace	sound	0	rom
+	0x08161cc8	0x08161cc8	932	.rodata	sound/songs/mus_tret_tree	sound	0	rom
+	0x0816206c	0x0816206c	2260	.rodata	sound/songs/mus_fuchin_temple	sound	0	rom
+	0x08162940	0x08162940	2532	.rodata	sound/songs/mus_kalay	sound	0	rom
+	0x08163324	0x08163324	2644	.rodata	sound/songs/mus_colosso_intro	sound	0	rom
+	0x08163d78	0x08163d78	1640	.rodata	sound/songs/mus_colosso	sound	0	rom
+	0x081643e0	0x081643e0	2076	.rodata	sound/songs/mus_djinn_lesson	sound	0	rom
+	0x08164bfc	0x08164bfc	1756	.rodata	sound/songs/mus_tolbi	sound	0	rom
+	0x081652d8	0x081652d8	8	.rodata	sound/songs/mus_silence	data	0	rom
+	0x081652e0	0x081652e0	2712	.rodata	sound/songs/mus_sol_sanctum	sound	0	rom
+	0x08165d78	0x08165d78	1852	.rodata	sound/songs/mus_forest	sound	0	rom
+	0x081664b4	0x081664b4	4840	.rodata	sound/songs/mus_elemental_stars	sound	0	rom
+	0x0816779c	0x0816779c	3856	.rodata	sound/songs/mus_danger	sound	0	rom
+	0x081686ac	0x081686ac	4828	.rodata	sound/songs/mus_cave	sound	0	rom
+	0x08169988	0x08169988	3224	.rodata	sound/songs/mus_desert	sound	0	rom
+	0x0816a620	0x0816a620	1756	.rodata	sound/songs/mus_suhalla	sound	0	rom
+	0x0816acfc	0x0816acfc	3740	.rodata	sound/songs/mus_mercury_lighthouse	sound	0	rom
+	0x0816bb98	0x0816bb98	3092	.rodata	sound/songs/mus_dungeon	sound	0	rom
+	0x0816c7ac	0x0816c7ac	4892	.rodata	sound/songs/mus_confrontation	sound	0	rom
+	0x0816dac8	0x0816dac8	1520	.rodata	sound/songs/mus_babi	sound	0	rom
+	0x0816e0b8	0x0816e0b8	2716	.rodata	sound/songs/mus_unused	sound	0	rom
+	0x0816eb54	0x0816eb54	2760	.rodata	sound/songs/mus_tolbi_bound_ship	sound	0	rom
+	0x0816f61c	0x0816f61c	3084	.rodata	sound/songs/mus_world_map	sound	0	rom
+	0x08170228	0x08170228	3516	.rodata	sound/songs/mus_venus_lighthouse	sound	0	rom
+	0x08170fe4	0x08170fe4	2868	.rodata	sound/songs/mus_battle	sound	0	rom
+	0x08171b18	0x08171b18	7972	.rodata	sound/songs/mus_saturos_battle	sound	0	rom
+	0x08173a3c	0x08173a3c	6500	.rodata	sound/songs/mus_boss_battle	sound	0	rom
+	0x081753a0	0x081753a0	7180	.rodata	sound/songs/mus_saturos_and_menardi_battle	sound	0	rom
+	0x08176fac	0x08176fac	7964	.rodata	sound/songs/mus_fusion_dragon_battle	sound	0	rom
+	0x08178ec8	0x08178ec8	2840	.rodata	sound/songs/mus_boulder_chase	sound	0	rom
+	0x081799e0	0x081799e0	924	.rodata	sound/songs/mus_victory	sound	0	rom
+	0x08179d7c	0x08179d7c	464	.rodata	sound/songs/mus_defeat	sound	0	rom
+	0x08179f4c	0x08179f4c	1604	.rodata	sound/songs/mus_ivan	sound	0	rom
+	0x0817a590	0x0817a590	1944	.rodata	sound/songs/mus_ominous	sound	0	rom
+	0x0817ad28	0x0817ad28	860	.rodata	sound/songs/mus_sheba_hangs_on	sound	0	rom
+	0x0817b084	0x0817b084	3536	.rodata	sound/songs/mus_eruption	sound	0	rom
+	0x0817be54	0x0817be54	664	.rodata	sound/songs/mus_title_after_prologue	sound	0	rom
+	0x0817c0ec	0x0817c0ec	7528	.rodata	sound/songs/mus_ending	sound	0	rom
+	0x0817de54	0x0817de54	2744	.rodata	sound/songs/mus_title	sound	0	rom
+	0x0817e90c	0x0817e90c	2016	.rodata	sound/songs/mus_felix_leaps_after_sheba	sound	0	rom
+	0x0817f0ec	0x0817f0ec	2844	.rodata	sound/songs/mus_file_screen	sound	0	rom
+	0x0817fc08	0x0817fc08	612	.rodata	sound/songs/mus_ending_logo	sound	0	rom
+	0x0817fe6c	0x0817fe6c	1908	.rodata	sound/songs/mus_colosso_battle	sound	0	rom
+	0x081805e0	0x081805e0	192	.rodata	sound/songs/mus_puzzle_solved	sound	0	rom
+	0x081806a0	0x081806a0	248	.rodata	sound/songs/mus_joined	sound	0	rom
+	0x08180798	0x08180798	188	.rodata	sound/songs/mus_revive	sound	0	rom
+	0x08180854	0x08180854	248	.rodata	sound/songs/mus_treasure_found	sound	0	rom
+	0x0818094c	0x0818094c	200	.rodata	sound/songs/mus_cure	sound	0	rom
+	0x08180a14	0x08180a14	96	.rodata	sound/songs/mus_saved	sound	0	rom
+	0x08180a74	0x08180a74	388	.rodata	sound/songs/mus_inn	sound	0	rom
+	0x08180bf8	0x08180bf8	144	.rodata	sound/songs/mus_remove_curse	sound	0	rom
+	0x08180c88	0x08180c88	196	.rodata	sound/songs/mus_repel_evil	sound	0	rom
+	0x08180d4c	0x08180d4c	220	.rodata	sound/songs/mus_level_up	sound	0	rom
+	0x08180e28	0x08180e28	100	.rodata	sound/songs/mus_jingle_small	sound	0	rom
+	0x08180e8c	0x08180e8c	188	.rodata	sound/songs/mus_jingle_medium	sound	0	rom
+	0x08180f48	0x08180f48	368	.rodata	sound/songs/mus_jingle_large	sound	0	rom
+	0x081810b8	0x081810b8	8	.rodata	sound/songs/bgm_095	data	0	rom
+	0x081810c0	0x081810c0	44	.rodata	sound/songs/se_bell	sound	0	rom
+	0x081810ec	0x081810ec	56	.rodata	sound/songs/se_shop_purchase	sound	0	rom
+	0x08181124	0x08181124	60	.rodata	sound/songs/se_shop_sell	sound	0	rom
+	0x08181160	0x08181160	80	.rodata	sound/songs/se_curse	sound	0	rom
+	0x081811b0	0x081811b0	72	.rodata	sound/songs/se_104	sound	0	rom
+	0x081811f8	0x081811f8	104	.rodata	sound/songs/se_105	sound	0	rom
+	0x08181260	0x08181260	28	.rodata	sound/songs/se_drip	sound	0	rom
+	0x0818127c	0x0818127c	116	.rodata	sound/songs/se_tremor	sound	0	rom
+	0x081812f0	0x081812f0	36	.rodata	sound/songs/se_triple_tone_low	sound	0	rom
+	0x08181314	0x08181314	36	.rodata	sound/songs/se_triple_tone_high	sound	0	rom
+	0x08181338	0x08181338	32	.rodata	sound/songs/se_chime	sound	0	rom
+	0x08181358	0x08181358	48	.rodata	sound/songs/se_menu_cursor_move	sound	0	rom
+	0x08181388	0x08181388	84	.rodata	sound/songs/se_menu_confirm	sound	0	rom
+	0x081813dc	0x081813dc	88	.rodata	sound/songs/se_menu_cancel	sound	0	rom
+	0x08181434	0x08181434	96	.rodata	sound/songs/se_menu_error	sound	0	rom
+	0x08181494	0x08181494	68	.rodata	sound/songs/se_ice	sound	0	rom
+	0x081814d8	0x081814d8	40	.rodata	sound/songs/se_tolbi_spring_toss_prompt	sound	0	rom
+	0x08181500	0x08181500	36	.rodata	sound/songs/se_item_remove	sound	0	rom
+	0x08181524	0x08181524	28	.rodata	sound/songs/se_footstep	sound	0	rom
+	0x08181540	0x08181540	28	.rodata	sound/songs/se_119	sound	0	rom
+	0x0818155c	0x0818155c	40	.rodata	sound/songs/se_120	sound	0	rom
+	0x08181584	0x08181584	72	.rodata	sound/songs/se_scuffle	sound	0	rom
+	0x081815cc	0x081815cc	60	.rodata	sound/songs/se_122	sound	0	rom
+	0x08181608	0x08181608	100	.rodata	sound/songs/se_map_exit	sound	0	rom
+	0x0818166c	0x0818166c	32	.rodata	sound/songs/se_chest_open	sound	0	rom
+	0x0818168c	0x0818168c	32	.rodata	sound/songs/se_chest_close	sound	0	rom
+	0x081816ac	0x081816ac	112	.rodata	sound/songs/se_recovery	sound	0	rom
+	0x0818171c	0x0818171c	40	.rodata	sound/songs/se_landing_thud	sound	0	rom
+	0x08181744	0x08181744	56	.rodata	sound/songs/se_stairs_up	sound	0	rom
+	0x0818177c	0x0818177c	56	.rodata	sound/songs/se_stairs_down	sound	0	rom
+	0x081817b4	0x081817b4	40	.rodata	sound/songs/se_psynergy_start	sound	0	rom
+	0x081817dc	0x081817dc	68	.rodata	sound/songs/se_psynergy_sparkle	sound	0	rom
+	0x08181820	0x08181820	40	.rodata	sound/songs/se_water	sound	0	rom
+	0x08181848	0x08181848	52	.rodata	sound/songs/se_impact	sound	0	rom
+	0x0818187c	0x0818187c	88	.rodata	sound/songs/se_heavy_impact	sound	0	rom
+	0x081818d4	0x081818d4	80	.rodata	sound/songs/se_click	sound	0	rom
+	0x08181924	0x08181924	40	.rodata	sound/songs/se_whoosh	sound	0	rom
+	0x0818194c	0x0818194c	60	.rodata	sound/songs/se_kirin	sound	0	rom
+	0x08181988	0x08181988	40	.rodata	sound/songs/se_item_break	sound	0	rom
+	0x081819b0	0x081819b0	48	.rodata	sound/songs/se_djinni_set	sound	0	rom
+	0x081819e0	0x081819e0	152	.rodata	sound/songs/se_spin	sound	0	rom
+	0x08181a78	0x08181a78	88	.rodata	sound/songs/se_rumble	sound	0	rom
+	0x08181ad0	0x08181ad0	128	.rodata	sound/songs/se_swirl	sound	0	rom
+	0x08181b50	0x08181b50	36	.rodata	sound/songs/se_crack	sound	0	rom
+	0x08181b74	0x08181b74	108	.rodata	sound/songs/se_clatter	sound	0	rom
+	0x08181be0	0x08181be0	108	.rodata	sound/songs/se_crash	sound	0	rom
+	0x08181c4c	0x08181c4c	28	.rodata	sound/songs/se_enemy_cry	sound	0	rom
+	0x08181c68	0x08181c68	32	.rodata	sound/songs/se_beast_cry	sound	0	rom
+	0x08181c88	0x08181c88	32	.rodata	sound/songs/se_boss_roar	sound	0	rom
+	0x08181ca8	0x08181ca8	52	.rodata	sound/songs/se_monster_roar	sound	0	rom
+	0x08181cdc	0x08181cdc	32	.rodata	sound/songs/se_unused_defeat_cry	sound	0	rom
+	0x08181cfc	0x08181cfc	68	.rodata	sound/songs/se_light_appear	sound	0	rom
+	0x08181d40	0x08181d40	56	.rodata	sound/songs/se_jump	sound	0	rom
+	0x08181d78	0x08181d78	64	.rodata	sound/songs/se_high_jump	sound	0	rom
+	0x08181db8	0x08181db8	76	.rodata	sound/songs/se_cast	sound	0	rom
+	0x08181e04	0x08181e04	40	.rodata	sound/songs/se_switch	sound	0	rom
+	0x08181e2c	0x08181e2c	28	.rodata	sound/songs/se_switch_mechanism	sound	0	rom
+	0x08181e48	0x08181e48	32	.rodata	sound/songs/se_gate_move	sound	0	rom
+	0x08181e68	0x08181e68	56	.rodata	sound/songs/se_door_open	sound	0	rom
+	0x08181ea0	0x08181ea0	36	.rodata	sound/songs/se_door_close	sound	0	rom
+	0x08181ec4	0x08181ec4	40	.rodata	sound/songs/se_160	sound	0	rom
+	0x08181eec	0x08181eec	36	.rodata	sound/songs/se_rattle	sound	0	rom
+	0x08181f10	0x08181f10	44	.rodata	sound/songs/se_wave	sound	0	rom
+	0x08181f3c	0x08181f3c	44	.rodata	sound/songs/se_rush	sound	0	rom
+	0x08181f68	0x08181f68	32	.rodata	sound/songs/se_scatter	sound	0	rom
+	0x08181f88	0x08181f88	120	.rodata	sound/songs/se_165	sound	0	rom
+	0x08182000	0x08182000	40	.rodata	sound/songs/se_166	sound	0	rom
+	0x08182028	0x08182028	40	.rodata	sound/songs/se_map_transition	sound	0	rom
+	0x08182050	0x08182050	52	.rodata	sound/songs/se_168	sound	0	rom
+	0x08182084	0x08182084	40	.rodata	sound/songs/se_ambient_wind	sound	0	rom
+	0x081820ac	0x081820ac	40	.rodata	sound/songs/se_ambient_water	sound	0	rom
+	0x081820d4	0x081820d4	36	.rodata	sound/songs/se_thunder	sound	0	rom
+	0x081820f8	0x081820f8	36	.rodata	sound/songs/se_thunder_loud	sound	0	rom
+	0x0818211c	0x0818211c	84	.rodata	sound/songs/se_note_low	sound	0	rom
+	0x08182170	0x08182170	84	.rodata	sound/songs/se_note_mid	sound	0	rom
+	0x081821c4	0x081821c4	84	.rodata	sound/songs/se_note_high	sound	0	rom
+	0x08182218	0x08182218	44	.rodata	sound/songs/se_kolima_bridge_hop	sound	0	rom
+	0x08182244	0x08182244	44	.rodata	sound/songs/se_177	sound	0	rom
+	0x08182270	0x08182270	104	.rodata	sound/songs/se_178	sound	0	rom
+	0x081822d8	0x081822d8	68	.rodata	sound/songs/se_179	sound	0	rom
+	0x0818231c	0x0818231c	104	.rodata	sound/songs/se_settle	sound	0	rom
+	0x08182384	0x08182384	60	.rodata	sound/songs/se_boom	sound	0	rom
+	0x081823c0	0x081823c0	96	.rodata	sound/songs/se_gem_set	sound	0	rom
+	0x08182420	0x08182420	56	.rodata	sound/songs/se_stone_rumble	sound	0	rom
+	0x08182458	0x08182458	212	.rodata	sound/songs/se_cart_turn	sound	0	rom
+	0x0818252c	0x0818252c	40	.rodata	sound/songs/se_push	sound	0	rom
+	0x08182554	0x08182554	40	.rodata	sound/songs/se_sol_sanctum_light_up	sound	0	rom
+	0x0818257c	0x0818257c	40	.rodata	sound/songs/se_falling_light	sound	0	rom
+	0x081825a4	0x081825a4	40	.rodata	sound/songs/se_thump	sound	0	rom
+	0x081825cc	0x081825cc	96	.rodata	sound/songs/se_stone_grind	sound	0	rom
+	0x0818262c	0x0818262c	132	.rodata	sound/songs/se_warp	sound	0	rom
+	0x081826b0	0x081826b0	28	.rodata	sound/songs/se_191	sound	0	rom
+	0x081826cc	0x081826cc	48	.rodata	sound/songs/se_192	sound	0	rom
+	0x081826fc	0x081826fc	116	.rodata	sound/songs/se_193	sound	0	rom
+	0x08182770	0x08182770	56	.rodata	sound/songs/se_194	sound	0	rom
+	0x081827a8	0x081827a8	48	.rodata	sound/songs/se_195	sound	0	rom
+	0x081827d8	0x081827d8	88	.rodata	sound/songs/se_wise_one_quest	sound	0	rom
+	0x08182830	0x08182830	564	.rodata	sound/songs/se_197	sound	0	rom
+	0x08182a64	0x08182a64	412	.rodata	sound/songs/se_kolima_bridge_post	sound	0	rom
+	0x08182c00	0x08182c00	472	.rodata	sound/songs/se_199	sound	0	rom
+	0x08182dd8	0x08182dd8	320	.rodata	sound/songs/se_sparkle_fall	sound	0	rom
+	0x08182f18	0x08182f18	80	.rodata	sound/songs/se_ascend	sound	0	rom
+	0x08182f68	0x08182f68	52	.rodata	sound/songs/se_flame_flare	sound	0	rom
+	0x08182f9c	0x08182f9c	36	.rodata	sound/songs/se_203	sound	0	rom
+	0x08182fc0	0x08182fc0	140	.rodata	sound/songs/se_dust_puff	sound	0	rom
+	0x0818304c	0x0818304c	48	.rodata	sound/songs/se_205	sound	0	rom
+	0x0818307c	0x0818307c	52	.rodata	sound/songs/se_curse_fall	sound	0	rom
+	0x081830b0	0x081830b0	80	.rodata	sound/songs/se_bane_escape	sound	0	rom
+	0x08183100	0x08183100	156	.rodata	sound/songs/se_mercury_lighthouse_door_open	sound	0	rom
+	0x0818319c	0x0818319c	64	.rodata	sound/songs/se_hidden_passage_open	sound	0	rom
+	0x081831dc	0x081831dc	56	.rodata	sound/songs/se_mercury_lighthouse_mechanism	sound	0	rom
+	0x08183214	0x08183214	52	.rodata	sound/songs/se_power_up	sound	0	rom
+	0x08183248	0x08183248	76	.rodata	sound/songs/se_heavy_stop	sound	0	rom
+	0x08183294	0x08183294	76	.rodata	sound/songs/se_rising_chimes	sound	0	rom
+	0x081832e0	0x081832e0	56	.rodata	sound/songs/se_splash_small	sound	0	rom
+	0x08183318	0x08183318	56	.rodata	sound/songs/se_burst	sound	0	rom
+	0x08183350	0x08183350	48	.rodata	sound/songs/se_floor_switch	sound	0	rom
+	0x08183380	0x08183380	28	.rodata	sound/songs/se_218	sound	0	rom
+	0x0818339c	0x0818339c	44	.rodata	sound/songs/se_gush	sound	0	rom
+	0x081833c8	0x081833c8	148	.rodata	sound/songs/se_shimmer	sound	0	rom
+	0x0818345c	0x0818345c	44	.rodata	sound/songs/se_rise_with_sparks	sound	0	rom
+	0x08183488	0x08183488	60	.rodata	sound/songs/se_222	sound	0	rom
+	0x081834c4	0x081834c4	40	.rodata	sound/songs/se_lift	sound	0	rom
+	0x081834ec	0x081834ec	48	.rodata	sound/songs/se_224	sound	0	rom
+	0x0818351c	0x0818351c	36	.rodata	sound/songs/se_225	sound	0	rom
+	0x08183540	0x08183540	56	.rodata	sound/songs/se_log_push	sound	0	rom
+	0x08183578	0x08183578	52	.rodata	sound/songs/se_topple	sound	0	rom
+	0x081835ac	0x081835ac	36	.rodata	sound/songs/se_sparkling_passage	sound	0	rom
+	0x081835d0	0x081835d0	36	.rodata	sound/songs/se_splash	sound	0	rom
+	0x081835f4	0x081835f4	40	.rodata	sound/songs/se_water_drain	sound	0	rom
+	0x0818361c	0x0818361c	64	.rodata	sound/songs/se_water_level	sound	0	rom
+	0x0818365c	0x0818365c	56	.rodata	sound/songs/se_crunch	sound	0	rom
+	0x08183694	0x08183694	160	.rodata	sound/songs/se_cart_roll	sound	0	rom
+	0x08183734	0x08183734	28	.rodata	sound/songs/se_run_back	sound	0	rom
+	0x08183750	0x08183750	160	.rodata	sound/songs/se_235	sound	0	rom
+	0x081837f0	0x081837f0	36	.rodata	sound/songs/se_colosso_countdown	sound	0	rom
+	0x08183814	0x08183814	44	.rodata	sound/songs/se_colosso_go	sound	0	rom
+	0x08183840	0x08183840	120	.rodata	sound/songs/se_push_step	sound	0	rom
+	0x081838b8	0x081838b8	140	.rodata	sound/songs/se_heavy_move	sound	0	rom
+	0x08183944	0x08183944	44	.rodata	sound/songs/se_log_fall	sound	0	rom
+	0x08183970	0x08183970	200	.rodata	sound/songs/se_water_move	sound	0	rom
+	0x08183a38	0x08183a38	96	.rodata	sound/songs/se_242	sound	0	rom
+	0x08183a98	0x08183a98	52	.rodata	sound/songs/se_243	sound	0	rom
+	0x08183acc	0x08183acc	120	.rodata	sound/songs/se_sandstorm	sound	0	rom
+	0x08183b44	0x08183b44	56	.rodata	sound/songs/se_245	sound	0	rom
+	0x08183b7c	0x08183b7c	120	.rodata	sound/songs/se_glitter	sound	0	rom
+	0x08183bf4	0x08183bf4	40	.rodata	sound/songs/se_colosso_lettering	sound	0	rom
+	0x08183c1c	0x08183c1c	68	.rodata	sound/songs/se_248	sound	0	rom
+	0x08183c60	0x08183c60	52	.rodata	sound/songs/se_249	sound	0	rom
+	0x08183c94	0x08183c94	48	.rodata	sound/songs/se_250	sound	0	rom
+	0x08183cc4	0x08183cc4	48	.rodata	sound/songs/se_251	sound	0	rom
+	0x08183cf4	0x08183cf4	48	.rodata	sound/songs/se_colosso_warrior_appear	sound	0	rom
+	0x08183d24	0x08183d24	88	.rodata	sound/songs/se_253	sound	0	rom
+	0x08183d7c	0x08183d7c	32	.rodata	sound/songs/se_voice_first	sound	0	rom
+	0x08183d9c	0x08183d9c	32	.rodata	sound/songs/se_voice_animal_2	sound	0	rom
+	0x08183dbc	0x08183dbc	32	.rodata	sound/songs/se_voice_animal_3	sound	0	rom
+	0x08183ddc	0x08183ddc	32	.rodata	sound/songs/se_voice_animal_4	sound	0	rom
+	0x08183dfc	0x08183dfc	32	.rodata	sound/songs/se_voice_girl_1	sound	0	rom
+	0x08183e1c	0x08183e1c	32	.rodata	sound/songs/se_voice_girl_2	sound	0	rom
+	0x08183e3c	0x08183e3c	32	.rodata	sound/songs/se_voice_girl_3	sound	0	rom
+	0x08183e5c	0x08183e5c	36	.rodata	sound/songs/se_voice_girl_4	sound	0	rom
+	0x08183e80	0x08183e80	36	.rodata	sound/songs/se_voice_boy_1	sound	0	rom
+	0x08183ea4	0x08183ea4	36	.rodata	sound/songs/se_voice_boy_2	sound	0	rom
+	0x08183ec8	0x08183ec8	36	.rodata	sound/songs/se_voice_boy_3	sound	0	rom
+	0x08183eec	0x08183eec	36	.rodata	sound/songs/se_voice_boy_4	sound	0	rom
+	0x08183f10	0x08183f10	36	.rodata	sound/songs/se_voice_young_woman_1	sound	0	rom
+	0x08183f34	0x08183f34	36	.rodata	sound/songs/se_voice_young_woman_2	sound	0	rom
+	0x08183f58	0x08183f58	36	.rodata	sound/songs/se_voice_young_woman_3	sound	0	rom
+	0x08183f7c	0x08183f7c	36	.rodata	sound/songs/se_voice_young_woman_4	sound	0	rom
+	0x08183fa0	0x08183fa0	36	.rodata	sound/songs/se_voice_young_man_1	sound	0	rom
+	0x08183fc4	0x08183fc4	36	.rodata	sound/songs/se_voice_young_man_2	sound	0	rom
+	0x08183fe8	0x08183fe8	36	.rodata	sound/songs/se_voice_young_man_3	sound	0	rom
+	0x0818400c	0x0818400c	36	.rodata	sound/songs/se_voice_young_man_4	sound	0	rom
+	0x08184030	0x08184030	36	.rodata	sound/songs/se_voice_woman_1	sound	0	rom
+	0x08184054	0x08184054	36	.rodata	sound/songs/se_voice_woman_2	sound	0	rom
+	0x08184078	0x08184078	36	.rodata	sound/songs/se_voice_woman_3	sound	0	rom
+	0x0818409c	0x0818409c	36	.rodata	sound/songs/se_voice_woman_4	sound	0	rom
+	0x081840c0	0x081840c0	40	.rodata	sound/songs/se_voice_old_man_1	sound	0	rom
+	0x081840e8	0x081840e8	40	.rodata	sound/songs/se_voice_old_man_2	sound	0	rom
+	0x08184110	0x08184110	40	.rodata	sound/songs/se_voice_old_man_3	sound	0	rom
+	0x08184138	0x08184138	40	.rodata	sound/songs/se_voice_old_man_4	sound	0	rom
+	0x08184160	0x08184160	36	.rodata	sound/songs/se_voice_man_1	sound	0	rom
+	0x08184184	0x08184184	36	.rodata	sound/songs/se_voice_man_2	sound	0	rom
+	0x081841a8	0x081841a8	40	.rodata	sound/songs/se_voice_man_3	sound	0	rom
+	0x081841d0	0x081841d0	40	.rodata	sound/songs/se_voice_man_4	sound	0	rom
+	0x081841f8	0x081841f8	8	.rodata	sound/songs/se_stop_action_se	data	0	rom
+	0x08184200	0x08184200	52	.rodata	sound/songs/se_289	sound	0	rom
+	0x08184234	0x08184234	88	.rodata	sound/songs/se_290	sound	0	rom
+	0x0818428c	0x0818428c	92	.rodata	sound/songs/se_291	sound	0	rom
+	0x081842e8	0x081842e8	56	.rodata	sound/songs/se_eruption_columns	sound	0	rom
+	0x08184320	0x08184320	56	.rodata	sound/songs/se_293	sound	0	rom
+	0x08184358	0x08184358	8	.rodata	sound/songs/se_stop_music_player_5	data	0	rom
+	0x08184360	0x08184360	40	.rodata	sound/songs/se_tolbi_spring_toss	sound	0	rom
+	0x08184388	0x08184388	36	.rodata	sound/songs/se_tolbi_spring_obstacle_hit	sound	0	rom
+	0x081843ac	0x081843ac	28	.rodata	sound/songs/se_lucky_dice_throw	sound	0	rom
+	0x081843c8	0x081843c8	36	.rodata	sound/songs/se_lucky_dice_number	sound	0	rom
+	0x081843ec	0x081843ec	56	.rodata	sound/songs/se_lucky_wheels_spin	sound	0	rom
+	0x08184424	0x08184424	44	.rodata	sound/songs/se_lucky_wheels_hold	sound	0	rom
+	0x08184450	0x08184450	44	.rodata	sound/songs/se_lucky_wheels_stop_prompt	sound	0	rom
+	0x0818447c	0x0818447c	52	.rodata	sound/songs/se_lucky_wheels_stop	sound	0	rom
+	0x081844b0	0x081844b0	144	.rodata	sound/songs/se_materialize	sound	0	rom
+	0x08184540	0x08184540	60	.rodata	sound/songs/se_star_bounce	sound	0	rom
+	0x0818457c	0x0818457c	84	.rodata	sound/songs/se_310	sound	0	rom
+	0x081845d0	0x081845d0	200	.rodata	sound/songs/se_311	sound	0	rom
+	0x08185000	0x08185000	8	.text	src/gamepak/far_call/SPRITE	code	1	rom
+	0x08185008	0x08185008	28	.text	src/system/sprite_metadata	code	0	rom
+	0x08185024	0x08185024	15016	.rodata	src/graphics/sprite/sprites	data	0	rom
+	0x08188acc	0x08188acc	16	.rodata	src/graphics/sprite/animref0	data	0	rom
+	0x08188adc	0x08188adc	3344	.rodata.a	src/graphics/sprite/sprites	data	0	rom
+	0x081897ec	0x081897ec	20	.rodata	src/graphics/sprite/animref1	data	0	rom
+	0x08189800	0x08189800	20	.rodata	src/graphics/sprite/animref2	data	0	rom
+	0x08189814	0x08189814	1660868	.rodata.b	src/graphics/sprite/sprites	data	0	rom
+	0x08320000	0x08320000	4016	.rodata	src/gamepak/resource_directory	data	0	rom
+	0x08320fb0	0x08320fb0	10432	.rodata	src/graphics/ui/ui	data	0	rom
+	0x08323870	0x08323870	95820	.rodata	src/graphics/title/title	data	0	rom
+	0x0833aebc	0x0833aebc	558776	.rodata	src/graphics/battle_backgrounds/battle_backgrounds	data	0	rom
+	0x083c3574	0x083c3574	8452	.rodata	src/graphics/lucky_wheels/lucky_wheels	data	0	rom
+	0x083c5678	0x083c5678	24132	.rodata	src/graphics/lucky_dice/lucky_dice	data	0	rom
+	0x083cb4bc	0x083cb4bc	286140	.rodata	src/graphics/battle_effects/battle_effects	data	0	rom
+	0x08411278	0x08411278	508	.rodata	src/graphics/battle_effects/paths	data	0	rom
+	0x08411474	0x08411474	79864	.rodata	src/map/world_map	data	0	rom
+	0x08424c6c	0x08424c6c	46920	.rodata	src/graphics/world_map/world_map	data	0	rom
+	0x084303b4	0x084303b4	23364	.rodata	src/map/colosso/colosso	data	0	rom
+	0x08435ef8	0x08435ef8	2048	.rodata	src/graphics/ui/menu_cursor	data	0	rom
+	0x084366f8	0x084366f8	37232	.rodata	src/graphics/ui/icons	data	0	rom
+	0x0843f868	0x0843f868	503536	.rodata	src/graphics/monster/monster	data	0	rom
+	0x084ba758	0x084ba758	2152	.rodata	src/map/map_001/map	data	0	rom
+	0x084bafc0	0x084bafc0	60268	.rodata	src/map/map_000/map	data	0	rom
+	0x084c9b2c	0x084c9b2c	60516	.rodata	src/map/map_002/map	data	0	rom
+	0x084d8790	0x084d8790	47128	.rodata	src/map/map_003/map	data	0	rom
+	0x084e3fa8	0x084e3fa8	41320	.rodata	src/map/map_004/map	data	0	rom
+	0x084ee110	0x084ee110	39744	.rodata	src/map/map_005/map	data	0	rom
+	0x084f7c50	0x084f7c50	41948	.rodata	src/map/map_006/map	data	0	rom
+	0x0850202c	0x0850202c	17432	.rodata	src/map/map_007/map	data	0	rom
+	0x08506444	0x08506444	22988	.rodata	src/map/map_008/map	data	0	rom
+	0x0850be10	0x0850be10	29900	.rodata	src/map/map_009/map	data	0	rom
+	0x085132dc	0x085132dc	19336	.rodata	src/map/map_010/map	data	0	rom
+	0x08517e64	0x08517e64	18184	.rodata	src/map/map_011/map	data	0	rom
+	0x0851c56c	0x0851c56c	3368	.rodata	src/map/map_012/map	data	0	rom
+	0x0851d294	0x0851d294	11868	.rodata	src/map/map_013/map	data	0	rom
+	0x085200f0	0x085200f0	22592	.rodata	src/map/map_014/map	data	0	rom
+	0x08525930	0x08525930	26832	.rodata	src/map/map_015/map	data	0	rom
+	0x0852c200	0x0852c200	7748	.rodata	src/map/map_016/map	data	0	rom
+	0x0852e044	0x0852e044	45712	.rodata	src/map/map_017/map	data	0	rom
+	0x085392d4	0x085392d4	35216	.rodata	src/map/map_018/map	data	0	rom
+	0x08541c64	0x08541c64	13156	.rodata	src/map/map_019/map	data	0	rom
+	0x08544fc8	0x08544fc8	45336	.rodata	src/map/map_020/map	data	0	rom
+	0x085500e0	0x085500e0	27564	.rodata	src/map/map_021/map	data	0	rom
+	0x08556c8c	0x08556c8c	34336	.rodata	src/map/map_022/map	data	0	rom
+	0x0855f2ac	0x0855f2ac	7460	.rodata	src/map/map_023/map	data	0	rom
+	0x08560fd0	0x08560fd0	3908	.rodata	src/map/map_024/map	data	0	rom
+	0x08561f14	0x08561f14	39200	.rodata	src/map/map_025/map	data	0	rom
+	0x0856b834	0x0856b834	12096	.rodata	src/map/map_026/map	data	0	rom
+	0x0856e774	0x0856e774	11724	.rodata	src/map/map_027/map	data	0	rom
+	0x08571540	0x08571540	43080	.rodata	src/map/map_028/map	data	0	rom
+	0x0857bd88	0x0857bd88	25496	.rodata	src/map/map_029/map	data	0	rom
+	0x08582120	0x08582120	4868	.rodata	src/map/map_030/map	data	0	rom
+	0x08583424	0x08583424	47760	.rodata	src/map/map_031/map	data	0	rom
+	0x0858eeb4	0x0858eeb4	19480	.rodata	src/map/map_032/map	data	0	rom
+	0x08593acc	0x08593acc	11056	.rodata	src/map/map_033/map	data	0	rom
+	0x085965fc	0x085965fc	31940	.rodata	src/map/map_034/map	data	0	rom
+	0x0859e2c0	0x0859e2c0	34784	.rodata	src/map/map_035/map	data	0	rom
+	0x085a6aa0	0x085a6aa0	34244	.rodata	src/map/map_036/map	data	0	rom
+	0x085af064	0x085af064	38524	.rodata	src/map/map_037/map	data	0	rom
+	0x085b86e0	0x085b86e0	12672	.rodata	src/map/map_038/map	data	0	rom
+	0x085bb860	0x085bb860	33032	.rodata	src/map/map_039/map	data	0	rom
+	0x085c3968	0x085c3968	5280	.rodata	src/map/map_040/map	data	0	rom
+	0x085c4e08	0x085c4e08	33488	.rodata	src/map/map_041/map	data	0	rom
+	0x085cd0d8	0x085cd0d8	12464	.rodata	src/map/map_042/map	data	0	rom
+	0x085d0188	0x085d0188	7876	.rodata	src/map/map_043/map	data	0	rom
+	0x085d204c	0x085d204c	43036	.rodata	src/map/map_044/map	data	0	rom
+	0x085dc868	0x085dc868	40888	.rodata	src/map/map_045/map	data	0	rom
+	0x085e6820	0x085e6820	32776	.rodata	src/map/map_046/map	data	0	rom
+	0x085ee828	0x085ee828	24248	.rodata	src/map/map_047/map	data	0	rom
+	0x085f46e0	0x085f46e0	12180	.rodata	src/map/map_048/map	data	0	rom
+	0x085f7674	0x085f7674	14724	.rodata	src/map/map_049/map	data	0	rom
+	0x085faff8	0x085faff8	16968	.rodata	src/map/map_050/map	data	0	rom
+	0x085ff240	0x085ff240	30812	.rodata	src/map/map_051/map	data	0	rom
+	0x08606a9c	0x08606a9c	41984	.rodata	src/map/map_052/map	data	0	rom
+	0x08610e9c	0x08610e9c	3608	.rodata	src/map/map_053/map	data	0	rom
+	0x08611cb4	0x08611cb4	38984	.rodata	src/map/map_054/map	data	0	rom
+	0x0861b4fc	0x0861b4fc	6924	.rodata	src/map/map_055/map	data	0	rom
+	0x0861d008	0x0861d008	7744	.rodata	src/map/map_056/map	data	0	rom
+	0x0861ee48	0x0861ee48	6952	.rodata	src/map/map_057/map	data	0	rom
+	0x08620970	0x08620970	8568	.rodata	src/map/map_058/map	data	0	rom
+	0x08622ae8	0x08622ae8	3880	.rodata	src/map/map_059/map	data	0	rom
+	0x08623a10	0x08623a10	21240	.rodata	src/map/map_060/map	data	0	rom
+	0x08628d08	0x08628d08	28700	.rodata	src/map/map_061/map	data	0	rom
+	0x0862fd24	0x0862fd24	4024	.rodata	src/map/map_062/map	data	0	rom
+	0x08630cdc	0x08630cdc	3172	.rodata	src/map/map_063/map	data	0	rom
+	0x08631940	0x08631940	3536	.rodata	src/map/map_064/map	data	0	rom
+	0x08632710	0x08632710	4752	.rodata	src/map/map_065/map	data	0	rom
+	0x086339a0	0x086339a0	3816	.rodata	src/map/map_066/map	data	0	rom
+	0x08634888	0x08634888	4312	.rodata	src/map/map_067/map	data	0	rom
+	0x08635960	0x08635960	38268	.rodata	src/map/map_068/map	data	0	rom
+	0x0863eedc	0x0863eedc	13780	.rodata	src/map/map_069/map	data	0	rom
+	0x086424b0	0x086424b0	15112	.rodata	src/map/map_070/map	data	0	rom
+	0x08645fb8	0x08645fb8	15632	.rodata	src/map/map_071/map	data	0	rom
+	0x08649cc8	0x08649cc8	16480	.rodata	src/map/map_072/map	data	0	rom
+	0x0864dd28	0x0864dd28	27896	.rodata	src/map/map_073/map	data	0	rom
+	0x08654a20	0x08654a20	7860	.rodata	src/map/map_074/map	data	0	rom
+	0x086568d4	0x086568d4	42972	.rodata	src/map/map_075/map	data	0	rom
+	0x086610b0	0x086610b0	20608	.rodata	src/map/map_076/map	data	0	rom
+	0x08666130	0x08666130	6544	.rodata	src/map/map_077/map	data	0	rom
+	0x08667ac0	0x08667ac0	5492	.rodata	src/map/map_078/map	data	0	rom
+	0x08669034	0x08669034	10704	.rodata	src/map/map_079/map	data	0	rom
+	0x0866ba04	0x0866ba04	8904	.rodata	src/map/map_080/map	data	0	rom
+	0x0866dccc	0x0866dccc	5592	.rodata	src/map/map_081/map	data	0	rom
+	0x0866f2a4	0x0866f2a4	8384	.rodata	src/map/map_082/map	data	0	rom
+	0x08671364	0x08671364	9004	.rodata	src/map/map_083/map	data	0	rom
+	0x08673690	0x08673690	11300	.rodata	src/map/map_084/map	data	0	rom
+	0x086762b4	0x086762b4	5256	.rodata	src/map/map_085/map	data	0	rom
+	0x0867773c	0x0867773c	3716	.rodata	src/map/map_086/map	data	0	rom
+	0x086785c0	0x086785c0	6460	.rodata	src/map/map_087/map	data	0	rom
+	0x08679efc	0x08679efc	8064	.rodata	src/map/map_088/map	data	0	rom
+	0x0867be7c	0x0867be7c	13508	.rodata	src/map/map_089/map	data	0	rom
+	0x0867f340	0x0867f340	36712	.rodata	src/map/map_090/map	data	0	rom
+	0x086882a8	0x086882a8	9440	.rodata	src/map/map_091/map	data	0	rom
+	0x0868a788	0x0868a788	10472	.rodata	src/map/map_092/map	data	0	rom
+	0x0868d070	0x0868d070	36012	.rodata	src/map/map_093/map	data	0	rom
+	0x08695d1c	0x08695d1c	41620	.rodata	src/map/map_094/map	data	0	rom
+	0x0869ffb0	0x0869ffb0	3580	.rodata	src/map/map_095/map	data	0	rom
+	0x086a0dac	0x086a0dac	4472	.rodata	src/map/map_096/map	data	0	rom
+	0x086a1f24	0x086a1f24	8008	.rodata	src/map/map_097/map	data	0	rom
+	0x086a3e6c	0x086a3e6c	17748	.rodata	src/map/map_098/map	data	0	rom
+	0x086a83c0	0x086a83c0	10368	.rodata	src/map/map_099/map	data	0	rom
+	0x086aac40	0x086aac40	4224	.rodata	src/map/map_100/map	data	0	rom
+	0x086abcc0	0x086abcc0	37056	.rodata	src/map/map_101/map	data	0	rom
+	0x086b4d80	0x086b4d80	8992	.rodata	src/map/map_102/map	data	0	rom
+	0x086b70a0	0x086b70a0	32948	.rodata	src/map/map_103/map	data	0	rom
+	0x086bf154	0x086bf154	3264	.rodata	src/map/map_104/map	data	0	rom
+	0x086bfe14	0x086bfe14	22692	.rodata	src/map/map_105/map	data	0	rom
+	0x086c56b8	0x086c56b8	7976	.rodata	src/map/map_106/map	data	0	rom
+	0x086c75e0	0x086c75e0	9036	.rodata	src/map/map_107/map	data	0	rom
+	0x086c992c	0x086c992c	23376	.rodata	src/map/map_108/map	data	0	rom
+	0x086cf47c	0x086cf47c	3668	.rodata	src/map/map_109/map	data	0	rom
+	0x086d02d0	0x086d02d0	6716	.rodata	src/map/map_110/map	data	0	rom
+	0x086d1d0c	0x086d1d0c	7180	.rodata	src/map/map_111/map	data	0	rom
+	0x086d3918	0x086d3918	8160	.rodata	src/map/map_112/map	data	0	rom
+	0x086d58f8	0x086d58f8	8236	.rodata	src/map/map_113/map	data	0	rom
+	0x086d7924	0x086d7924	4340	.rodata	src/map/map_114/map	data	0	rom
+	0x086d8a18	0x086d8a18	4808	.rodata	src/map/map_115/map	data	0	rom
+	0x086d9ce0	0x086d9ce0	11288	.rodata	src/map/map_116/map	data	0	rom
+	0x086dc8f8	0x086dc8f8	5536	.rodata	src/map/map_117/map	data	0	rom
+	0x086dde98	0x086dde98	10960	.rodata	src/map/map_118/map	data	0	rom
+	0x086e0968	0x086e0968	9612	.rodata	src/map/map_119/map	data	0	rom
+	0x086e2ef4	0x086e2ef4	13408	.rodata	src/map/map_120/map	data	0	rom
+	0x086e6354	0x086e6354	3852	.rodata	src/map/map_121/map	data	0	rom
+	0x086e7260	0x086e7260	6168	.rodata	src/map/map_122/map	data	0	rom
+	0x086e8a78	0x086e8a78	11256	.rodata	src/map/map_123/map	data	0	rom
+	0x086eb670	0x086eb670	27452	.rodata	src/map/map_124/map	data	0	rom
+	0x086f21ac	0x086f21ac	5840	.rodata	src/map/map_125/map	data	0	rom
+	0x086f387c	0x086f387c	4716	.rodata	src/map/map_126/map	data	0	rom
+	0x086f4ae8	0x086f4ae8	37992	.rodata	src/map/map_127/map	data	0	rom
+	0x086fdf50	0x086fdf50	39440	.rodata	src/map/map_128/map	data	0	rom
+	0x08707960	0x08707960	36620	.rodata	src/map/map_129/map	data	0	rom
+	0x0871086c	0x0871086c	5004	.rodata	src/map/map_130/map	data	0	rom
+	0x08711bf8	0x08711bf8	4008	.rodata	src/map/map_131/map	data	0	rom
+	0x08712ba0	0x08712ba0	5756	.rodata	src/map/map_132/map	data	0	rom
+	0x0871421c	0x0871421c	4164	.rodata	src/map/map_133/map	data	0	rom
+	0x08715260	0x08715260	6584	.rodata	src/map/map_134/map	data	0	rom
+	0x08716c18	0x08716c18	3956	.rodata	src/map/map_135/map	data	0	rom
+	0x08717b8c	0x08717b8c	4864	.rodata	src/map/gondowan_passage/map	data	0	rom
+	0x08718e8c	0x08718e8c	6028	.rodata	src/map/map_136/map	data	0	rom
+	0x0871a618	0x0871a618	7612	.rodata	src/map/map_137/map	data	0	rom
+	0x0871c3d4	0x0871c3d4	5316	.rodata	src/map/map_138/map	data	0	rom
+	0x0871d898	0x0871d898	10516	.rodata	src/map/map_139/map	data	0	rom
+	0x087201ac	0x087201ac	10732	.rodata	src/map/map_140/map	data	0	rom
+	0x08722b98	0x08722b98	5100	.rodata	src/map/map_141/map	data	0	rom
+	0x08723f84	0x08723f84	5384	.rodata	src/map/map_142/map	data	0	rom
+	0x0872548c	0x0872548c	16512	.rodata	src/map/map_143/map	data	0	rom
+	0x0872950c	0x0872950c	4808	.rodata	src/map/map_144/map	data	0	rom
+	0x0872a7d4	0x0872a7d4	15312	.rodata	src/map/map_145/map	data	0	rom
+	0x0872e3a4	0x0872e3a4	4844	.rodata	src/map/map_146/map	data	0	rom
+	0x0872f690	0x0872f690	9016	.rodata	src/map/map_147/map	data	0	rom
+	0x087319c8	0x087319c8	10864	.rodata	src/map/map_148/map	data	0	rom
+	0x08734438	0x08734438	6732	.rodata	src/map/map_149/map	data	0	rom
+	0x08735e84	0x08735e84	38056	.rodata	src/map/map_150/map	data	0	rom
+	0x0873f32c	0x0873f32c	38936	.rodata	src/map/map_151/map	data	0	rom
+	0x08748b44	0x08748b44	6964	.rodata	src/map/map_152/map	data	0	rom
+	0x0874a678	0x0874a678	6000	.rodata	src/map/map_153/map	data	0	rom
+	0x0874bde8	0x0874bde8	6740	.rodata	src/map/map_154/map	data	0	rom
+	0x0874d83c	0x0874d83c	6640	.rodata	src/map/map_155/map	data	0	rom
+	0x0874f22c	0x0874f22c	6444	.rodata	src/map/map_156/map	data	0	rom
+	0x08750b58	0x08750b58	8664	.rodata	src/map/map_157/map	data	0	rom
+	0x08752d30	0x08752d30	3560	.rodata	src/map/map_158/map	data	0	rom
+	0x08753b18	0x08753b18	8484	.rodata	src/map/map_159/map	data	0	rom
+	0x08755c3c	0x08755c3c	12032	.rodata	src/map/map_160/map	data	0	rom
+	0x08758b3c	0x08758b3c	9724	.rodata	src/map/map_161/map	data	0	rom
+	0x0875b138	0x0875b138	3232	.rodata	src/map/map_162/map	data	0	rom
+	0x0875bdd8	0x0875bdd8	18188	.rodata	src/map/venus_entrance/map	data	0	rom
+	0x087604e4	0x087604e4	7492	.rodata	src/map/map_163/map	data	0	rom
+	0x08762228	0x08762228	6812	.rodata	src/map/map_164/map	data	0	rom
+	0x08763cc4	0x08763cc4	5340	.rodata	src/map/map_165/map	data	0	rom
+	0x087651a0	0x087651a0	5456	.rodata	src/map/map_166/map	data	0	rom
+	0x087666f0	0x087666f0	7876	.rodata	src/map/map_167/map	data	0	rom
+	0x087685b4	0x087685b4	6744	.rodata	src/map/map_168/map	data	0	rom
+	0x0876a00c	0x0876a00c	21424	.rodata	src/map/map_169/map	data	0	rom
+	0x0876f3bc	0x0876f3bc	18228	.rodata	src/map/map_170/map	data	0	rom
+	0x08773af0	0x08773af0	4952	.rodata	src/map/map_171/map	data	0	rom
+	0x08774e48	0x08774e48	2152	.rodata	src/map/map_172/map	data	0	rom
+	0x087756b0	0x087756b0	2152	.rodata	src/map/map_173/map	data	0	rom
+	0x08775f18	0x08775f18	2152	.rodata	src/map/map_174/map	data	0	rom
+	0x08776780	0x08776780	2152	.rodata	src/map/map_175/map	data	0	rom
+	0x08776fe8	0x08776fe8	2152	.rodata	src/map/map_176/map	data	0	rom
+	0x08777850	0x08777850	2152	.rodata	src/map/map_177/map	data	0	rom
+	0x087780b8	0x087780b8	2152	.rodata	src/map/map_178/map	data	0	rom
+	0x08778920	0x08778920	2152	.rodata	src/map/map_179/map	data	0	rom
+	0x08779188	0x08779188	541492	.overlays	src/system/overlay/overlays	overlay-stream	0	rom
+36f	0x02008000		48	.text	src/scene/entry/title	code	0	
+36f	0x02008030		1288	.text	src/scene/title	code	1	
+36f	0x02008538		192	.text	src/scene/import/title	code	24	
+36f	0x020085f8		90	.data	src/scene/title	data	0	
+36f	0x02008652		294	.bss	src/scene/bss/title	ram	0	
+370	0x02008000		48	.text	src/scene/entry/file_screen	code	0	
+370	0x02008030		4836	.text	src/scene/file_screen	code	3	
+370	0x02009314		448	.text	src/scene/import/file_screen	code	54	
+370	0x020094d4		38	.rodata	src/scene/file_screen	data	0	
+370	0x020094fc		348	.rodata	src/scene/file_screen_keyboard	data	0	
+370	0x02009658		194	.data	src/scene/file_screen	data	0	
+371	0x02008000		48	.text	src/scene/entry/world_map	code	0	
+371	0x02008030		16708	.text	src/scene/world_map	code	128	
+371	0x0200c174		824	.text	src/scene/import/world_map	code	101	
+371	0x0200c4ac		1336	.rodata	src/graphics/world_map/lighthouse_transition	data	0	
+371	0x0200c9e4		7608	.data	src/scene/world_map	data	28	
+371	0x0200e79c		8	COMMON	src/scene/world_map	ram	0	
+372	0x02008000		48	.text	src/scene/entry/vale_prologue	code	0	
+372	0x02008030		17924	.text	src/scene/vale_prologue	code	19	
+372	0x0200c634		648	.text	src/scene/import/vale_prologue	code	80	
+372	0x0200c8bc		3900	.data	src/scene/vale_prologue	data	34	
+372	0x0200d7f8		8	.bss	src/scene/vale_prologue	ram	0	
+373	0x02008000		48	.text	src/scene/entry/vale	code	0	
+373	0x02008030		24148	.text	src/scene/vale	code	19	
+373	0x0200de84		720	.text	src/scene/import/vale	code	89	
+373	0x0200e190		5788	.data	src/scene/vale	data	87	
+374	0x02008000		48	.text	src/scene/entry/vale_plaza	code	0	
+374	0x02008030		9652	.text	src/scene/vale_plaza	code	5	
+374	0x0200a5e4		624	.text	src/scene/import/vale_plaza	code	77	
+374	0x0200a854		5760	.data	src/scene/vale_plaza	data	58	
+375	0x02008000		48	.text	src/scene/entry/vale_kradens_cottage	code	0	
+375	0x02008030		6684	.text	src/scene/vale_kradens_cottage	code	0	
+375	0x02009a4c		400	.text	src/scene/import/vale_kradens_cottage	code	50	
+375	0x02009bdc		1254	.data	src/scene/vale_kradens_cottage	data	12	
+376	0x02008000		48	.text	src/scene/entry/cottage_rooms_a	code	0	
+376	0x02008030		4372	.text	src/scene/cottage_rooms_a	code	1	
+376	0x02009144		440	.text	src/scene/import/cottage_rooms_a	code	54	
+376	0x020092fc		3940	.data	src/scene/cottage_rooms_a	data	48	
+377	0x02008000		48	.text	src/scene/entry/cottage_rooms_b	code	0	
+377	0x02008030		6108	.text	src/scene/cottage_rooms_b	code	2	
+377	0x0200980c		680	.text	src/scene/import/cottage_rooms_b	code	84	
+377	0x02009ab4		4712	.data	src/scene/cottage_rooms_b	data	59	
+378	0x02008000		48	.text	src/scene/entry/sanctum	code	0	
+378	0x02008030		13552	.text	src/scene/sanctum	code	152	
+378	0x0200b520		544	.text	src/scene/import/sanctum	code	67	
+378	0x0200b740		2640	.data	src/scene/sanctum	data	19	
+379	0x02008000		48	.text	src/scene/entry/vale_eruption	code	0	
+379	0x02008030		2696	.text	src/scene/vale_eruption	code	0	
+379	0x02008ab8		328	.text	src/scene/import/vale_eruption	code	41	
+379	0x02008c00		694	.data	src/scene/vale_eruption	data	0	
+37a	0x02008000		48	.text	src/scene/entry/sol_sanctum_luna_sol_rooms	code	0	
+37a	0x02008030		10556	.text	src/scene/sol_sanctum_luna_sol_rooms	code	4	
+37a	0x0200a96c		400	.text	src/scene/import/sol_sanctum_luna_sol_rooms	code	50	
+37a	0x0200aafc		736	.data	src/scene/sol_sanctum_luna_sol_rooms	data	10	
+37a	0x0200addc		20	.bss	src/scene/bss/sol_sanctum_luna_sol_rooms	ram	0	
+37b	0x02008000		48	.text	src/scene/entry/sol_sanctum_statue	code	0	
+37b	0x02008030		9098	.text	src/scene/sol_sanctum_statue	code	1	
+37b	0x0200a3bc		432	.text	src/scene/import/sol_sanctum_statue	code	54	
+37b	0x0200a56c		84	.rodata	src/graphics/sol_sanctum_statue/rows	data	0	
+37b	0x0200a5c0		952	.data	src/scene/sol_sanctum_statue	data	27	
+37b	0x0200a980		532	.bss	src/scene/sol_sanctum_statue	ram	0	
+37c	0x02008000		48	.text	src/scene/entry/sol_sanctum_psynergy_stone	code	0	
+37c	0x02008030		112	.text	src/scene/sol_sanctum_psynergy_stone	code	0	
+37c	0x020080a0		40	.text	src/scene/import/sol_sanctum_psynergy_stone	code	5	
+37c	0x020080c8		144	.data	src/scene/sol_sanctum_psynergy_stone	data	0	
+37d	0x02008000		48	.text	src/scene/entry/sol_sanctum_maze	code	0	
+37d	0x02008030		112	.text	src/scene/sol_sanctum_maze	code	0	
+37d	0x020080a0		32	.text	src/scene/import/sol_sanctum_maze	code	4	
+37d	0x020080c0		184	.data	src/scene/sol_sanctum_maze	data	0	
+37e	0x02008000		48	.text	src/scene/entry/sol_sanctum_corridor	code	0	
+37e	0x02008030		112	.text	src/scene/sol_sanctum_corridor	code	0	
+37e	0x020080a0		32	.text	src/scene/import/sol_sanctum_corridor	code	4	
+37e	0x020080c0		172	.data	src/scene/sol_sanctum_corridor	data	0	
+37f	0x02008000		48	.text	src/scene/entry/sol_sanctum_entrance	code	0	
+37f	0x02008030		6900	.text	src/scene/sol_sanctum_entrance	code	18	
+37f	0x02009b24		432	.text	src/scene/import/sol_sanctum_entrance	code	54	
+37f	0x02009cd4		2504	.data	src/scene/sol_sanctum_entrance	data	18	
+37f	0x0200a69c		4	.bss	src/scene/sol_sanctum_entrance	ram	0	
+380	0x02008000		48	.text	src/scene/entry/sol_sanctum_elemental_star_room	code	0	
+380	0x02008030		18468	.text	src/scene/sol_sanctum_elemental_star_room	code	2	
+380	0x0200c854		712	.text	src/scene/import/sol_sanctum_elemental_star_room	code	87	
+380	0x0200cb1c		1652	.data	src/scene/sol_sanctum_elemental_star_room	data	16	
+381	0x02008000		48	.text	src/scene/entry/sol_sanctum_eruption	code	0	
+381	0x02008030		13220	.text	src/scene/sol_sanctum_eruption	code	16	
+381	0x0200b3d4		600	.text	src/scene/import/sol_sanctum_eruption	code	73	
+381	0x0200b62c		1164	.data	src/scene/sol_sanctum_eruption	data	1	
+381	0x0200bab8		188	.bss	src/scene/bss/sol_sanctum_eruption	ram	0	
+382	0x02008000		48	.text	src/scene/entry/vault	code	0	
+382	0x02008030		6352	.text	src/scene/vault	code	4	
+382	0x02009900		464	.text	src/scene/import/vault	code	56	
+382	0x02009b0c		3560	.data	src/scene/vault	data	64	
+383	0x02008000		48	.text	src/scene/entry/log_rooms_a	code	0	
+383	0x02008030		19516	.text	src/scene/log_rooms_a	code	36	
+383	0x0200cc6c		704	.text	src/scene/import/log_rooms_a	code	88	
+383	0x0200cf2c		5580	.data	src/scene/log_rooms_a	data	64	
+383	0x0200e4f8		4	COMMON	src/scene/log_rooms_a	ram	0	
+384	0x02008000		48	.text	src/scene/entry/stone_rooms	code	0	
+384	0x02008030		560	.text	src/scene/stone_rooms	code	0	
+384	0x02008260		112	.text	src/scene/import/stone_rooms	code	14	
+384	0x020082d0		512	.rodata	src/scene/stone_rooms	data	7	
+385	0x02008000		48	.text	src/scene/entry/vault_revisit	code	0	
+385	0x02008030		4136	.text	src/scene/vault_revisit	code	2	
+385	0x02009058		352	.text	src/scene/import/vault_revisit	code	43	
+385	0x020091f4		2124	.data	src/scene/vault_revisit	data	33	
+386	0x02008000		48	.text	src/scene/entry/log_rooms_b	code	0	
+386	0x02008030		1450	.text	src/scene/log_rooms_b	code	1	
+386	0x020085dc		256	.text	src/scene/import/log_rooms_b	code	32	
+386	0x020086dc		1300	.data	src/scene/log_rooms_b	data	14	
+387	0x02008000		48	.text	src/scene/entry/goma_cave_entrance	code	0	
+387	0x02008030		4180	.text	src/scene/goma_cave_entrance	code	2	
+387	0x02009084		432	.text	src/scene/import/goma_cave_entrance	code	53	
+387	0x02009234		716	.data	src/scene/goma_cave_entrance	data	7	
+388	0x02008000		48	.text	src/scene/entry/goma_cave_pond	code	0	
+388	0x02008030		168	.text	src/scene/goma_cave_pond	code	0	
+388	0x020080d8		48	.text	src/scene/import/goma_cave_pond	code	6	
+388	0x02008108		236	.data	src/scene/goma_cave_pond	data	0	
+389	0x02008000		48	.text	src/scene/entry/goma_cave_pillar	code	0	
+389	0x02008030		4984	.text	src/scene/goma_cave_pillar	code	5	
+389	0x020093a8		368	.text	src/scene/import/goma_cave_pillar	code	46	
+389	0x02009554		920	.data	src/scene/goma_cave_pillar	data	10	
+389	0x020098ec		4	COMMON	src/scene/goma_cave_pillar	ram	0	
+38a	0x02008000		48	.text	src/scene/entry/goma_cave_stream	code	0	
+38a	0x02008030		1660	.text	src/scene/goma_cave_stream	code	2	
+38a	0x020086ac		184	.text	src/scene/import/goma_cave_stream	code	22	
+38a	0x02008764		688	.data	src/scene/goma_cave_stream	data	1	
+38b	0x02008000		48	.text	src/scene/entry/bilibin	code	0	
+38b	0x02008030		4072	.text	src/scene/bilibin	code	1	
+38b	0x02009018		424	.text	src/scene/import/bilibin	code	53	
+38b	0x020091c0		3016	.data	src/scene/bilibin	data	38	
+38b	0x02009d88		4	COMMON	src/scene/bilibin	ram	0	
+38c	0x02008000		48	.text	src/scene/entry/cottage_rooms_c	code	0	
+38c	0x02008030		1232	.text	src/scene/cottage_rooms_c	code	0	
+38c	0x02008500		152	.text	src/scene/import/cottage_rooms_c	code	19	
+38c	0x02008598		2140	.data	src/scene/cottage_rooms_c	data	18	
+38d	0x02008000		48	.text	src/scene/entry/mccoy_palace	code	0	
+38d	0x02008030		9176	.text	src/scene/mccoy_palace	code	0	
+38d	0x0200a408		440	.text	src/scene/import/mccoy_palace	code	55	
+38d	0x0200a5c0		2800	.data	src/scene/mccoy_palace	data	17	
+38e	0x02008000		48	.text	src/scene/entry/mccoy_palace_grounds	code	0	
+38e	0x02008030		2588	.text	src/scene/mccoy_palace_grounds	code	1	
+38e	0x02008a4c		392	.text	src/scene/import/mccoy_palace_grounds	code	49	
+38e	0x02008bd4		708	.data	src/scene/mccoy_palace_grounds	data	8	
+38f	0x02008000		48	.text	src/scene/entry/kolima	code	0	
+38f	0x02008030		10604	.text	src/scene/kolima	code	13	
+38f	0x0200a99c		568	.text	src/scene/import/kolima	code	71	
+38f	0x0200abd4		2744	.data	src/scene/kolima	data	17	
+38f	0x0200b68c		24	.bss	src/scene/kolima	ram	0	
+390	0x02008000		48	.text	src/scene/entry/log_rooms_c	code	0	
+390	0x02008030		648	.text	src/scene/log_rooms_c	code	0	
+390	0x020082b8		96	.text	src/scene/import/log_rooms_c	code	12	
+390	0x02008318		1612	.data	src/scene/log_rooms_c	data	4	
+391	0x02008000		48	.text	src/scene/entry/kolima_forest_entrance	code	0	
+391	0x02008030		11092	.text	src/scene/kolima_forest_entrance	code	8	
+391	0x0200ab84		424	.text	src/scene/import/kolima_forest_entrance	code	53	
+391	0x0200ad68		1564	.data	src/scene/kolima_forest_entrance	data	9	
+391	0x0200b384		24	.bss	src/scene/kolima_forest_entrance	ram	0	
+392	0x02008000		48	.text	src/scene/entry/kolima_forest_glade	code	0	
+392	0x02008030		3420	.text	src/scene/kolima_forest_glade	code	2	
+392	0x02008d8c		256	.text	src/scene/import/kolima_forest_glade	code	31	
+392	0x02008ec8		476	.data	src/scene/kolima_forest_glade	data	2	
+392	0x020090b0		2688	.bss	src/scene/kolima_forest_glade	ram	0	
+393	0x02008000		48	.text	src/scene/entry/kolima_forest_cliff	code	0	
+393	0x02008030		3564	.text	src/scene/kolima_forest_cliff	code	1	
+393	0x02008e1c		184	.text	src/scene/import/kolima_forest_cliff	code	22	
+393	0x02008f10		452	.data	src/scene/kolima_forest_cliff	data	2	
+393	0x020090e0		2688	.bss	src/scene/kolima_forest_cliff	ram	0	
+394	0x02008000		48	.text	src/scene/entry/kolima_forest_floodgate	code	0	
+394	0x02008030		4036	.text	src/scene/kolima_forest_floodgate	code	3	
+394	0x02008ff4		296	.text	src/scene/import/kolima_forest_floodgate	code	36	
+394	0x0200911c		412	.data	src/scene/kolima_forest_floodgate	data	5	
+394	0x020092b8		3624	.bss	src/scene/bss/kolima_forest_floodgate	ram	0	
+395	0x02008000		48	.text	src/scene/entry/kolima_forest_tree	code	0	
+395	0x02008030		6344	.text	src/scene/kolima_forest_tree	code	67	
+395	0x020098f8		448	.text	src/scene/import/kolima_forest_tree	code	54	
+395	0x02009ab8		772	.data	src/scene/kolima_forest_tree	data	7	
+395	0x02009dc0		24	.bss	src/scene/kolima_forest_tree	ram	0	
+395	0x02009dd8		2696	.bss	src/scene/bss/kolima_forest_tree	ram	0	
+396	0x02008000		48	.text	src/scene/entry/tree_rooms	code	0	
+396	0x02008030		6624	.text	src/scene/tree_rooms	code	67	
+396	0x02009a10		496	.text	src/scene/import/tree_rooms	code	60	
+396	0x02009c00		4540	.data	src/scene/tree_rooms	data	44	
+396	0x0200adc0		20	.bss	src/scene/tree_rooms	ram	0	
+397	0x02008000		48	.text	src/scene/entry/tret_tree_branch	code	0	
+397	0x02008030		724	.text	src/scene/tret_tree_branch	code	2	
+397	0x02008304		88	.text	src/scene/import/tret_tree_branch	code	11	
+397	0x0200835c		554	.data	src/scene/tret_tree_branch	data	16	
+397	0x02008590		136	.bss	src/scene/tret_tree_branch	ram	0	
+398	0x02008000		48	.text	src/scene/entry/bilibin_cave	code	0	
+398	0x02008030		2262	.text	src/scene/bilibin_cave	code	0	
+398	0x02008908		168	.text	src/scene/import/bilibin_cave	code	21	
+398	0x020089b0		1780	.data	src/scene/bilibin_cave	data	17	
+399	0x02008000		48	.text	src/scene/entry/imil	code	0	
+399	0x02008030		8504	.text	src/scene/imil	code	5	
+399	0x0200a168		648	.text	src/scene/import/imil	code	80	
+399	0x0200a3f0		3580	.data	src/scene/imil	data	35	
+399	0x0200b1f0		12	COMMON	src/scene/imil	ram	0	
+39a	0x02008000		48	.text	src/scene/entry/imil_fuchin_falls	code	0	
+39a	0x02008030		8744	.text	src/scene/imil_fuchin_falls	code	3	
+39a	0x0200a258		448	.text	src/scene/import/imil_fuchin_falls	code	55	
+39a	0x0200a418		12	.rodata	src/scene/imil_fuchin_falls	data	0	
+39a	0x0200a424		3844	.data	src/scene/imil_fuchin_falls	data	98	
+39a	0x0200b328		4	COMMON	src/scene/imil_fuchin_falls	ram	0	
+39b	0x02008000		48	.text	src/scene/entry/mercury_lighthouse_entrance	code	0	
+39b	0x02008030		9132	.text	src/scene/mercury_lighthouse_entrance	code	39	
+39b	0x0200a3dc		576	.text	src/scene/import/mercury_lighthouse_entrance	code	70	
+39b	0x0200a658		2468	.data	src/scene/mercury_lighthouse_entrance	data	27	
+39c	0x02008000		48	.text	src/scene/entry/mercury_lighthouse	code	0	
+39c	0x02008030		22844	.text	src/scene/mercury_lighthouse	code	61	
+39c	0x0200d96c		768	.text	src/scene/import/mercury_lighthouse	code	94	
+39c	0x0200dca8		4976	.data	src/scene/mercury_lighthouse	data	64	
+39d	0x02008000		48	.text	src/scene/entry/mercury_lighthouse_aerie	code	0	
+39d	0x02008030		13814	.text	src/scene/mercury_lighthouse_aerie	code	3	
+39d	0x0200b628		544	.text	src/scene/import/mercury_lighthouse_aerie	code	67	
+39d	0x0200b884		1020	.data	src/scene/mercury_lighthouse_aerie	data	7	
+39e	0x02008000		48	.text	src/scene/entry/fuchin_temple	code	0	
+39e	0x02008030		17164	.text	src/scene/fuchin_temple	code	4	
+39e	0x0200c33c		584	.text	src/scene/import/fuchin_temple	code	72	
+39e	0x0200c584		3212	.data	src/scene/fuchin_temple	data	29	
+39f	0x02008000		48	.text	src/scene/entry/mogall_forest	code	0	
+39f	0x02008030		11444	.text	src/scene/mogall_forest	code	17	
+39f	0x0200ace4		472	.text	src/scene/import/mogall_forest	code	58	
+39f	0x0200aef8		3892	.data	src/scene/mogall_forest	data	30	
+3a0	0x02008000		48	.text	src/scene/entry/xian	code	0	
+3a0	0x02008030		4862	.text	src/scene/xian	code	17	
+3a0	0x02009330		400	.text	src/scene/import/xian	code	49	
+3a0	0x020094fc		2204	.data	src/scene/xian	data	20	
+3a1	0x02008000		48	.text	src/scene/entry/lacquer_rooms_b	code	0	
+3a1	0x02008030		1508	.text	src/scene/lacquer_rooms_b	code	1	
+3a1	0x02008614		176	.text	src/scene/import/lacquer_rooms_b	code	21	
+3a1	0x020086c4		1840	.data	src/scene/lacquer_rooms_b	data	11	
+3a2	0x02008000		48	.text	src/scene/entry/alpine_crossing_lama_temple	code	0	
+3a2	0x02008030		5224	.text	src/scene/alpine_crossing_lama_temple	code	2	
+3a2	0x02009498		392	.text	src/scene/import/alpine_crossing_lama_temple	code	49	
+3a2	0x02009620		1984	.data	src/scene/alpine_crossing_lama_temple	data	18	
+3a3	0x02008000		48	.text	src/scene/entry/altin	code	0	
+3a3	0x02008030		3568	.text	src/scene/altin	code	4	
+3a3	0x02008e20		424	.text	src/scene/import/altin	code	53	
+3a3	0x02008fc8		3816	.data	src/scene/altin	data	27	
+3a4	0x02008000		48	.text	src/scene/entry/altin_peak	code	0	
+3a4	0x02008030		14912	.text	src/scene/altin_peak	code	14	
+3a4	0x0200ba70		696	.text	src/scene/import/altin_peak	code	86	
+3a4	0x0200bd28		5392	.data	src/scene/altin_peak	data	33	
+3a4	0x0200d238		44	.bss	src/scene/bss/altin_peak	ram	0	
+3a5	0x02008000		48	.text	src/scene/entry/lamakan_desert	code	0	
+3a5	0x02008030		7252	.text	src/scene/lamakan_desert	code	4	
+3a5	0x02009c84		456	.text	src/scene/import/lamakan_desert	code	56	
+3a5	0x02009e88		248	.rodata	src/scene/lamakan_desert	data	0	
+3a5	0x02009f80		416	.rodata	src/graphics/lamakan_desert/heat_gauge	data	0	
+3a5	0x0200a120		1442	.data	src/scene/lamakan_desert	data	21	
+3a5	0x0200a6d0		2402	.bss	src/scene/bss/lamakan_desert	ram	0	
+3a6	0x02008000		48	.text	src/scene/entry/vale_cave	code	0	
+3a6	0x02008030		7138	.text	src/scene/vale_cave	code	15	
+3a6	0x02009c14		336	.text	src/scene/import/vale_cave	code	41	
+3a6	0x02009da0		2288	.data	src/scene/vale_cave	data	32	
+3a7	0x02008000		48	.text	src/scene/entry/vault_cave	code	0	
+3a7	0x02008030		4144	.text	src/scene/vault_cave	code	18	
+3a7	0x02009060		248	.text	src/scene/import/vault_cave	code	29	
+3a7	0x02009844		68	.rodata	src/scene/vault_cave	data	0	
+3a7	0x0200989c		2456	.data	src/scene/vault_cave	data	16	
+3a8	0x02008000		48	.text	src/scene/entry/kalay	code	0	
+3a8	0x02008030		15076	.text	src/scene/kalay	code	12	
+3a8	0x0200bb14		624	.text	src/scene/import/kalay	code	78	
+3a8	0x0200bd84		5040	.data	src/scene/kalay	data	36	
+3a8	0x0200d138		16	.bss	src/scene/bss/kalay	ram	0	
+3a9	0x02008000		48	.text	src/scene/entry/stucco_rooms_a	code	0	
+3a9	0x02008030		952	.text	src/scene/stucco_rooms_a	code	0	
+3a9	0x020083e8		184	.text	src/scene/import/stucco_rooms_a	code	23	
+3a9	0x020084a0		2680	.data	src/scene/stucco_rooms_a	data	8	
+3aa	0x02008000		48	.text	src/scene/entry/hammet_palace	code	0	
+3aa	0x02008030		6660	.text	src/scene/hammet_palace	code	0	
+3aa	0x02009a34		352	.text	src/scene/import/hammet_palace	code	44	
+3aa	0x02009b94		1520	.data	src/scene/hammet_palace	data	7	
+3ab	0x02008000		48	.text	src/scene/entry/lunpa	code	0	
+3ab	0x02008030		6376	.text	src/scene/lunpa	code	10	
+3ab	0x02009918		544	.text	src/scene/import/lunpa	code	67	
+3ab	0x02009b38		2584	.data	src/scene/lunpa	data	50	
+3ac	0x02008000		48	.text	src/scene/entry/rock_rooms	code	0	
+3ac	0x02008030		1120	.text	src/scene/rock_rooms	code	0	
+3ac	0x02008490		104	.text	src/scene/import/rock_rooms	code	13	
+3ac	0x020084f8		2000	.rodata	src/scene/rock_rooms	data	33	
+3ad	0x02008000		48	.text	src/scene/entry/west_lunpa_cave	code	0	
+3ad	0x02008030		6820	.text	src/scene/west_lunpa_cave	code	0	
+3ad	0x02009ad4		352	.text	src/scene/import/west_lunpa_cave	code	44	
+3ad	0x02009c34		536	.rodata	src/scene/west_lunpa_cave	data	7	
+3ae	0x02008000		48	.text	src/scene/entry/kalay_tolbi_docks	code	0	
+3ae	0x02008030		5328	.text	src/scene/kalay_tolbi_docks	code	0	
+3ae	0x02009500		440	.text	src/scene/import/kalay_tolbi_docks	code	55	
+3ae	0x020096b8		3420	.data	src/scene/kalay_tolbi_docks	data	23	
+3af	0x02008000		48	.text	src/scene/entry/tolbi_ship_deck	code	0	
+3af	0x02008030		16932	.text	src/scene/tolbi_ship_deck	code	82	
+3af	0x0200c254		528	.text	src/scene/import/tolbi_ship_deck	code	65	
+3af	0x0200c464		5832	.rodata	src/scene/tolbi_ship_deck	data	30	
+3af	0x0200db30		128	.bss	src/scene/tolbi_ship_deck	ram	0	
+3b0	0x02008000		48	.text	src/scene/entry/tolbi_ship_mast	code	0	
+3b0	0x02008030		4484	.text	src/scene/tolbi_ship_mast	code	17	
+3b0	0x020091b4		352	.text	src/scene/import/tolbi_ship_mast	code	44	
+3b0	0x02009314		1544	.data	src/scene/tolbi_ship_mast	data	13	
+3b0	0x02009920		36	.bss	src/scene/tolbi_ship_mast	ram	0	
+3b1	0x02008000		48	.text	src/scene/entry/ship_rooms	code	0	
+3b1	0x02008030		25584	.text	src/scene/ship_rooms	code	160	
+3b1	0x0200e420		584	.text	src/scene/import/ship_rooms	code	73	
+3b1	0x0200e668		6428	.data	src/scene/ship_rooms	data	49	
+3b1	0x0200ff84		4	COMMON	src/scene/ship_rooms	ram	0	
+3b2	0x02008000		48	.text	src/scene/entry/crossbone_isle	code	0	
+3b2	0x02008030		12160	.text	src/scene/crossbone_isle	code	14	
+3b2	0x0200afb0		368	.text	src/scene/import/crossbone_isle	code	45	
+3b2	0x0200b15c		3160	.data	src/scene/crossbone_isle	data	81	
+3b3	0x02008000		48	.text	src/scene/entry/crossbone_isle_stepping_stones	code	0	
+3b3	0x02008030		10748	.text	src/scene/crossbone_isle_stepping_stones	code	11	
+3b3	0x0200aa2c		400	.text	src/scene/import/crossbone_isle_stepping_stones	code	49	
+3b3	0x0200abf8		2772	.data	src/scene/crossbone_isle_stepping_stones	data	28	
+3b3	0x0200b6d0		108	.bss	src/scene/crossbone_isle_stepping_stones	ram	0	
+3b4	0x02008000		48	.text	src/scene/entry/crossbone_isle_keys	code	0	
+3b4	0x02008030		9272	.text	src/scene/crossbone_isle_keys	code	21	
+3b4	0x0200a468		416	.text	src/scene/import/crossbone_isle_keys	code	52	
+3b4	0x0200a644		2368	.data	src/scene/crossbone_isle_keys	data	59	
+3b5	0x02008000		48	.text	src/scene/entry/tolbi	code	0	
+3b5	0x02008030		3276	.text	src/scene/tolbi	code	2	
+3b5	0x02008cfc		368	.text	src/scene/import/tolbi	code	46	
+3b5	0x02008ea8		3744	.data	src/scene/tolbi	data	89	
+3b6	0x02008000		48	.text	src/scene/entry/stucco_rooms_b	code	0	
+3b6	0x02008030		2408	.text	src/scene/stucco_rooms_b	code	0	
+3b6	0x02008998		248	.text	src/scene/import/stucco_rooms_b	code	31	
+3b6	0x02008a90		4956	.data	src/scene/stucco_rooms_b	data	31	
+3b7	0x02008000		48	.text	src/scene/entry/tolbi_games	code	0	
+3b7	0x02008030		6180	.text	src/scene/tolbi_games	code	1	
+3b7	0x02009854		376	.text	src/scene/import/tolbi_games	code	45	
+3b7	0x02009a08		1634	.rodata	src/scene/tolbi_games	data	7	
+3b7	0x0200a070		204	.bss	src/scene/tolbi_games	ram	0	
+3b8	0x02008000		48	.text	src/scene/entry/babi_palace	code	0	
+3b8	0x02008030		17168	.text	src/scene/babi_palace	code	0	
+3b8	0x0200c340		528	.text	src/scene/import/babi_palace	code	66	
+3b8	0x0200c550		5608	.data	src/scene/babi_palace	data	46	
+3b9	0x02008000		48	.text	src/scene/entry/colosseum_entrance	code	0	
+3b9	0x02008030		11098	.text	src/scene/colosseum_entrance	code	134	
+3b9	0x0200ab8c		432	.text	src/scene/import/colosseum_entrance	code	54	
+3b9	0x0200ad3c		5244	.data	src/scene/colosseum_entrance	data	15	
+3ba	0x02008000		48	.text	src/scene/entry/colosseum_azart_match	code	0	
+3ba	0x02008030		15056	.text	src/scene/colosseum_azart_match	code	17	
+3ba	0x0200bb00		776	.text	src/scene/import/colosseum_azart_match	code	96	
+3ba	0x0200be44		176	.rodata	src/scene/colosseum_azart_match	data	0	
+3ba	0x0200bef4		220	.rodata	src/graphics/colosso/gauge	data	0	
+3ba	0x0200bfd0		1920	.data	src/scene/colosseum_azart_match	data	23	
+3ba	0x0200c750		184	.bss	src/scene/bss/colosseum_azart_match	ram	0	
+3bb	0x02008000		48	.text	src/scene/entry/colosseum_satrage_match	code	0	
+3bb	0x02008030		15720	.text	src/scene/colosseum_satrage_match	code	18	
+3bb	0x0200bd98		808	.text	src/scene/import/colosseum_satrage_match	code	100	
+3bb	0x0200c0c0		180	.rodata	src/scene/colosseum_satrage_match	data	0	
+3bb	0x0200c174		220	.rodata	src/graphics/colosso/gauge	data	0	
+3bb	0x0200c250		2464	.data	src/scene/colosseum_satrage_match	data	33	
+3bb	0x0200cbf0		184	.bss	src/scene/bss/colosseum_satrage_match	ram	0	
+3bc	0x02008000		48	.text	src/scene/entry/colosseum_navampa_match	code	0	
+3bc	0x02008030		18432	.text	src/scene/colosseum_navampa_match	code	20	
+3bc	0x0200c830		896	.text	src/scene/import/colosseum_navampa_match	code	110	
+3bc	0x0200cbec		372	.rodata	src/scene/colosseum_navampa_match	data	1	
+3bc	0x0200cd60		220	.rodata	src/graphics/colosso/gauge	data	0	
+3bc	0x0200ce3c		3388	.data	src/scene/colosseum_navampa_match	data	33	
+3bc	0x0200db80		200	.bss	src/scene/bss/colosseum_navampa_match	ram	0	
+3bd	0x02008000		48	.text	src/scene/entry/altmiller_cave	code	0	
+3bd	0x02008030		15288	.text	src/scene/altmiller_cave	code	5	
+3bd	0x0200bbe8		656	.text	src/scene/import/altmiller_cave	code	79	
+3bd	0x0200beb4		2640	.data	src/scene/altmiller_cave	data	39	
+3bd	0x0200c904		12	.bss	src/scene/altmiller_cave	ram	0	
+3be	0x02008000		48	.text	src/scene/entry/gondowan_cave	code	0	
+3be	0x02008030		5204	.text	src/scene/gondowan_cave	code	3	
+3be	0x02009484		344	.text	src/scene/import/gondowan_cave	code	42	
+3be	0x02009618		1916	.data	src/scene/gondowan_cave	data	12	
+3bf	0x02008000		48	.text	src/scene/entry/lunpa_fortress	code	0	
+3bf	0x02008030		21848	.text	src/scene/lunpa_fortress	code	75	
+3bf	0x0200d588		552	.text	src/scene/import/lunpa_fortress	code	69	
+3bf	0x0200ded8		184	.rodata	src/scene/lunpa_fortress	data	0	
+3bf	0x0200dfa4		6096	.data	src/scene/lunpa_fortress	data	63	
+3c0	0x02008000		48	.text	src/scene/entry/suhalla_desert	code	0	
+3c0	0x02008030		4540	.text	src/scene/suhalla_desert	code	5	
+3c0	0x020091ec		400	.text	src/scene/import/suhalla_desert	code	49	
+3c0	0x0200937c		1668	.data	src/scene/suhalla_desert	data	39	
+3c0	0x02009a00		2	.bss	src/scene/suhalla_desert	ram	0	
+3c1	0x02008000		48	.text	src/scene/entry/suhalla	code	0	
+3c1	0x02008030		600	.text	src/scene/suhalla	code	0	
+3c1	0x02008288		104	.text	src/scene/import/suhalla	code	13	
+3c1	0x020082f0		1476	.data	src/scene/suhalla	data	14	
+3c2	0x02008000		48	.text	src/scene/entry/timber_rooms_a	code	0	
+3c2	0x02008030		2820	.text	src/scene/timber_rooms_a	code	0	
+3c2	0x02008b34		264	.text	src/scene/import/timber_rooms_a	code	33	
+3c2	0x02008c3c		1936	.data	src/scene/timber_rooms_a	data	26	
+3c3	0x02008000		48	.text	src/scene/entry/suhalla_gate	code	0	
+3c3	0x02008030		2092	.text	src/scene/suhalla_gate	code	0	
+3c3	0x0200885c		280	.text	src/scene/import/suhalla_gate	code	35	
+3c3	0x02008974		1320	.data	src/scene/suhalla_gate	data	9	
+3c4	0x02008000		48	.text	src/scene/entry/tunnel_ruins	code	0	
+3c4	0x02008030		12260	.text	src/scene/tunnel_ruins	code	57	
+3c4	0x0200b014		416	.text	src/scene/import/tunnel_ruins	code	50	
+3c4	0x0200b1f0		3980	.data	src/scene/tunnel_ruins	data	74	
+3c5	0x02008000		48	.text	src/scene/entry/babi_lighthouse	code	0	
+3c5	0x02008030		11592	.text	src/scene/babi_lighthouse	code	12	
+3c5	0x0200ad78		544	.text	src/scene/import/babi_lighthouse	code	67	
+3c5	0x0200afd4		3360	.data	src/scene/babi_lighthouse	data	23	
+3c6	0x02008000		48	.text	src/scene/entry/lalivero	code	0	
+3c6	0x02008030		5288	.text	src/scene/lalivero	code	0	
+3c6	0x020094d8		352	.text	src/scene/import/lalivero	code	44	
+3c6	0x02009638		2736	.data	src/scene/lalivero	data	30	
+3c7	0x02008000		48	.text	src/scene/entry/timber_rooms_bc	code	0	
+3c7	0x02008030		4524	.text	src/scene/timber_rooms_bc	code	0	
+3c7	0x020091dc		312	.text	src/scene/import/timber_rooms_bc	code	39	
+3c7	0x02009314		3732	.data	src/scene/timber_rooms_bc	data	55	
+3c8	0x02008000		48	.text	src/scene/entry/venus_lighthouse	code	0	
+3c8	0x02008030		19820	.text	src/scene/venus_lighthouse	code	118	
+3c8	0x0200cd9c		616	.text	src/scene/import/venus_lighthouse	code	76	
+3c8	0x0200d040		10188	.data	src/scene/venus_lighthouse	data	93	
+3c9	0x02008000		48	.text	src/scene/entry/venus_lighthouse_aerie	code	0	
+3c9	0x02008030		23484	.text	src/scene/venus_lighthouse_aerie	code	66	
+3c9	0x0200dbec		744	.text	src/scene/import/venus_lighthouse_aerie	code	91	
+3c9	0x0200df10		2128	.data	src/scene/venus_lighthouse_aerie	data	7	
+3c9	0x0200e760		8	.bss	src/scene/venus_lighthouse_aerie	ram	0	
+3ca	0x02008000		48	.text	src/scene/entry/lemurian_ship	code	0	
+3ca	0x02008030		4836	.text	src/scene/lemurian_ship	code	9	
+3ca	0x02009314		408	.text	src/scene/import/lemurian_ship	code	50	
+3ca	0x020094ac		1612	.data	src/scene/lemurian_ship	data	8	
+3ca	0x02009af8		292	.bss	src/scene/lemurian_ship	ram	0	
+3cb	0x02008000		48	.text	src/scene/entry/battle_arena	code	0	
+3cb	0x02008030		5844	.text	src/scene/battle_arena	code	2	
+3cb	0x02009704		488	.text	src/scene/import/battle_arena	code	59	
+3cb	0x02009928		24	.rodata	src/scene/battle_arena	data	0	
+3cb	0x02009940		1548	.data	src/scene/battle_arena	data	17	
+3cb	0x02009f4c		4	.bss	src/scene/battle_arena	ram	0	
+3cb	0x02009f50		4	COMMON	src/scene/battle_arena	ram	0	
+3cc	0x02008000		48	.text	src/debug/entry/test_scenes	code	0	
+3cc	0x02008030		136	.text	src/debug/test_scenes	code	0	
+3cc	0x020080b8		16	.text	src/debug/import/test_scenes	code	2	
+3cc	0x020080c8		472	.data	src/debug/test_scenes	data	4	
+3cd	0x02008000		48	.text	src/debug/entry/level	code	0	
+3cd	0x02008030		1966	.text	src/debug/level	code	0	
+3cd	0x020087e0		240	.text	src/debug/import/level	code	29	
+3cd	0x020088d0		512	.data	src/debug/level	data	9	
+3ce	0x02008000		48	.text	src/debug/entry/test	code	0	
+3ce	0x02008030		4438	.text	src/debug/test	code	0	
+3ce	0x02009188		296	.text	src/debug/import/test	code	36	
+3ce	0x020092b0		988	.data	src/debug/test	data	22	
