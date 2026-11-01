@@ -153,11 +153,11 @@ async function start(rom) {
       console.error(e);
     }
   }
-  // GS10 "Return to title": the game's own soft reset (A+B+Select+Start -> System_SoftReset -> Cart_Start) is not
-  // available in the port (Cart_Start is ROM entry code with no C port), so the page restarts the game the way a
-  // power cycle would: the current run is dropped (its frame wait never resolves, its memory is garbage) and a fresh
-  // module boots with the same ROM bytes (nothing re-read) and the save as it is now. The game then shows its logos
-  // and title / File Screen as at power-on.
+  // GS10 "Return to title": the page restarts the game the way a power cycle would: the current run is dropped (its
+  // frame wait never resolves, its memory is garbage) and a fresh module boots with the same ROM bytes (nothing
+  // re-read) and the save as it is now. The game then shows its logos and title / File Screen as at power-on.
+  // Since GS11 the game's own soft reset works too (A+B+Select+Start on keys, pad or touch: port_lib.js
+  // port_soft_reset); the menu keeps the power cycle because it also recovers a run that has stopped.
   window.GSPage = {
     restart() {
       if (!m) return null;
