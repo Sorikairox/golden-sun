@@ -55,10 +55,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   cornering chase, Mind Read, Move on the crate, Ivan staying behind and rejoining, 78 World Map battles (Isaac Lv 6), the loft,
   the thieves' battle won, the rod; three saves, regress 26 cases. New test-only bots: tests/probes/grindbot.cjs, battlebot.cjs.
   No port bug found (encounter transition and battle backgrounds checked against the vendor).
+- GS17 (2026-11-02): **Vault Sanctum to Goma Cave by real play** (goma_entrance, goma_ivan, goma_pillar.keys; docs/G17.md): Revive
+  at the Vault healer, the north gate, the Goma Cave Entrance (pillars by push and Move, **Ivan rejoins** with Whirlwind, the stump
+  leaps into the pool, Whirlwind on the ivy), the stream room, the pillar room (east pillar settled); battles with Djinn set and
+  unleash, Ray and a **Venus summon** (battlebot BB_SEQ). Three saves, regress 29 cases, `regress.sh --quick`. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the vault_thieves save: revive Isaac at the Vault Sanctum, the north gate, Goma Range (G16.md 2 end), Bilibin; run
-  tools/regress.sh after every build.
+  from the goma_pillar save: the pond room and the y-32 ledges (G17.md 2 end), Forge, the stream room's north and the bridge,
+  Bilibin; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -355,3 +359,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     (sprite_draw.c:66; a Port_CodeGbaOf rule broke it).
     Only the Djinn, Status and (international) Item screens call Menu_SuspendFieldTasks; the Start pause menu and the English
     Psynergy screen do not, so scene tasks keep running under them by design (GS15, tests/probes/tasks.cjs).
+42. Field Psynergy that "does nothing" is usually a missed target, not a bug (GS17): Field_FindNearbyPsynergyTarget takes an actor
+    only within 8 px of height (Catch 48, Douse 64, Mind Read 16) and, past 11 px, within ~34 degrees of the facing rounded to a
+    quarter turn; stand level and in line. Move pushes once per cast and ends on A/B/L/R. The cast tint colour is chosen by
+    `gFrameCount & 7` (eight colours), so it differs from cast to cast. Diagonal stairs need diagonal input.

@@ -2,6 +2,42 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS17 — 2026-11-02: Vault Sanctum to Goma Cave by real play: Revive, Ivan rejoins (Whirlwind), the cave's stream and pillar rooms, Djinn/Psynergy/summon in battle
+
+### Done
+- **Real play, no probe** (story order from sanctum.c, vault.c, goma_cave_*.c first; docs/G17.md 2), three new saves + regress cases:
+  - `goma_entrance.keys` (+ `_save`): from the loft down to Vault, the **Vault Sanctum: Revive** Isaac (120 coins), the north
+    gate, the World Map east (a Bat battle) to the **Goma Cave Entrance**, Cure on Garet; save (regress `goma_entrance`).
+  - `goma_ivan.keys` (+ `_save`): the west pillar pushed off the ladder, **Move** pulls the east pillar into place, the y-64 level,
+    **Move on the ivy-bound stump**: "It's no use...", **Ivan rejoins** and blows the ivy off with **Whirlwind**; Move sends the
+    stump leaping into the pool; Ivan's **Whirlwind** on the tall ivy opens the cave mouth; into Goma Cave; save (regress `goma_ivan`).
+  - `goma_pillar.keys` (+ `_save`): the stream room's jump cells, diagonal stairs into the pillar room, four Skeleton battles with
+    **Isaac's Djinn command (Flint set), Flint unleashed, Ivan's Ray, Isaac summons Venus**, the east pillar pushed and Moved
+    three times to (38,14) where it settles; save (regress `goma_pillar`). Furthest saved point:
+    `port_work/g17/final/furthest_goma_pillar_10500.png`; highlights in story order `port_work/g17/final/sheet.png` (frames in
+    final/frames.txt).
+- **Tools**: battlebot `BB_SEQ` (per-command-box macros: Djinn, Psynergy, Summon); `tools/regress.sh --quick` (core probes +
+  newest 3 story cases, saves reused, ~30 s) and `REUSE=1`.
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: Move/Whirlwind tints vary per cast by design
+  (`gFrameCount & 7`), a Move that only plays and ends had no target (8 px height, ~34 degree cone: trap 42), the cave battle
+  background matches `goma_cave.png`. No asm/C change: no EQUIV spec or audit row, the wasm was not rebuilt (web tests not rerun).
+- **Audio per second**: goma_entrance 154/157 s with sound, goma_ivan 216/219, goma_pillar 172/175; silent only at power-on;
+  battle music reaches the DAC clamp in up to 0.29 % of a window's samples (as GS16).
+
+### Next
+1. From the goma_pillar save: reach the pillar room's y-32 ledges (the pond room via exit 6 or 7; the stump on the central ledge
+   falls into the pond and makes jump cells), Forge (Djinni battle) and Mind Read on the man, exit 9 to the stream room's north
+   (its stump on column 24 is a stepping stone), the bridge, the World Map to **Bilibin** (McCoy, the curse), Kolima Forest.
+2. Write a height-aware BFS for caves (hdump.cjs heights: 4 = y 32, 8 = y 64; walls are heights there, not behavior 255) before
+   routing more caves; fix mapdump's MAP_MODE=height scale (byte 1 is in 8-px units).
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress 29/29 OK (full run 4:40; `--update` only for the three new cases), `--quick` 9/9 OK in 28 s, test_arm 79/79 EQUIV, leak check PASS, code-range audit untouched.
+- Routing: Vault Sanctum door 3,17 from 3,19 (villager on 5,18); the counter 12,9 facing north. Diagonal stairs need diagonal
+  input. Move pushes once per cast and ends on A/B/L/R; Ivan's first battle Psynergy entry is Ray.
+- No downloads, installs, deploys or permission denials.
+
 ## GS16 — 2026-11-02: Vault by real play: the chase, Mind Read, Move on the crate, grinding, the thieves' battle won, the Shaman's Rod
 
 ### Done
