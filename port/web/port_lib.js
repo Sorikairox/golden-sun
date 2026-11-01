@@ -15,6 +15,32 @@ addToLibrary({
   },
 });
 
+// The game's soft reset (GS11, trap 36): A+B+Select+Start -> System_SoftReset -> Cart_Start, which port/pc/main.c
+// runs as Port_SystemEntry -> here. On the GBA the jump to the cartridge entry drops the whole stack; here ASYNCIFY
+// unwinds the wasm stack out of the running export (as a frame wait does) and the saved state is thrown away instead
+// of rewound; once nothing of the old run is on the stack (a microtask later), the C stack pointer goes back to its
+// base and Port_Restart runs System_Entry again. Memory and the hardware layer keep their state, as on the GBA.
+// Module.onSoftReset (optional) is told first (the page clears its per-run state).
+addToLibrary({
+  port_soft_reset__async: true,
+  port_soft_reset__deps: ['$stackRestore', 'emscripten_stack_get_base'],
+  port_soft_reset: function () {
+    return Asyncify.handleSleep(() => {
+      queueMicrotask(() => {
+        if (Asyncify.currData) { _free(Asyncify.currData); Asyncify.currData = null; }
+        Asyncify.state = Asyncify.State.Normal;
+        stackRestore(_emscripten_stack_get_base());
+        if (Module.onSoftReset) Module.onSoftReset();
+        try {
+          Module._Port_Restart();
+        } catch (e) {
+          if (e !== 'unwind') { err('game stopped: ' + (e && e.stack || e)); throw e; }
+        }
+      });
+    });
+  },
+});
+
 // The link transport (port/pc/link_transport.h): link.c's channel to the other console, delegated to
 // Module.linkTransport {connected(), playerId(), send(ch, Uint8Array), recv(ch) -> Uint8Array|null}. G6 uses
 // the in-memory pair of port/web/link_loopback.js, G7 WebRTC data channels. Absent: never connected.

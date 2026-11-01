@@ -153,6 +153,8 @@ void Port_CodeUnalias(u32 to, u32 bytes) {
   aliasCount = k;
 }
 
+void Port_SystemEntry(void);
+
 void *Port_ResolveCode(void *p) {
   u32 a = (u32)(uintptr_t)p;
   void *fn;
@@ -171,6 +173,8 @@ void *Port_ResolveCode(void *p) {
   fn = Port_CodeAt(a);
   if (fn)
     return fn;
+  if (a == 0x08000000u || a == 0x080003C0u) /* Cart_Start, System_Entry: the soft reset (main.c, trap 36) */
+    return (void *)Port_SystemEntry;
   printf("Port_ResolveCode: no function at GBA address 0x%08x (overlay %x)\n", (unsigned)a, (unsigned)currentOverlay);
   fflush(stdout);
   abort();

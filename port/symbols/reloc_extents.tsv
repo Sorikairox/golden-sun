@@ -1,0 +1,7 @@
+# Relocated data the game reads past its symbol's own size (GS11, trap 36). The reference build places unnamed
+# section pieces right after the symbol; the game copies them together (System_InstallIwramAndIrqs copies 14
+# handlers from gDefaultIrqHandlers, whose symbol covers 10). bind.py widens the buffer to `size` and moves the
+# piece's relocs.tsv slots into it at `offset`. Checked: the pieces lie at symbol + offset in the reference map.
+symbol	size	piece	offset
+gDefaultIrqHandlers	56	.rodata.irq_middle	40
+gDefaultIrqHandlers	56	.rodata.irq_tail	48

@@ -626,6 +626,10 @@ function routines(h) {
     },
     { name: 'Bios_SoundBiasOn', spec: { orig: T('Bios_SoundBiasOn'), port: 'Bios_SoundBiasOn', returns: 'none' }, cases: () => [[], []], setup: () => { h.mem[0x04000088] = 0x55; h.mem[0x04000089] = 0xc3; } },
     { name: 'Bios_SoundBiasOff', spec: { orig: T('Bios_SoundBiasOff'), port: 'Bios_SoundBiasOff', returns: 'none' }, cases: () => [[], []] },
+    // GS11 (trap 36): the cartridge entry up to its call of System_Initialize (stacks are registers, not compared;
+    // the IRQ vector word at 0x03007FFC is). setup puts a random word there first, so the store is seen.
+    { name: 'System_Entry', spec: { orig: A('System_Entry'), port: 'Port_SystemEntryPrologue', returns: 'u32', stopAt: h.addr('System_Initialize') & ~1 },
+      cases: () => [[], [], [], []], setup: () => { for (let i = 0; i < 4; i++) h.mem[0x03007ffc + i] = R() & 0xff; } },
   ];
   return list;
 }

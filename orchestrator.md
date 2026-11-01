@@ -299,9 +299,13 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     game loop runs from a Worker's ticks while hidden (net.js); the netsim queue is drained every game frame.
 35. In headless Chrome the second page target (another browser context) is `visibilityState: hidden` while the first
     is visible: tests/web_link.cjs's page b exercises the hidden-page path (it must still run ~60 frames/s).
-36. The game's soft reset (A+B+Select+Start) does nothing in the port: KEYCNT is armed (0xC00F, IE bit 12) but
-    gResetRequested is never set (keypad IRQ path in hw.c to investigate), and Cart_Start (0x08000000, entry.s) has no C
-    port, so Port_ResolveCode would abort on it anyway. The page's "Return to title" restarts the module instead (GS10).
+36. The game's soft reset (A+B+Select+Start) works since GS11. It was dead for two reasons: (a) System_InstallIwramAndIrqs
+    copies 14 handlers from gDefaultIrqHandlers, whose symbol covers 10; the last 4 (Keypad among them) are unnamed section
+    pieces after it, so the relocated 40-byte buffer handed the IRQ table garbage (port/symbols/reloc_extents.tsv widens it);
+    (b) System_SoftReset calls the constant Cart_Start (`call inttoptr (i32 0x08000000)`), which bind.py did not route
+    through Port_ResolveCode. Now Cart_Start/System_Entry resolve to main.c Port_SystemEntry: port_lib.js unwinds the wasm
+    stack with ASYNCIFY, drops the saved state, resets the C stack pointer and runs Port_Restart (System_Entry again;
+    memory and hardware keep their state, as on the GBA). Holding the keys resets again each boot, as on hardware.
 37. `offsetParent` is null for `position: fixed` elements (the picture and pad in play): page tests must test
     visibility with `getClientRects().length`, not offsetParent.
 38. The PPU must reload an affine reference point (BG2X/Y, BG3X/Y) on every write, not only when the value changes: the

@@ -125,6 +125,19 @@ class Arm7 {
   }
   note(k) { this.used.set(k, (this.used.get(k) || 0) + 1); }
 
+  // A mode switch (GS11, System_Entry sets the IRQ and system stacks): banks r13/r14 for IRQ, SVC and user/system
+  // (which share theirs). FIQ (banked r8-r12) and the abort/undefined modes throw.
+  switchMode(to, op) {
+    const bank = (m) => (m === 0x10 || m === 0x1f ? 'usr' : m === 0x12 ? 'irq' : m === 0x13 ? 'svc' : null);
+    const from = bank(this.cpsr & 0x1f), b = bank(to);
+    if (!from || !b) throw new Error(`ARM msr to mode 0x${to.toString(16)} (0x${(op >>> 0).toString(16)}) not implemented`);
+    this.note('arm msr mode');
+    this.banks = this.banks || {};
+    this.banks[from] = [this.r[13], this.r[14]];
+    const [sp, lr] = this.banks[b] || [0, 0];
+    this.r[13] = sp; this.r[14] = lr;
+  }
+
   get thumb() { return (this.cpsr & T) !== 0; }
   // jump with interworking (BX): bit 0 selects Thumb
   bx(a) {
@@ -133,7 +146,8 @@ class Arm7 {
 
   // Call a routine at `addr` (bit 0 = Thumb) with up to four register arguments plus stack arguments; returns
   // when it returns to the sentinel in lr. Returns r0 (and leaves all registers in this.r).
-  call(addr, args = [], { sp = 0x0d0ff000, stackArgs = [], maxSteps = 50_000_000, regs = {} } = {}) {
+  // stopAt: also stop (as if returned) when the pc reaches this address (a call out of an entry routine).
+  call(addr, args = [], { sp = 0x0d0ff000, stackArgs = [], maxSteps = 50_000_000, regs = {}, stopAt = -1 } = {}) {
     const RET = 0x0d0ffff0;
     this.r.fill(0);
     for (let i = 0; i < 4 && i < args.length; i++) this.r[i] = args[i] >>> 0;
@@ -143,9 +157,10 @@ class Arm7 {
     this.r[13] = s;
     this.r[14] = RET;
     this.cpsr = 0x1f;
+    this.banks = {};
     this.bx(addr);
     const limit = this.steps + maxSteps;
-    while (this.r[15] !== RET) {
+    while (this.r[15] !== RET && this.r[15] !== stopAt) {
       if (this.steps++ > limit) throw new Error(`routine at 0x${addr.toString(16)} did not return in ${maxSteps} steps`);
       if (this.thumb) this.stepThumb(); else this.stepArm();
     }
@@ -224,7 +239,8 @@ class Arm7 {
         if (op & (1 << 19)) mask |= 0xff000000;
         if (op & (1 << 16)) mask |= 0xff;
         if (op & (1 << 22)) { this.spsr = ((this.spsr & ~mask) | (v & mask)) >>> 0; return; }
-        if ((mask & 0xff) && ((v & 0x3f) !== (this.cpsr & 0x3f))) unimpl('msr changing mode or state');
+        if ((mask & 0xff) && ((v & 0x20) !== (this.cpsr & 0x20))) unimpl('msr changing state');
+        if ((mask & 0xff) && ((v & 0x1f) !== (this.cpsr & 0x1f))) this.switchMode(v & 0x1f, op);
         this.cpsr = ((this.cpsr & ~mask) | (v & mask)) >>> 0;
         return;
       }

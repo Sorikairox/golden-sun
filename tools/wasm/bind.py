@@ -24,7 +24,9 @@ DEF_GLOBAL = re.compile(r'^@(?:"([^"]+)"|([-\w$.]+)) = (.*)$')
 DEF_FUNC = re.compile(r'^define\b[^@]*@(?:"([^"]+)"|([-\w$.]+))\(')
 DECL_FUNC = re.compile(r'^declare\b[^@]*@(?:"([^"]+)"|([-\w$.]+))\(')
 # `%r = [tail ]call <type> %callee(` : an indirect call (the callee is a local value, not @function)
-INDIRECT_CALL = re.compile(r'^(\s+(?:%[-\w.]+ = )?(?:tail |notail )?call [^%@(]*(?:\([^)]*\)\s*)?)(%[-\w.]+)\(')
+# or of a constant GBA address (`call i32 inttoptr (i32 134217728 to ptr)()`: System_SoftReset's Cart_Start, GS11)
+INDIRECT_CALL = re.compile(r'^(\s+(?:%[-\w.]+ = )?(?:tail |notail )?call [^%@(]*(?:\([^)]*\)\s*)?)'
+                           r'(%[-\w.]+|inttoptr \(i32 \d+ to ptr\))\(')
 COMPILER_LOCAL = re.compile(r'^(\.str|switch\.table|__block_|\.compoundliteral|__const\.|_NSConcrete|\.Lswitch|reltable)')
 
 
@@ -66,6 +68,12 @@ class Tables:
             self.ovl_by_obj[(o, ob)][n] = r
         self.absolute = {r['name']: int(r['value'], 16) for r in read_tsv(os.path.join(sym, 'absolute.tsv'))}
         self.relocs = read_tsv(os.path.join(sym, 'relocs.tsv'))
+        # symbols the game reads past their size into unnamed pieces after them (reloc_extents.tsv, GS11)
+        for e in read_tsv(os.path.join(sym, 'reloc_extents.tsv')):
+            self.main[e['symbol']]['size'] = e['size']
+            for r in self.relocs:
+                if not r['overlay'] and r['symbol'] == e['piece']:
+                    r['symbol'], r['offset'] = e['symbol'], str(int(r['offset']) + int(e['offset']))
         self.relocated = self.closure()
 
     def closure(self):

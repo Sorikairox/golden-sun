@@ -86,11 +86,11 @@ class Harness {
   }
   // One case: spec.orig (GBA address, |1 for Thumb), spec.port (exported name; spec.call, a JS function, calls
   // it instead, e.g. Port_CallCode4 for vendor C), args, returns ('u32'|'none'), spec.sp (the original's stack top),
-  // checkMemory. Returns null if equal, else a description.
+  // spec.stopAt (the original also ends when the pc gets there: an entry routine's call out), checkMemory. Returns null if equal, else a description.
   compare(spec, args, { checkMemory = true, stackArgs = [] } = {}) {
     const before = checkMemory ? this.snapshot() : null;
     let ro, rp, err;
-    try { ro = this.cpu.call(spec.orig, args, spec.sp ? { stackArgs, sp: spec.sp } : { stackArgs }) >>> 0; } catch (e) { err = 'original: ' + e.message; }
+    try { ro = this.cpu.call(spec.orig, args, { stackArgs, ...(spec.sp ? { sp: spec.sp } : {}), ...(spec.stopAt ? { stopAt: spec.stopAt } : {}) }) >>> 0; } catch (e) { err = 'original: ' + e.message; }
     const afterOrig = checkMemory ? this.snapshot() : null;
     if (checkMemory) this.restore(before);
     try { rp = (spec.call ? spec.call(...args, ...stackArgs) : this.m['_' + spec.port](...args, ...stackArgs)) >>> 0; } catch (e) { err = err || 'port: ' + e.message; }
