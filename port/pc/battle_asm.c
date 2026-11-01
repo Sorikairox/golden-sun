@@ -15,7 +15,7 @@
  *   110        10 bits: v = bits 3..9
  * The bit buffer holds at least 16 bits: a halfword is read whenever fewer remain (none at the end of the last
  * pixel). The original also relocates its own handler table inside its RAM copy (not kept: no table here). */
-void BitDecoder_DecodeImage(const u8 *source, u8 *destination) {
+static void bitdecoder_decode(const u8 *source, u8 *destination, u32 offset) {
   const u16 *src = (const u16 *)source;
   u32 bits = *src++; /* r3 */
   s32 extra = 0;     /* r2: bits held beyond 16 */
@@ -72,7 +72,7 @@ void BitDecoder_DecodeImage(const u8 *source, u8 *destination) {
             }
             word |= (v >> 25) << (8 * p);
           }
-          *(u32 *)dst = word + 0x60606060u;
+          *(u32 *)dst = word + offset;
           dst += k ? 60 : 4;
         }
       }
@@ -80,4 +80,14 @@ void BitDecoder_DecodeImage(const u8 *source, u8 *destination) {
     }
     dst = dst - 64 + 2048;
   }
+}
+
+void BitDecoder_DecodeImage(const u8 *source, u8 *destination) { bitdecoder_decode(source, destination, 0x60606060u); }
+
+/* menu/credits_background_decode.s Credits_DecodeBackground(source, destination, offset) (GS9): the same decoder
+ * and commands (its own copy, credits_background_expand.s, in bank 09) with the word added to every four pixels
+ * passed in r2 instead of 0x60606060: 0 or 0x80808080, the palette half of a credits slide
+ * (Credits_LoadBackground copies it to HEAP_SLOT_RAM_CODE_TEMP and calls the copy). */
+void Credits_DecodeBackground(const u8 *source, u8 *destination, u32 offset) {
+  bitdecoder_decode(source, destination, offset);
 }

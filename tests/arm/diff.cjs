@@ -439,6 +439,25 @@ function routines(h) {
       },
     },
     {
+      // credits slides (menu/credits_background_decode.s, GS9): BitDecoder_DecodeImage's decoder with the pixel
+      // offset as an argument; run from a RAM copy (its command table relocated inside the copy, ignored), random
+      // bit streams biased to each command kind, offsets 0, 0x80808080 and random
+      name: 'Credits_DecodeBackground', spec: { orig: 0x03003400, port: 'Credits_DecodeBackground', returns: 'none', ignore: [[0x03003400, 0x230]] },
+      setup: () => { const a = A('Credits_DecodeBackground'); h.mem.copyWithin(0x03003400, a, a + 0x230); },
+      memoryEvery: 1,
+      cases: function* () {
+        for (let i = 0; i < 300; i++) {
+          const src = EW + 0x10000 + 2 * R.range(0, 8), kind = i % 9;
+          for (let k = 0; k < 40000; k += 2) {
+            let hw = R() & 0xffff;
+            if (kind < 8 && (R() & 3) === 0) hw = (hw & ~7) | kind;
+            h.mem[src + k] = hw & 0xff; h.mem[src + k + 1] = hw >> 8;
+          }
+          yield [src, EW + 4 * R.range(0, 16), [0, 0x80808080, R() >>> 0][i % 3]];
+        }
+      },
+    },
+    {
       // World Map still picture (field/picture_decode.s, GS9): 160 random affine lines (pa/pc small, large and
       // 0; x/y anywhere), a 64x64 BG2 map over a BG3 map 4096 bytes lower and 8bpp tiles over BG3's 16384 bytes
       // lower, both with many zeros (the fallback); the whole 240x160 output is compared
