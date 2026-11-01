@@ -1,8 +1,7 @@
 /* PC replacement for alchemy's include/system/iwram_call.h (same API). On the GBA these routines are ARM code
  * copied to IWRAM and called at fixed addresses; a wasm function pointer is a table index, not an address, so
  * every entry here is one of our C functions (port layer, written and unit-tested against the originals in
- * G2/G3). The arithmetic forms (IwramIrqMain + Iwram_*Offset) only appear in two vendor files, which are
- * overridden (port/overrides.tsv). */
+ * G2/G3). */
 #ifndef PORT_IWRAM_CALL_H
 #define PORT_IWRAM_CALL_H
 #define ALCHEMY_IWRAM_CALL_H 1
@@ -53,6 +52,14 @@ static inline void *Iwram_Decompress(const void *source, void *destination) {
 static inline s32 Iwram_CopyWords(volatile void *destination, const volatile void *source, s32 size) {
   return Port_IwramCopyWords((void *)destination, (const void *)source, size);
 }
+
+/* Offsets of IWRAM routines from IwramIrqMain: item.c and actor_update_arm.c call them as
+ * (fn type)(IwramIrqMain + offset). In wasm a function pointer is a table index, so each offset is chosen to make
+ * that sum the index of our C function (plain i32 arithmetic in wasm32). */
+extern u8 IwramIrqMain[];
+#define Iwram_CopyWordsOffset ((u32)(void *)Port_IwramCopyWords - (u32)(void *)IwramIrqMain)
+#define Iwram_RatioMulQ14Offset ((u32)(void *)Port_IwramRatioMulQ14 - (u32)(void *)IwramIrqMain)
+#define Iwram_SqrtOffset ((u32)(void *)Port_IwramSqrt - (u32)(void *)IwramIrqMain)
 
 /* (left * right) >> 16 with a 64-bit product: the 16.16 product (IwramMulQ16ReturnIp on the GBA). */
 static inline s32 Iwram_MulQ16(s32 left, s32 right) { return (s32)(((s64)left * right) >> 16); }

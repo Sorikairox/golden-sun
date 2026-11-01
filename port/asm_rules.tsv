@@ -1,0 +1,8 @@
+# Non-empty inline asm statements in vendor C, and the C that replaces each in the wasm build (applied by
+# tools/wasm/port_src.py). template: the asm string; {0} {1}.. in the replacement are the statement's operand
+# expressions in order (outputs, then inputs). Port_* functions live in the PC layer (port/pc).
+template	replacement	why
+swi 2	Port_BiosHalt();	BIOS Halt until an interrupt: the frame driver's yield to the browser (D8)
+swi 3	Port_BiosStop();	BIOS Stop (sleep mode)
+mov %0, sp	{0} = (void *)Port_FrameWaitStackTop();	wait() keeps the GBA stack shallow by copying it aside below a fixed top; reporting sp at that top skips the copy, which wasm does not need
+mov sp, %0	(void)({0});	the matching stack switch: nothing to do in wasm

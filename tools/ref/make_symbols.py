@@ -15,6 +15,7 @@ Prints the coverage summary (bytes of the ROM by kind).
 Usage: make_symbols.py BUILD_DIR ROM OUT_DIR [VENDOR_ALCHEMY]
 """
 import bisect
+import struct
 import glob
 import os
 import re
@@ -90,6 +91,7 @@ class ObjInfo:
     def __init__(self, path, func_names, is_c):
         self.ok = os.path.exists(path)
         self.code_secs, self.codeptrs, self.otherptrs = set(), defaultdict(list), defaultdict(list)
+        self.targets = defaultdict(list)  # section -> [(offset, target name, 'code'|'data')]
         if not self.ok:
             return
         e = elf32.Elf(path)
@@ -116,6 +118,18 @@ class ObjInfo:
                          e.sections[sym.shndx].flags & elf32.SHF_EXECINSTR and 'code' in mapping[sym.shndx]) or
                         (sym.shndx == 0 and sym.name in func_names))
                 (self.codeptrs if code else self.otherptrs)[tname].append(r.offset)
+                tgt = sym.name
+                if sym.type == 'SECTION':
+                    # REL: the addend is the word in place; name the symbol of that object it lands on
+                    sec = e.sections[sym.shndx]
+                    data_sec = e.sections[target]
+                    addend = struct.unpack_from('<I', e.data, data_sec.offset + r.offset)[0] if data_sec.type != 8 else 0
+                    cands = [x for x in e.symbols if x.shndx == sym.shndx and x.type in ('FUNC', 'OBJECT', 'NOTYPE')
+                             and x.name and not x.name.startswith(('$', '.L')) and (x.value & ~1) <= (addend & ~1)]
+                    best = max(cands, key=lambda x: x.value & ~1, default=None)
+                    tgt = (best.name if best else sec.name) + ('' if not best or (best.value & ~1) == (addend & ~1)
+                                                               else f'+{(addend & ~1) - (best.value & ~1)}')
+                self.targets[tname].append((r.offset, tgt, 'code' if code else 'data'))
 
 
 def main():
@@ -247,7 +261,25 @@ def main():
                 cpt_rows.append((overlay or '', n, a, size, len(ptrs), len(optrs)))
             sym_rows.append((overlay, n, a, ra, size, skind, s.name, mapparse.short_obj(s.obj), sym_check))
 
+    reloc_rows = []
+    for s, kind, r, check, src, info, overlay in sec_index:
+        if not info or kind in ('code', 'ram') or not info.targets.get(s.name):
+            continue
+        syms = sorted((a, n) for n, a, in [(row[1], row[2]) for row in sym_rows
+                                           if row[0] == overlay and row[6] == s.name and row[7] == mapparse.short_obj(s.obj)])
+        starts = [a for a, _ in syms]
+        for off, tgt, tk in info.targets[s.name]:
+            k = bisect.bisect_right(starts, s.addr + off) - 1
+            owner, base = (syms[k][1], syms[k][0]) if k >= 0 else (s.name, s.addr)
+            reloc_rows.append((overlay or '', owner, s.addr + off - base, tgt, tk))
     os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, 'relocs.tsv'), 'w') as f:
+        f.write('# Pointers inside data symbols (ABS32 relocations of the reference build): which symbol each points\n'
+                '# to. Names and offsets only. A data symbol that holds a code pointer, or points to one that does, is\n'
+                '# copied from the ROM at run time and these slots are patched (G2/G3).\n'
+                'overlay\tsymbol\toffset\ttarget\ttarget_kind\n')
+        for row in reloc_rows:
+            f.write('\t'.join(str(x) for x in row) + '\n')
     hx = lambda v: f'0x{v:08x}' if v is not None else ''  # noqa: E731
     head = ('# Golden Sun (USA, Europe) tbs-en address map, from alchemy 24b72a32 built by tools/build_ref.sh.\n'
             '# Addresses and names only (no ROM bytes). check: rom = section byte-identical to the player\'s ROM;\n'

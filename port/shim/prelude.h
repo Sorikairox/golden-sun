@@ -7,6 +7,7 @@
 #ifndef PORT_SHIM_PRELUDE_H
 #define PORT_SHIM_PRELUDE_H
 
+#include "port_api.h"
 #include "system/port_dma.h"
 #include "system/port_iwram_call.h"
 #include "system/port_transform.h"
