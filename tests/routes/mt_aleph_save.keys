@@ -1,0 +1,6 @@
+# GS15: save on the World Map outside Vale (after mt_aleph.keys, from the Elemental Star Room save):
+# B, Start, Save your quest, file 1, "OK to save over this file?" LEFT to Yes, A (written ~f58770), B.
+B@58300-58302,START@58400-58402,A@58490-58492   # pause menu, Save
+A@58590-58592                                   # file 1
+LEFT@58690-58692,A@58740-58742                  # Yes: save over it
+B@58950-58952                                   # close "Your game was saved."

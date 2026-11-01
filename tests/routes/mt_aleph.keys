@@ -1,0 +1,21 @@
+# GS15: from the Elemental Star Room save (sol_star_room_save.keys; continue with vale_day1_continue.keys + --flash-in).
+# Around the captors (diagonal past Alex at 31,21) to 34,18, then the north loop to the Mars pedestal (14,8)
+RIGHT@2100-2129,UP@2130-2132,RIGHT@2133-2137,RIGHT@2139-2173,RIGHT@2175-2209,RIGHT@2211-2248,RIGHT@2250-2270
+UP@2272-2286,RIGHT@2288-2304,UP@2306-2339,RIGHT@2341-2378,UP@2380-2400,RIGHT@2402-2430,UP@2432-2451
+UP@2453-2486,RIGHT@2488-2539,UP@2541-2614,RIGHT@2541-2614
+UP@2630-2668,RIGHT@2670-2689,RIGHT@2691-2725,UP@2727-2764,RIGHT@2766-2785,UP@2787-2819,UP@2821-2858
+UP@2860-2894,UP@2896-2932,LEFT@2934-2954,LEFT@2956-2990,UP@2992-3011,LEFT@3013-3045,LEFT@3047-3065
+UP@3067-3081,LEFT@3083-3099,LEFT@3101-3134,LEFT@3136-3174,DOWN@3176-3195,LEFT@3197-3229,DOWN@3231-3268
+LEFT@3270-3289,DOWN@3291-3323,LEFT@3325-3362,DOWN@3364-3384,LEFT@3386-3414,LEFT@3416-3435,DOWN@3437-3468
+LEFT@3470-3490,DOWN@3492-3504,LEFT@3506-3522,LEFT@3524-3557,LEFT@3559-3577,UP@3579-3641
+# Search the Mars pedestal: the room quakes, SolSanctumEruption (Wise One, Saturos leaves with Jenna and Kraden), the
+# Wise One sends Isaac and Garet to the Luna/Sol rooms (f23510); A taps answer every Yes/No with Yes
+UP@3660-3663,A@3690-3692,A@3770-24700/40
+# Retreat (pause menu, Psynergy, Isaac, Retreat, Yes) to the Sanctum's first room; south exit to Sol Entrance
+START@25100-25102,A@25180-25182,A@25260-25262,DOWN@25340-25342,DOWN@25400-25402,A@25460-25462,A@25560-25562
+DOWN@26050-26093
+# Sol Entrance: off the door platform by the west steps, down the path: ValeEruption (f27149)
+LEFT@26450-26560,DOWN@26600-26800,RIGHT@26800-26900,DOWN@26900-27008
+LEFT@27030-27063,DOWN@27065-27131,DOWN@27133-27148
+# ValeEruption, the Great Healer's Sanctum (sepia account, the quest: Yes), Vale's farewell, onto the World Map (f58055)
+A@27300-57990/40

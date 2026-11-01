@@ -11,7 +11,8 @@
 # Kraden, Mt. Aleph, Sol Sanctum's stepping stones, a random battle won; needs port_work/regress/vale_day1.sav, made first),
 # sol_sanctum_save (GS13: the Sol Sanctum save, SHA-1 kept), sol_jewels (GS13: from it, both Small Jewels set, the
 # statues Moved, the maze; its save SHA-1 kept), sol_star_room (GS14: from it, statue 2 and 6 Moved, the round passage,
-# the Luna/Sol rooms, the statue puzzle, the Elemental Star Room to the Jupiter Star event; its save SHA-1 kept), battle_fight,
+# the Luna/Sol rooms, the statue puzzle, the Elemental Star Room to the Jupiter Star event; its save SHA-1 kept), mt_aleph (GS15: from it, the Mars Star, the
+# eruption, Retreat, Sol Entrance, Vale's eruption, the Sanctum's quest, Vale's farewell, the World Map save; SHA-1 kept), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -44,9 +45,10 @@ CASES=(
   "sol_sanctum_save|22200|22100,22200||$R/vale_day1_continue.keys,$R/vale_sanctum.keys,$R/sol_sanctum.keys,$R/sol_sanctum_save.keys||--flash-in $W/vale_day1.sav --flash-out $W/sol_sanctum.sav"
   "sol_jewels|33700|2000,4300,7700,11300,15000,16900,17900,22700,28000,31000,32500,33700||$R/vale_day1_continue.keys,$R/sol_jewels.keys,$R/sol_jewels_save.keys||--flash-in $W/sol_sanctum.sav --flash-out $W/sol_jewels.sav"
   "sol_star_room|75700|3016,6700,7900,13000,17000,20000,24000,31600,37000,40000,56500,58500,66000,75100,75700||$R/vale_day1_continue.keys,$R/sol_star_room.keys,$R/sol_star_room_save.keys||--flash-in $W/sol_jewels.sav --flash-out $W/sol_star_room.sav"
+  "mt_aleph|59300|3640,4500,9000,14000,20000,23600,25600,26100,27200,33600,40000,50000,58100,59300||$R/vale_day1_continue.keys,$R/mt_aleph.keys,$R/mt_aleph_save.keys||--flash-in $W/sol_star_room.sav --flash-out $W/mt_aleph.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected
