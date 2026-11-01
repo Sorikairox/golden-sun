@@ -2,6 +2,49 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS3 — 2026-11-01: G3 partial: test interpreter (D20), 39 EQUIV ports, boot to the File Screen, page v1
+
+### Done
+- **D20** (coordinator decision): our own ARMv4T interpreter for tests (`tests/arm/arm7.js`), the differential
+  harness (`tests/arm/diff.cjs`, `harness.js`) and negative controls (`selftest.cjs`); `tools/test_arm.sh`.
+  **39/39 routines EQUIV** against the ROM's own code: the IWRAM routines, trig, heap release, CpuSet and
+  SoundBias (vs a GBATEK reference), the decoders on all 1000 ROM resources, the message decoder on real
+  messages, the OAM builder, tile packers, map grid converter, register write queue... (list in docs/G3.md).
+- Of the 23 asm stubs of G2, 13 are gone; **10 asm stubs left**: MPlayMain, SoundMain, Mixer_Enter, TrackStop,
+  m4aSoundVSync, ply_note/endtie/lfos/mod (audio, G4) and BitDecoder_DecodeImage (battle). Plus
+  SoundMainRAM_Rom and _call_via_r0 (other). 13 of the 51 code-as-data routines ported.
+- **Runtime**: indirect calls by GBA address through `Port_ResolveCode` (bind.py IR rewrite + generated code map
+  + DMA-registered aliases for RAM copies); overlay switching from the overlay decode (D7); frame driver with
+  HBlank/VCount/VBlank/timer/keypad IRQs dispatched in IwramIrqMain's order (D8); DMA immediate/VBlank/HBlank;
+  timers; keypad; flash at the driver API (`port/fn_overrides.tsv`: new mechanism, bind.py drops the vendor body,
+  port_src.py marks it noinline); VCOUNT busy-waits via `port/c_rules.tsv` (new text rule table).
+- **PPU v1** (modes 0-2, sprites incl. affine, windows, blending; no mosaic/bitmap modes).
+- **Page v1** (`port/web`, `tools/site.sh`): picker with size + SHA-1, IndexedDB ROM and save cache, canvas,
+  keyboard, 59.73 Hz with ASYNCIFY suspension; `tests/web_shot.cjs` (muted headless Chrome over CDP, node static
+  server, waits for any other headless Chrome, kills only its own). ~59 fps, 0 console errors.
+- **Boot**: Nintendo logo (f120), Camelot logo (f250), Golden Sun logo (f380), File Screen name entry (f600),
+  same frames in node (4000 fps) and Chrome. Checked by eye against the vendor's own `nintendo_splash.png`,
+  `camelot_logo.png`, `golden_sun.png`. Captures: `port_work/g3/frame_00120/00250/00380/00600.png`,
+  `web_00121/00254/00381/00600.png` (gitignored). The full title screen (`screen.png`: sky, peak, copyright,
+  PRESS START) only shows when a save file exists (Title_Run); not reached.
+- Leak check: halfword counting runs are trivial now (the wasm's element section encodes such runs); PASS on
+  every build. game.wasm 3.7 MB (ASYNCIFY + names section).
+
+### Next
+1. `tools/boot.sh 1000 --keys A@650-652` confirms the name and enters Isaac's house (overlay 377); it stops at
+   `Port_ResolveCode: no function at 0x03003400` = a RAM copy of **Render_DecodePicture** (field/picture_decode.s).
+   Port it with a diff.cjs spec, then follow the next unknown address (Tile_CopyStrided, TileMap_DrawRows,
+   Decompress_ByteLzArm, palette fade kernels are likely next on the field path).
+2. A save file, to reach the real title screen: play the prologue to the first save (scripted keys) or record a
+   run; then G3's exit (title + file menu) is met.
+3. G4: m4a audio (the 9 sound stubs + mixer), mosaic, touch controls (rule 11).
+4. Watch: `_call_via_r3` is one C function taking four words; field_psynergy.c declares it void(s32, s32), which
+   wasm-ld turns into a trap stub (signature mismatch warning).
+
+### Notes
+- No downloads, no system installs, no permission denials that blocked work. One `rm` with a relative glob was
+  refused by the safety check (`rm .../port_work/g3/*` after a `cd`); re-run with absolute paths.
+
 ## GS2 — 2026-11-01: G1 finished (exact match), G2 done
 
 ### Done

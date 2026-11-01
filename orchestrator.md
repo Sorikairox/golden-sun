@@ -14,10 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS2 (2026-11-01): **G1 done**: alchemy tbs-en builds byte-identical (SHA-1 5c469520, `make compare-tbs-en`
-  OK) and gsret matches; address map in `port/symbols/`. **G2 done**: `tools/web_build.sh` compiles all 124 C
-  code objects into one `game.wasm` with 42 logged stubs and 300 veneers; leak check passes (docs/G2.md).
-- Next: G3 (boot to the title screen): PC layer core, relocated tables, overlay dispatch, renderer, page.
+- GS3 (2026-11-01): **G3 partial**. Test interpreter + differential harness (D20): 39/39 hand ports EQUIV.
+  Boot in node and muted headless Chrome (same frames): Nintendo, Camelot and Golden Sun logos, then the File
+  Screen's name entry (a blank save skips the title intro, as on the real game); A enters the first field scene,
+  where the next unported ARM routine (Render_DecodePicture) stops it. Page v1 (picker, SHA-1, IndexedDB ROM and
+  save, keyboard, 59.73 Hz). 10 asm stubs left (9 sound, 1 battle). Details: docs/G3.md.
+- Next: field sprite/tile ARM routines (code_as_data.tsv) to play the prologue; a save to reach the title
+  screen; then G4 (audio, renderer completion, touch controls).
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -234,3 +237,13 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 15. alchemy's code objects are aggregates: `battle/battle.c` #includes `turn.c`, `action.c`... Transform the
     whole include closure (the build mirrors the tree), not just the files clang names first.
 16. Far-call names declared K&R style (`f()`) are variadic in IR; their veneers take the target's signature.
+17. ASYNCIFY re-enters a suspended import when it rewinds: run the import's side effects (onFrame) only when
+    `Asyncify.state` is Normal, or every frame happens twice (port/web/port_lib.js).
+18. python's `http.server` stalled headless Chrome's first page load for ~60 s: tests serve with node's http.
+19. clang inlines vendor functions into their callers at -O2 before bind.py sees the IR: a function replaced
+    by port/pc (port/fn_overrides.tsv) is marked noinline by port_src.py first.
+20. A heap block that held a RAM copy of code is reused for data or other code: aliases must be dropped when
+    anything is copied over them (Port_CodeUnalias), or a later call runs the wrong port.
+21. With no save file the game skips the title intro (Title_Run: Save_ScanFileSummaries() > 0): logos, Golden
+    Sun logo, then the File Screen. The full title screen needs a save.
+22. Busy-waits on VCOUNT (m4a SampleFreqSet) never end unless reading VCOUNT advances time: port/c_rules.tsv.

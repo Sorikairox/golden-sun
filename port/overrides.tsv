@@ -18,3 +18,19 @@ games/tbs/src/battle_effect/battle_effect/particle_streams.c	transform	tools/was
 games/tbs/src/menu/menu/item.c	header	port/shim/system/port_iwram_call.h	done	Iwram_*Offset defined so IwramIrqMain + offset is our function: calls an IWRAM routine as IwramIrqMain + Iwram_CopyWordsOffset (address arithmetic on code)
 games/tbs/src/field/actor_update_arm.c	header	port/shim/system/port_iwram_call.h	done	ARM C calling IWRAM routines by offset from IwramIrqMain (IWRAM_ENTRY)
 games/tbs/src/system/system/frame.c	transform	tools/wasm/port_src.py	done	asm rules: swi 2/3 -> Port_BiosHalt/Stop, sp read/switch -> no stack copy
+games/tbs/src/system/iwram_routines.s	asm	port/pc/iwram.c	done	IWRAM routines (divide core, signed remainder, sqrt, fill/copy words, bit runs, transform vector/matrix, resident LZ): EQUIV (tests/arm/diff.cjs)
+games/tbs/src/sound/resident_mixer_render.s	asm	port/pc/iwram.c	done	IwramCopyWords only (the mixer is G4): EQUIV
+games/tbs/src/system/iwram_entry.s	asm	port/pc/iwram.c	done	__divsi3/__udivsi3/__modsi3/__umodsi3 veneers
+games/tbs/src/field/actor_update_far.s	asm	port/pc/iwram.c	done	ARM veneers to ArcTan2, IwramSqrt, IwramRatioMulQ14: EQUIV
+games/tbs/src/system/trig.s	asm	port/pc/asm_small.c	done	Trig_Sin/Cos: EQUIV on all 65536 angles
+games/tbs/src/system/heap_release.s	asm	port/pc/asm_small.c	done	Heap_Release, HeapSlot_Release: EQUIV
+games/tbs/src/sound/umul_high.s	asm	port/pc/asm_small.c	partial	umul3232H32 EQUIV; SoundMain still a stub (audio is G4)
+games/tbs/src/system/bios.s	asm	port/pc/bios.c	done	CpuSet and SoundBias from GBATEK: EQUIV against the harness's GBATEK reference
+games/tbs/src/sound/clear_buffer.s	asm	port/pc/sound_asm.c	partial	SoundMainBTM, RealClearChain EQUIV; MPlayJumpTableCopy copies the relocated template; MPlayMain, TrackStop, ply_* still stubs (G4)
+games/tbs/src/system/decompress_byte_lz.s	asm	port/pc/oam_kernel.c	partial	Oam_BuildBufferKernel EQUIV; Decompress_ByteLzArm, palette fade kernels todo
+games/tbs/src/system/decompress_tagged_lz.s	asm	port/pc/decompress.c	done	tagged LZ (forms 0/1), move-to-front LZ (form 2), Resource_PatchThumbBranch, Resource_ExecuteTransfer: EQUIV (all ROM resources)
+games/tbs/src/window/message_decode.s	asm	port/pc/text_asm.c	done	Message_FindArm, Text_DecodeSymbol: EQUIV on real messages
+games/tbs/src/window/decompress_4bpp.s	asm	port/pc/window_asm.c	done	Tile_Decompress4bpp, Tile_ExpandMasked: EQUIV
+games/tbs/src/window/expand_opaque.s	asm	port/pc/window_asm.c	done	Tile_ExpandOpaque: EQUIV
+games/tbs/src/field/map_grid_convert.s	asm	port/pc/field_asm.c	partial	Tile_ConvertMapGrid EQUIV; Tile_CopyStrided todo
+games/tbs/src/gamepak/flash/*.c	function	port/pc/flash.c	done	flash driver replaced at its API (port/fn_overrides.tsv): the emulated chip is an SST 39VF512

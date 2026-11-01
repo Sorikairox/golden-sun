@@ -24,7 +24,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 - Leak check: no asset object compiled, and the wasm contains none of a list of ROM strings.
 - **Exit:** all tbs-en code objects compile and link to one `.wasm`; stub count reported; leak check passes.
 
-## G3 — Boot to the title screen
+## G3 — Boot to the title screen (partial, GS3; see docs/G3.md)
 
 - PC layer core: frame driver + fibers (D8), IRQ dispatch (VBlank/HBlank/timers/serial), DMA (immediate,
   VBlank, HBlank, sound FIFO), timers, KEYINPUT, BIOS SWIs in C, the LZ/RL decompressors, flash emulation backed
@@ -33,6 +33,8 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 - Page v1: ROM picker (SHA-1 check, IndexedDB cache), keyboard input.
 - **Exit:** in muted headless Chrome the ROM boots through the Nintendo/Camelot logos to the title screen and the
   file menu; captures in `port_work/g3/` match an emulator capture of the same frames by eye.
+- GS3: logos -> Golden Sun logo -> File Screen name entry in node and Chrome (no emulator here: compared with the
+  vendor's own title assets); the title intro needs a save file (trap 21).
 
 ## G4 — Playable single player
 
