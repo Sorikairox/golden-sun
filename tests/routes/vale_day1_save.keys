@@ -1,0 +1,8 @@
+# GS12, after vale_plaza.keys (Vale three years later, f40000): A through the opening (Garet's Move lesson, Jenna,
+# the roof mended at VALE_FROM_ROOF_MENDED f43890, Dora sends the three off to Mt. Aleph with Kraden), in control by
+# the ladder of Isaac's house (23,57) at ~f56100; Start, Save, file 1: the Vale day-one save (written ~f56890).
+# tools/regress.sh vale_day1_save writes it to port_work/regress/vale_day1.sav; later routes start from it
+# (tests/routes/vale_day1_continue.keys with --flash-in). Inputs only.
+A@40040-56060/40
+START@56700-56702,A@56790-56792   # pause menu, Save
+A@56890-56892,A@56990-56992       # file 1: saved, close

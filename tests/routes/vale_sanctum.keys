@@ -1,0 +1,24 @@
+# GS12, after vale_day1_continue.keys (the Vale day-one save loaded, f1958): day one in Vale by real play to Sol
+# Sanctum. Story order from the vendor scenes (vale.c, vale_kradens_cottage.c, sol_sanctum_entrance.c): the puppies
+# (behaviours 20/21) wall the south way to Kraden's until the party has met Saturos and Menardi, so the way is the
+# north exit (0,38-40) past the woman who asks "Do you need to go past here?" (Yes; she stays, go round her by row 40);
+# ValeKradensCottage: walking past the strangers (behaviour 7 at 23-25,20) plays the Saturos and Menardi scene
+# (f3478-6920); behaviour 5 (17,19) Kraden wondering (f7327-8720); talking to Kraden (14,14) plans the Sol Sanctum
+# visit, the cottage, Kraden sets off (f9060-14500); back into Vale by the east exit; past the man guarding Mt. Aleph
+# (his question at f15900, answered; sneaking past while he walks his patrol, f16250); Sol Entrance (f16645), the
+# side stairs onto the door's platform (the middle has none), the door (f17120), Sol Sanctum and Kraden's
+# introduction (f17141-17750). Inputs only. B (not A) closes the last messages: A in the field opens the menu.
+UP@2000-2000,LEFT@2002-2077,UP@2079-2219,RIGHT@2221-2295,UP@2297-2324,LEFT@2326-2359,UP@2361-2459,LEFT@2461-2490,UP@2492-2503,LEFT@2505-2521,UP@2523-2589,LEFT@2591-2764,DOWN@2766-2822,LEFT@2824-2887,DOWN@2889-2900,LEFT@2902-2980,A@2981-2981,LEFT@2982-3003,A@3004-3005,LEFT@3006-3010
+A@3020-3022,A@3100-3300/40,DOWN@3320-3330,LEFT@3332-3442
+DOWN@3450-3477,A@3500-6880/40
+A@6920-6922
+DOWN@7050-7075,LEFT@7077-7231,UP@7233-7240,RIGHT@7242-7295,UP@7297-7330
+A@7400-8440/40,A@8720-8722
+UP@8950-9014,LEFT@9016-9055
+UP@9060-9063,A@9080-14200/40,B@14300-14500/40
+RIGHT@14550-14591,DOWN@14593-14667,LEFT@14669-14728,DOWN@14730-14741,RIGHT@14743-14890,UP@14892-14947,RIGHT@14949-15047
+UP@15150-15163,RIGHT@15165-15227,UP@15229-15288,RIGHT@15290-15452,UP@15454-15565,LEFT@15567-15590,UP@15592-15658,LEFT@15660-15671,UP@15673-15689,LEFT@15691-15880,A@15960-15962,B@16000-16200/40
+UP@16250-16284,LEFT@16285-16285,LEFT@16287-16324,UP@16325-16331,UP@16333-16399,LEFT@16401-16473,UP@16475-16535,LEFT@16537-16548,UP@16550-16585,LEFT@16587-16598,UP@16600-16640
+UP@16700-16717,RIGHT@16719-16739,UP@16741-16784,RIGHT@16786-16797,UP@16799-16880
+LEFT@16900-16949,UP@16951-16967,RIGHT@16969-17029,UP@17031-17042
+UP@17045-17120,B@17200-17760/40

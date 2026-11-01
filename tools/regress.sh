@@ -6,7 +6,9 @@
 #   tools/regress.sh CASE...    run only these cases
 # Cases: prologue_save (+ cmp of the saved flash with the stored SHA-1), soft_reset (the game's own reset, title,
 # Continue), garet, boulder, vale_monsters, vale_felix,
-# vale_plaza (real play: GS11, the prologue's four monster fights to Vale three years later), battle_fight,
+# vale_plaza (real play: GS11, the prologue's four monster fights to Vale three years later), vale_day1_save (GS12:
+# the opening to the Vale day-one save, its flash SHA-1 kept), vale_sanctum (GS12: from that save, Saturos and Menardi,
+# Kraden, Mt. Aleph, Sol Sanctum's stepping stones, a random battle won; needs port_work/regress/vale_day1.sav, made first), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -34,6 +36,8 @@ CASES=(
   "vale_monsters|14800|11600,12400,14800||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys||"
   "vale_felix|21950|17000,20300,21950||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys,$R/vale_felix.keys||"
   "vale_plaza|40000|30000,35500,36900,40000||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys,$R/vale_felix.keys,$R/vale_plaza.keys||"
+  "vale_day1_save|57000|43900,52000,57000||$PRO,$R/vale_garet.keys,$R/vale_boulder.keys,$R/vale_monsters.keys,$R/vale_felix.keys,$R/vale_plaza.keys,$R/vale_day1_save.keys||--flash-out $W/vale_day1.sav"
+  "vale_sanctum|21800|2000,5000,9500,14600,16700,17800,18700,19400,21800||$R/vale_day1_continue.keys,$R/vale_sanctum.keys,$R/sol_sanctum.keys||--flash-in $W/vale_day1.sav"
 )
 want() { [ $# -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 SEL=("$@")
@@ -43,11 +47,15 @@ for c in "${CASES[@]}"; do
   IFS='|' read -r name frames at envs keys probes extra <<< "$c"
   [ ${#SEL[@]} -gt 0 ] && ! want "$name" && continue
   log=$W/$name.log
+  if [[ "$extra" == *"--flash-in $W/vale_day1.sav"* ]] && [ ${#SEL[@]} -gt 0 ] && ! want vale_day1_save; then # make the save it starts from
+    rm -f $W/vale_day1.sav; IFS='|' read -r _ sf _ _ sk _ sx <<< "${CASES[$(( ${#CASES[@]} - 2 ))]}"
+    perl -e "alarm ${LIMIT:-240}; exec @ARGV" node tests/boot.cjs $BIN/game.js "$ROM" "$sf" --keys-file "$sk" --quiet --out $W/shots $sx > $W/vale_day1_save.pre.log 2>&1
+  fi
   env $envs DIGEST_AT=$at perl -e "alarm ${LIMIT:-240}; exec @ARGV" node tests/boot.cjs $BIN/game.js "$ROM" "$frames" \
     --keys-file "$keys" --probe "${probes:+$probes,}$P/digest.cjs" --quiet --out $W/shots $extra > "$log" 2>&1
   grep '^digest' "$log" | while read -r _ f _ ram _ pic; do printf '%s\t%s\t%s\t%s\n' "$name" "$f" "$ram" "$pic"; done >> $out
-  if [ "$name" = prologue_save ] && [ -f $W/prologue.sav ]; then
-    printf '%s\tsave\t%s\t-\n' "$name" "$(shasum $W/prologue.sav | cut -c1-16)" >> $out
+  if [[ "$extra" == --flash-out* ]] && [ -f "${extra#--flash-out }" ]; then # the save the route wrote
+    printf '%s\tsave\t%s\t-\n' "$name" "$(shasum "${extra#--flash-out }" | cut -c1-16)" >> $out
   fi
   grep -q 'game stopped\|Aborted\|killed after' "$log" && { echo "$name: STOPPED (see $log)"; fail=1; }
 done

@@ -1,0 +1,11 @@
+# GS12, after vale_sanctum.keys (in Sol Sanctum's entrance room, f17760): north through exit 9 (76,5) into the
+# stepping-stone room (f17908); across the stones (jump cells, 'J' in tests/probes/mapdump.cjs: each jump crosses one
+# pit cell) by 46,33 46,31 48,31 48,28 49,28 49,25 45,25 45,29 42,29 42,26 43,26 43,22, out by exit 5 (43,19) into
+# SolSanctumCorridor (f18628). Inputs only.
+UP@17800-17907
+UP@17950-17975,RIGHT@17977-18018,UP@18020-18058,RIGHT@18060-18097,UP@18099-18135,UP@18137-18153,RIGHT@18155-18166,UP@18168-18200,UP@18202-18217,LEFT@18219-18249,LEFT@18251-18284,DOWN@18286-18323,DOWN@18325-18363,LEFT@18365-18380,LEFT@18382-18419,UP@18421-18458,UP@18460-18476,RIGHT@18478-18488,UP@18490-18523,UP@18525-18558,UP@18560-18627
+# West along the corridor and down its south leg: a random encounter at 29,10 (f19052, the corridor's encounter rule):
+# three Wild Mushrooms in the Sol Sanctum hall background, won with A (Fight, Attack) every 40 frames; "You got 3
+# experience points. You got 6 coins." closed with B; back in the corridor at f21532.
+UP@18700-18713,LEFT@18715-18964,DOWN@18966-19051
+A@19100-21480/40,B@21500-21580/40
