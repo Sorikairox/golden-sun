@@ -1,0 +1,14 @@
+# ROMs, saves and anything taken from them never enter the repo.
+baserom*.gba
+*.gba
+*.sav
+*.sa1
+*.srm
+# Third-party clones (no licences; alchemy ships game-derived assets). Re-fetch with tools/vendor_fetch.sh.
+vendor/
+# Build output, captures, scratch.
+build/
+port_work/
+out/
+node_modules/
+.DS_Store
