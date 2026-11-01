@@ -14,12 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS6 (2026-11-01): **battles run** (node and Chrome): encounter transition, background, party/enemies, menus,
-  attacks with effects, enemy turns, win (XP, coins) or flee, back to the field. Entry is test-only
-  (tests/probes/battle.cjs writes a ROM formation into gFieldWork->encounter; the game's own path follows).
-  76/76 EQUIV (GS-audio's sound ports included). Prologue plays to free walking, saves, title + file menu.
-  Link battle path surveyed: docs/LINK.md. Details: docs/G6.md, docs/G4.md, docs/G5.md, docs/AUDIO.md.
-- Next: route to a real prologue fight; Psynergy/Djinn effects; G6 transport per docs/LINK.md section 6.
+- GS7 (2026-11-01): **local link battle runs end to end** (G6, D21): port/pc/link.c replaces serial.c's API over a
+  message transport (unreliable newest-wins frames + reliable bulk); two wasm instances in node (tests/link2.cjs,
+  tools/link2.sh) go File Screen -> Battle Arena lobby -> attendant -> circle -> party exchange -> 4 turns (both
+  Attack) -> one Isaac falls -> back to the Arena with the tally saved; both sides mirror each other at every seed
+  change, also with 1-3 frames of delay, 20-50 % dropped frames and reordering; deterministic run to run. 76/76 EQUIV.
+  Details: docs/LINK.md section 7 (with the G7 needs). Battles: docs/G6.md.
+- Next: G7 (WebRTC transport behind the same interface, rooms, hello/build check, online fresh window); a link-loss
+  and an exchange-retry test; route to a real prologue fight.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -158,6 +160,13 @@ that edition's address map, not a port. Out of scope until asked.
   first difference); `tests/arm/selftest.cjs` holds negative controls. Unimplemented opcodes throw a clear
   error. BIOS calls in original code use a GBATEK reference in the harness (no BIOS image). Lives in tests/,
   never shipped in the site.
+- **D21 G6 link harness at the serial API (coordinator, GS7):** G6 wires two game instances with an in-memory
+  implementation of the **same message channel G7 uses online**, not register-level SIO emulation (that would only
+  test code G7 replaces). `port/pc/link.c` replaces Serial_Initialize, Serial_PollStatus, Serial_ExchangePayloads,
+  Serial_StartSend, Serial_StartReceive and Serial_StepBlockTransfer (port/fn_overrides.tsv): per-frame payloads on an
+  unreliable newest-wins channel, bulk data whole on a reliable channel, SIOCNT id bits (4-5) kept plausible. The
+  transport is a small interface (`port/pc/link_transport.h`: send/recv per channel, player id, connected) so G7 swaps
+  in WebRTC data channels without touching link.c. Supersedes PLAN G6's register-level wording.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
@@ -268,3 +277,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 31. Shared test files (tests/arm/diff.cjs, harness.js) may hold another session's uncommitted edits: `git add` of the
     file commits theirs too. Stage only your hunks (an index blob built from HEAD + your edits, `git update-index
     --cacheinfo`), and check `git diff --cached` before committing.
+32. The File Screen offers Battle only for a file whose summary counts a Djinn flag (Save_ScanFileSummaries); the
+    prologue save has none. tests/link2.cjs patches a copy (summary byte 50 = 1, sector checksum + 1) in port_work/.
+33. A frame-scripted route through the Arena lobby keeps working under delay/drop only because the waits are the
+    game's (it polls the peer's state); tap A over a long window, and B (not A) to close the last message, or a new
+    talk with the attendant starts.

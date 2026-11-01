@@ -63,7 +63,10 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
   deterministic across two runs.
 - GS6 survey (docs/LINK.md): the cut is at serial.c's API (Serial_Initialize/PollStatus/ExchangePayloads/
   StartSend/StartReceive/StepBlockTransfer); it proposes wiring the two instances with an in-memory version of the
-  G7 message channel instead of register-level SIO (which only tests code G7 replaces). Orchestrator to decide.
+  G7 message channel instead of register-level SIO (which only tests code G7 replaces). Decided: D21.
+- GS7: done in node (tests/link2.cjs, two instances, loopback transport): connect, party exchange, 4 turns, result,
+  both sides mirror at every seed change, deterministic across runs (same RAM digests), also under delay/drop/jitter
+  (docs/LINK.md section 7). Left for the exit as worded: the same in one page (two instances + recorder), optional.
 
 ## G7 — Online link battle (link transport)
 

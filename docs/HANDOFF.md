@@ -2,6 +2,48 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS7 — 2026-11-01: local link battle end to end (G6, D21): link.c over a message transport, two instances
+
+### Done
+- **D21** recorded (coordinator): G6 uses an in-memory version of the G7 message channel, not register-level SIO.
+- **port/pc/link.c** replaces Serial_Initialize, Serial_PollStatus, Serial_ExchangePayloads, Serial_StartSend,
+  Serial_StartReceive, Serial_StepBlockTransfer (port/fn_overrides.tsv, 12 overrides now): 24-byte payload per VBlank
+  on an unreliable newest-wins channel, bulk transfers whole on a reliable channel (send done when the peer's frames
+  report it consumed), sender epochs per Serial_Initialize, SIOCNT SD/SI/id bits plausible, "both heard" held for
+  `Port_LinkSetFreshFrames` (12) frames after the newest peer frame. No asm ported (all C), so no new EQUIV spec.
+- **Transport interface** `port/pc/link_transport.h` -> JS imports in `port/web/port_lib.js` -> `Module.linkTransport`
+  {connected, playerId, send, recv}; **in-memory pair** `port/web/link_loopback.js` (delay, drop, jitter, seed).
+  link.py: the four imports are not stubs.
+- **Runner** `tests/link2.cjs` (+ `tools/link2.sh`): two wasm instances in one node process, frame lockstep (A then
+  B), own flash each, inputs per instance, `--hash` mirror check at every gBattleRandomSeed change (a's party unit =
+  b's enemy unit and the reverse, names/side byte excluded), RAM digests, side-by-side contact sheets.
+  Routes `tests/routes/link_arena.keys`, `link_lobby.keys`, `link_fight.keys` (inputs only).
+- **How far**: all the way. Title -> File Screen Battle -> Battle Arena lobby (link up f1510) -> attendant, apply Yes
+  (both `0123`) -> circle (`ABC1`) -> party exchange (4 bulks each way, f2353-2427) -> `EXEC` -> "EnemyIsaac appeared!"
+  on both -> 4 turns, both Attack (12 bulks each way in all) -> the parent's Isaac falls: a "Isaac goes down in
+  defeat...", b "You felled EnemyIsaac!" -> back to the Arena, tally a 000 / b 001, "Battle results were saved.".
+  20/20 checkpoints agree, same winner on both screens.
+- **Delay/drop**: `--delay 1/2/3`, `--drop 0.2`, `--delay 2 --drop 0.3 --jitter 2`, `--delay 3 --drop 0.5 --jitter 3`
+  (3696 of 7380 frame messages dropped): all reach the end, all checkpoints agree, same result. Same args -> same RAM
+  digests run to run (deterministic). No desync.
+- Captures (gitignored): side by side (a | b per pair, 2 pairs a row) `port_work/g7/shots/sheet_00.png` (lobby, apply,
+  circle, exchange, battle start, attacks, defeat/felled, results saved); whole runs `port_work/g7/r8/sheet_0*.png`.
+- Docs: docs/LINK.md section 7 (implementation, results, **what G7 needs**), orchestrator D21 + traps 32-33, PLAN G6.
+
+### Next
+1. G7: WebRTC transport object (frame channel `ordered:false, maxRetransmits:0`, bulk reliable) behind the same
+   interface; rooms/signaling after GoldenEye's net.js + Netlify room function (read only); `hello` with build id, ROM
+   SHA-1, edition; `Port_LinkSetFreshFrames(~300)` online; keep stepping when the tab is hidden; per-turn hash message.
+2. Tests not done: link loss mid-battle, failed party exchange + retry (stale bulk), parties with Psynergy/Djinn.
+3. Optional for PLAN G6's exit wording: two instances in one page with a recorder.
+
+### Notes
+- Tests: 76/76 EQUIV; leak check PASS (every build); 0 linker warnings, 1 logged stub (`_call_via_r0`); prologue save
+  byte-identical to GS4's (`cmp` OK); tests/web_touch.cjs ALL PASS (0 console errors). No downloads, no installs, no
+  permission denials. Trap 2 bit once (zsh loop args): matrix rerun under bash.
+- Confidence: high for the local path (seen on screen and by the mirror check); medium for online timing (the fixed
+  game windows were not stressed beyond 3 frames + jitter 3).
+
 ## GS6 — 2026-11-01: battles run (node + Chrome); battle-path ports EQUIV; link battle survey
 
 ### Done

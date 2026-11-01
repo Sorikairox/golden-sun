@@ -1,7 +1,8 @@
 # Link battle: survey and transport design (GS6)
 
 Survey of the Battle Arena link battle path in alchemy tbs (`vendor/alchemy/games/tbs`, pinned `24b72a32`) and a
-proposal for G6/G7 (orchestrator section 6, option B'). Research only: nothing here is implemented yet. Paths are
+proposal for G6/G7 (orchestrator section 6, option B'). Sections 1-6 are the GS6 research; section 7 is the G6
+implementation (GS7) and what G7 needs. Paths are
 relative to `vendor/alchemy/games/tbs/` unless they start with `port/`. Vendor code is described, not copied.
 Anything not checked against the source is marked **unconfirmed**.
 
@@ -292,3 +293,70 @@ orchestrator.
   battle code (uninitialized memory, host-dependent paths) would desync: hash guard catches it.
 - Overlay function overrides (battle_arena.c) unconfirmed; the design needs none.
 - The File Screen's GS2 send would run on the same layer; untested and out of scope.
+
+## 7. G6 implementation and results (GS7)
+
+Implemented as section 6 proposes (coordinator decision D21). Nothing of the vendor's above serial.c changed.
+
+| Piece | File |
+|---|---|
+| Serial_Initialize, Serial_PollStatus, Serial_ExchangePayloads, Serial_StartSend, Serial_StartReceive, Serial_StepBlockTransfer | `port/pc/link.c` (via `port/fn_overrides.tsv`) |
+| Transport interface: `connected()`, `playerId()`, `send(ch, bytes)`, `recv(ch)`; ch 0 frames (unreliable), ch 1 bulk (reliable, ordered) | `port/pc/link_transport.h`, `port/web/port_lib.js` (`Module.linkTransport`) |
+| In-memory transport pair: delay (frames), drop (ch 0), jitter (ch 0 reorder), seeded PRNG | `port/web/link_loopback.js` |
+| Two-instance runner (node): lockstep A then B each frame, per-instance inputs/flash, mirror check, RAM digest, side-by-side sheets | `tests/link2.cjs`, `tools/link2.sh`, routes `tests/routes/link_{arena,lobby,fight}.keys` |
+
+Wire format (little-endian): frame = `1, epoch, rxEpoch, 0, rxDone u16, 0 u16, frame u32, payload[24]` (36 bytes);
+bulk = `2, epoch, seq u16, size u32, bytes`. A send completes when a peer frame shows `rxEpoch == our epoch` and
+`rxDone >= seq`. A bulk is handed to a waiting `Serial_StartReceive` at a VBlank with the link fresh. "Both heard" stays
+set for `Port_LinkSetFreshFrames(n)` frames (default 12) after the newest peer frame. LinkBattle_WaitSync was not
+overridden (not needed up to 3 frames of delay + jitter 3).
+
+Test save: the File Screen offers Battle only for a file whose summary counts a Djinn flag; link2.cjs makes
+`port_work/g7/flash_battle.sav` from GS4's prologue save with that count set to 1 (sector checksum fixed). Test only.
+Both players are prologue Isaac (Lv 1, HP 30, no Psynergy): the other's Isaac appears as "EnemyIsaac".
+
+What runs (node, 5200 lockstep frames in ~3.6 s, ~1450 pair-frames/s):
+
+| Stage | Frame (d=0) | Evidence |
+|---|---|---|
+| Title, File Screen, Battle, file 1 | 1000-1400 | |
+| Battle Arena lobby, link up (both heard), `SGMC`/`EFG3` | 1510 | watch log |
+| Attendant: explanation, "Would you like to apply?" Yes -> `0123` both, call into the circle | 1970 | |
+| Circle (step trigger 10): `ABC1` both -> party exchange 3 x 340 + 320 each way (4 bulks each) | 2353-2427 | |
+| `EXEC`, "EnemyIsaac appeared!" on both | ~2490 | |
+| 4 turns, both Attack; 12 bulks each way in all (4 party + 4 x header/actions) | 2700-3830 | 20 seed-change checkpoints, units mirror |
+| Parent's Isaac goes down: a "Isaac goes down in defeat...", b "You felled EnemyIsaac!"; back to the Arena, win tally a 000 / b 001, "Battle results were saved." | 3830-4060 | |
+
+Network-like runs (`tools/link2.sh ARGS`): every one reaches the end with **all checkpoints agreeing and the same
+winner** (b): `--delay 1`, `--delay 2`, `--delay 3`, `--drop 0.2` (1257 frames dropped), `--delay 2 --drop 0.3
+--jitter 2` (1834 dropped, ~160 late/out-of-order frames discarded per side), `--delay 3 --drop 0.5 --jitter 3
+--seed 7` (3696 of 7380 frame messages dropped; slower, so the fight route taps A until f4900). Deterministic: the same
+arguments give the same RAM digests of both instances run to run. No desync seen.
+
+Not tested: a link loss mid-battle (BattleCamera_Update pause), failure + retry of a party exchange (stale bulk risk,
+section 6), Psynergy/Djinn/summons in a link battle (no party has them), three-member parties.
+
+### What G7 (online) needs
+
+1. A WebRTC transport object with this interface per page: two data channels on one RTCPeerConnection, `frame`
+   (`ordered: false, maxRetransmits: 0`) and `bulk` (reliable, ordered); `recv` pops from per-channel queues filled by
+   `onmessage`; `connected()` = both channels open; `playerId()` = 0 for the room host, 1 for the guest. link.c is
+   unchanged.
+2. Signaling and rooms: reuse the GoldenEye/Conker pattern read-only as reference (`~/goldeneye/port/web/net.js`,
+   `port/netlify/functions/room/{core.mjs,room.mjs}` on Netlify Blobs, local `scripts/web/roomserver.mjs` for tests,
+   copy-paste codes as fallback, STUN only: D15). Unlike GoldenEye there is **no input lockstep**: each page runs its own
+   game at full speed; only the link messages cross. A `hello` on the bulk channel before the game connects: build id
+   (wasm hash), ROM SHA-1, English edition (the lobby signature is per language), settings.
+3. Timing: online the newest peer frame can be 5-10 frames old. Set `Port_LinkSetFreshFrames` to ~300 (5 s) online so
+   jitter never drops "both heard"; check the fixed windows (WaitSync 30 frames; turn transfers 300; Arena 600/900)
+   against real RTTs; override LinkBattle_WaitSync with a wider window if a 150 ms+ RTT trips it.
+4. The page must keep stepping the game while its tab is hidden (rAF stops; the peer would see a link loss after the
+   fresh window): a timer fallback (check how the GoldenEye/Conker pages handle it).
+5. Desync guard: tests/link2.cjs checks the mirror from outside; online, send a per-turn hash (party units vs the
+   mirrored enemy units + gBattleRandomSeed) on the bulk channel as a separate message type and report the first
+   difference (needs a hook at a turn boundary, e.g. a LinkBattle_WaitSync override).
+6. Each player needs only their own save (the partner's party arrives in the exchange). The page's Battle entry needs
+   a file with a Djinn found; for testing without one, a test-only save patch as link2.cjs's.
+7. Netsim in the page (`?netsim=lat:MS,jit:MS,loss:PCT`) can wrap the WebRTC transport the way link_loopback.js wraps
+   the in-memory one; the G7 exit test (two pages in one headless Chrome via a local room server) should replay the
+   routes above.
