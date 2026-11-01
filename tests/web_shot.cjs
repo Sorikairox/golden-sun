@@ -6,6 +6,8 @@
 //   --audio prints the page's audio state (GSAudio.stats(): worklet running, samples sent/received non-zero) at the end;
 //   --flash puts a 64 KB save (port_work/, never committed) into the page's IndexedDB before it starts;
 //   --press holds a key (KeyboardEvent.code, e.g. Enter for Start) for 6 frames from that game frame.
+//   --battle FRAME (test only, G6): at that frame writes the formation of encounter zone 12 slot 2 into
+//   gFieldWork->encounter, as tests/probes/battle.cjs does in node (the game's own battle path follows).
 'use strict';
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
@@ -17,6 +19,8 @@ const ROM = process.env.ROM || path.join(process.env.HOME, 'roms/Golden_Sun_USA_
 const shots = (process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : '200,600,1000').split(',').map(Number);
 const argOpt = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : ''; };
 const FLASH = argOpt('--flash');
+const BATTLE = +argOpt('--battle') || 0;
+let battleDone = !BATTLE;
 const PRESSES = argOpt('--press').split(',').filter(Boolean).map((x) => { const [f, code] = x.split(':'); return { f: +f, code, done: 0 }; });
 const PORT = 8737 + (process.pid % 200);
 const DEBUG_PORT = 9337 + (process.pid % 200);
@@ -104,6 +108,15 @@ async function main() {
       while ((n = await frames()) < f) {
         if (Date.now() - t0 > 180000) throw new Error(`only ${n} frames after 180 s`);
         if (errors.length) break;
+        if (!battleDone && n >= BATTLE) {
+          battleDone = true;
+          const r = await send('Runtime.evaluate', { returnByValue: true, expression: `(() => { const H = window.__gs.HEAPU8;
+            const u32 = (a) => (H[a] | H[a + 1] << 8 | H[a + 2] << 16 | H[a + 3] << 24) >>> 0;
+            const fw = u32(0x03001ebc), z = 0x0809c610 + 2 * (12 * 14 + 2 + 2), f = H[z] | H[z + 1] << 8;
+            if (fw < 0x02000000 || fw >= 0x03008000) return 'no field work';
+            H[fw + 380] = f & 255; H[fw + 381] = f >> 8; return 'formation ' + f; })()` });
+          console.log(`battle at frame ${n}: ${r.result.result.value}`);
+        }
         for (const p of PRESSES) {
           if (!p.done && n >= p.f) { await key('keyDown', p.code); p.done = 1; }
           else if (p.done === 1 && n >= p.f + 6) { await key('keyUp', p.code); p.done = 2; }
