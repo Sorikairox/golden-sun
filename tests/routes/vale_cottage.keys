@@ -1,0 +1,10 @@
+# After prologue.keys (GS5, found with tools/route.sh + tests/probes/where.cjs): the first rock, then north along
+# x 298 (cells 18,56 -> 18,47), east up the slope to cell 25,47 (height 160 -> 192), north into CottageRoomsA's
+# east door (scene 7, entrance 6, frame ~5755), inside to the west (cell 42,29). Exits both ways work.
+A@4820-4822,A@4880-4882   # "You know the way... Be careful!" and close
+DOWN@4950-5040            # south, to the ledge
+RIGHT@5050-5070           # east: the first rock falls
+UP@5350-5520              # north past Isaac's house
+RIGHT@5521-5700           # east up the slope
+UP@5701-5900              # north: CottageRoomsA (east door)
+LEFT@5901-6300            # west inside the cottage
