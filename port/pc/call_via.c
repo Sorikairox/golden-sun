@@ -28,3 +28,16 @@ u32 Port_CallCode4(u32 gba, u32 a, u32 b, u32 c, u32 d) {
   u32 (*fn)(u32, u32, u32, u32) = (u32 (*)(u32, u32, u32, u32))Port_CodeAt(gba);
   return fn ? fn(a, b, c, d) : 0xdeadbeefu;
 }
+
+/* Test hooks (tests/arm/diff.cjs, battle blitters): call vendor C at a GBA address with five words
+ * (BattleEffect_BuildBlitter), and call RAM code by its GBA address with six (a built blitter, as the effects
+ * call it: Port_ResolveCode finds its alias). */
+u32 Port_CallCode5(u32 gba, u32 a, u32 b, u32 c, u32 d, u32 e) {
+  u32 (*fn)(u32, u32, u32, u32, u32) = (u32 (*)(u32, u32, u32, u32, u32))Port_CodeAt(gba);
+  return fn ? fn(a, b, c, d, e) : 0xdeadbeefu;
+}
+
+u32 Port_CallRam6(u32 gba, u32 a, u32 b, u32 c, u32 d, u32 e, u32 f) {
+  u32 (*fn)(u32, u32, u32, u32, u32, u32) = (u32 (*)(u32, u32, u32, u32, u32, u32))Port_ResolveCode((void *)(uintptr_t)gba);
+  return fn(a, b, c, d, e, f);
+}

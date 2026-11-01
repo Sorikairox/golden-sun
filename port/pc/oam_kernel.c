@@ -1,4 +1,4 @@
-/* Oam_BuildBufferKernel (vendor src/system/decompress_byte_lz.s), hand-ported to C (D6); the game copies it to
+/* Oam_BuildBufferKernel and the palette fade kernels (vendor src/system/decompress_byte_lz.s), hand-ported to C (D6); the game copies it to
  * RAM (RamCode_Load) and calls the copy, which codemap.c's alias sends here. Checked by tests/arm/diff.cjs. */
 #include "gba.h"
 
@@ -42,3 +42,68 @@ affine:
     *(u16 *)(o + 24) = (u16)(m[1] >> 16);
   }
 }
+
+/* The palette fade kernels (decompress_byte_lz.s; PaletteFade_BackupAnd* copy one to the stack and call it):
+ * buffers of 8-bit colour-ramp steps (0..63) shaded four bytes a word, 16 bytes a pass, after copying each pass
+ * to `backup`. Word arithmetic as the original: carries and borrows may cross bytes for values outside the
+ * ramp. bytes is a nonzero multiple of 16 (0 would never end, as in the original). */
+#define FADE_LOOP(body)                                                                                         \
+  u32 *b = (u32 *)buffer, *k = (u32 *)backup, *end = (u32 *)(buffer + bytes);                                   \
+  do {                                                                                                          \
+    int i;                                                                                                      \
+    for (i = 0; i < 4; i++)                                                                                     \
+      k[i] = b[i];                                                                                              \
+    k += 4;                                                                                                     \
+    for (i = 0; i < 4; i++) {                                                                                   \
+      u32 w = b[i];                                                                                             \
+      body                                                                                                      \
+    }                                                                                                           \
+    b += 4;                                                                                                     \
+  } while (b != end)
+
+static u32 fade_brighten(u32 w, u32 amount) {
+  u32 cap;
+  w += amount;
+  cap = w & 0x40404040u;
+  w &= ~cap;
+  cap -= cap >> 6;
+  return w | cap;
+}
+
+static u32 fade_darken(u32 w, u32 amount) {
+  u32 t = w + (0x80808080u - amount), m = 0x01010101u & (t >> 7);
+  return t & ((m << 7) - m);
+}
+
+void PaletteFade_BrightenKernel(u8 *buffer, u32 amount, u8 *backup, u32 bytes) {
+  FADE_LOOP(b[i] = fade_brighten(w, amount););
+}
+
+void PaletteFade_BrightenPartialKernel(u8 *buffer, u32 amount, u8 *backup, u32 bytes) {
+  FADE_LOOP(if (w != 0x3f3f3f3fu) b[i] = fade_brighten(w, amount););
+}
+
+void PaletteFade_DarkenKernel(u8 *buffer, u32 amount, u8 *backup, u32 bytes) {
+  FADE_LOOP(b[i] = fade_darken(w, amount););
+}
+
+void PaletteFade_DarkenPartialKernel(u8 *buffer, u32 amount, u8 *backup, u32 bytes) {
+  FADE_LOOP(if (w != 0) b[i] = fade_darken(w, amount););
+}
+
+void PaletteFade_ScaleThreeQuartersKernel(u8 *buffer, u8 *backup, u32 bytes) {
+  FADE_LOOP(w += w << 1; b[i] = w ? 0x3f3f3f3fu & (w >> 2) : 0;);
+}
+
+void PaletteFade_ScaleNonzeroThreeQuartersKernel(u8 *buffer, u8 *backup, u32 bytes) {
+  FADE_LOOP(w += w << 1; if (w) b[i] = 0x3f3f3f3fu & (w >> 2););
+}
+
+void PaletteFade_HalveKernel(u8 *buffer, u8 *backup, u32 bytes) {
+  FADE_LOOP(b[i] = 0x3f3f3f3fu & (w >> 1););
+}
+
+void PaletteFade_HalveNonzeroKernel(u8 *buffer, u8 *backup, u32 bytes) {
+  FADE_LOOP(if (w) b[i] = 0x3f3f3f3fu & (w >> 1););
+}
+#undef FADE_LOOP

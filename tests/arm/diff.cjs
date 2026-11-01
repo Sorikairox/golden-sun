@@ -381,6 +381,52 @@ function routines(h) {
       },
     },
     {
+      // battle effect blitters: BattleEffect_BuildBlitter (vendor C in wasm, Port_CallCode5) writes the ARM routine
+      // for each canvas width (128, 256 pixels), clip/mirror flags (0-15) and mode (copy, transparent, lighten,
+      // additive) into heap slot 46 (preset to EWRAM 0x0203c000, so the slot keeps it), and registers the C
+      // blitter for it (port/pc/blitter.c); the interpreter runs those ARM words, the port calls the address
+      // (Port_CallRam6). Random canvases, pictures (zeros included), positions in and around the canvas.
+      name: 'BattleEffect blitters', spec: {
+        orig: 0x0203c000, port: 'Port_CallRam6', returns: 'u32',
+        call: (...a) => h.m._Port_CallRam6(0x0203c000, ...a),
+      },
+      memoryEvery: 1,
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        const CANVAS = EW, PIC = EW + 0x10000;
+        for (const ws of [7, 8]) for (let flags = 0; flags < 16; flags++) for (let mode = 0; mode < 4; mode++) {
+          dv.setUint32(0x03001e50 + 46 * 4, 0x0203c000, true);
+          h.m._Port_CallCode5(A('BattleEffect_BuildBlitter'), 46, ws, 7, flags, mode);
+          for (let i = 0; i < 40; i++) {
+            for (let k = 0; k < 0x9000; k++) h.mem[CANVAS + k] = R() & 1 ? R() & 63 : R() & 0xff;
+            for (let k = 0; k < 0x1000; k++) h.mem[PIC + k] = R() & 1 ? 0 : (R() & 1 ? R() & 63 : R() & 0xff);
+            const w = R() & 1 ? 8 * R.range(0, 8) : R.range(0, 64), hh = R() & 1 ? 8 * R.range(0, 8) : R.range(0, 64);
+            yield [CANVAS + (i % 10 === 9 ? R.range(0, 3) : 0), PIC + R.range(0, 64), R.range(-80, (1 << ws) + 16), R.range(-80, 144), w, hh];
+          }
+        }
+      },
+    },
+    // palette fade kernels (decompress_byte_lz.s): ramp-step buffers (mostly 0..63, some any byte, some words all
+    // 0 or all 63), 16-1024 bytes, amounts as one step in every byte (or any word); buffer EW, backup EW+0x4000
+    ...['PaletteFade_BrightenKernel', 'PaletteFade_BrightenPartialKernel', 'PaletteFade_DarkenKernel',
+      'PaletteFade_DarkenPartialKernel', 'PaletteFade_ScaleThreeQuartersKernel',
+      'PaletteFade_ScaleNonzeroThreeQuartersKernel', 'PaletteFade_HalveKernel', 'PaletteFade_HalveNonzeroKernel'].map((name) => ({
+      name, spec: { orig: A(name), port: name, returns: 'none' },
+      memoryEvery: 1,
+      cases: function* () {
+        const amount = !/Scale|Halve/.test(name);
+        for (let i = 0; i < 1500; i++) {
+          const bytes = 16 * R.range(1, 64);
+          for (let k = 0; k < bytes; k += 4) {
+            const kind = R() & 7;
+            for (let j = 0; j < 4; j++) h.mem[EW + k + j] = kind === 0 ? 0 : kind === 1 ? 63 : kind === 2 ? R() & 0xff : R() & 63;
+          }
+          const a = R() & 15 ? R.range(0, 63) * 0x01010101 : R() >>> 0;
+          yield amount ? [EW, a >>> 0, EW + 0x4000, bytes] : [EW, EW + 0x4000, bytes];
+        }
+      },
+    })),
+    {
       name: 'Tile_CopyStrided', spec: { orig: A('Tile_CopyStrided'), port: 'Tile_CopyStrided', returns: 'none' },
       setup: () => fillRandom(EW + 0x8000, 0x8000),
       cases: () => {

@@ -123,6 +123,26 @@ void Port_CodeAlias(u32 to, u32 from) {
   }
 }
 
+/* RAM code that is no copy of a known routine (a blitter BattleEffect_BuildBlitter assembled): calls to `to`
+ * run the C function fn (port/pc/blitter.c) */
+void Port_CodeAliasFn(u32 to, void *fn) {
+  int i;
+  to &= ~1u;
+  for (i = 0; i < aliasCount; i++)
+    if (aliases[i].gba == to) {
+      aliases[i].fn = fn;
+      return;
+    }
+  if (aliasCount == MAX_ALIASES) {
+    for (i = 1; i < MAX_ALIASES; i++)
+      aliases[i - 1] = aliases[i];
+    aliasCount--;
+  }
+  aliases[aliasCount].gba = to;
+  aliases[aliasCount].fn = fn;
+  aliasCount++;
+}
+
 /* Data was written over [to, to + bytes): any alias there is gone (a heap block reused for other code or
  * data). */
 void Port_CodeUnalias(u32 to, u32 bytes) {

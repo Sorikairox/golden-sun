@@ -9,4 +9,7 @@ void *Port_FrameWaitStackTop(void);   /* wait()'s stack-depth trick: report sp a
 
 unsigned int Port_ReadVCount(void); /* a scanline read in a busy-wait: advances the display (port/c_rules.tsv) */
 
+/* BattleEffect_BuildBlitter wrote a blitter at gba (port/c_rules.tsv): port/pc/blitter.c draws for it */
+void Port_BlitterBuilt(unsigned int gba, int widthShift, int heightShift, int flags, unsigned int mode);
+
 #endif
