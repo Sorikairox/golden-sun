@@ -1,0 +1,6 @@
+# After prologue.keys (instead of first_save.keys): close Dora's message, walk south of Isaac's house and step
+# east: ValePrologue_FirstRockFalls drops a rock across the path (frames ~5100-5300); then west past the tree.
+A@4820-4822,A@4880-4882   # "You know the way... Be careful!" and close
+DOWN@4950-5040            # south, to the ledge
+RIGHT@5050-5070           # east: the step trigger, the first rock falls
+LEFT@5400-5700            # west past the tree toward the bridge

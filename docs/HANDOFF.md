@@ -12,23 +12,29 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
   (Tile_BuildCellPictures); link.py adapters for K&R calls with differing argument counts and for veneers with
   differing signatures (0 linker warnings, was 8; START no longer traps); `_call_via_r3` fixed (c_rules.tsv +
   call_via.c, also the flash program call of Save_WriteSector).
+- **Function pointers above message ids**: a step trigger's word is a message id or a routine, told apart by
+  size (< 65536); our table indices were small, so the first rock's routine showed message 2891 ("Power").
+  `-sTABLE_BASE=65536`, `-sGLOBAL_BASE=131072`, `PORT_IS_TABLE_INDEX`, and `-sEMULATE_FUNCTION_POINTER_CASTS=1`
+  (indirect calls with differing types no longer trap). game.wasm 4.4 MB, node ~2500 fps, Chrome 58 fps.
 - **Plays**: name entry -> Isaac's house (Dora, Kyle, lightning) -> outside in the rain -> Yes to Dora -> free
-  walking in Vale (ValePrologue, stage SENT_TO_PLAZA). Start -> Pause menu -> Save your quest -> file 1 ->
+  walking in Vale (ValePrologue, stage SENT_TO_PLAZA) -> ValePrologue_FirstRockFalls (the rock drops across
+  the path south of the house) -> west past the tree to the bridge. Start -> Pause menu -> Save your quest -> file 1 ->
   "Your game was saved." (frame 5170, deterministic bytes). Reboot with that flash: **the real title intro and
   title** (Mt. Aleph, clouds, sun, PRESS START, (c)2001 Nintendo / CAMELOT) and the File Screen icon menu with
   Continue, in node and in muted headless Chrome (58 fps, 0 console errors). Matches the vendor's `screen.png` and
   `intro_clouds.png` by eye.
 - Tools: boot.cjs key taps (`A@700-4400/40`), `--keys-file a,b`, `--every`, `--flash-in/--flash-out`, `--regs`;
   web_shot.cjs `--flash` (IndexedDB before start), `--press FRAME:CODE`, `OUT=`; `tools/contact.cjs` sheets;
-  routes `tests/routes/prologue.keys`, `first_save.keys` (inputs only).
+  routes `tests/routes/prologue.keys`, `first_save.keys`, `first_rock.keys` (inputs only).
 - Captures (gitignored): `port_work/g4/sheet1.png` (logos -> house -> Vale), `sheet7.png` (save), title
   `port_work/g4/title/frame_00900.png`, file menu `title/frame_01200.png`, Chrome `port_work/g4/web/web_00901.png`
-  (title), `web_01201.png` (file menu); flash `port_work/g4/flash.sav`. Notes: docs/G4.md.
+  (title), `web_01201.png` (file menu); the rock: `port_work/g4/sheet13.png`, `sheet_rock.png`; flash
+  `port_work/g4/flash.sav`. Notes: docs/G4.md.
 
 ### Next
 1. Script the rest of the prologue (route north of Isaac's house, then the plaza; stages in vale_prologue.c's
    header). A RAM position readout for the leader would make routing much faster than blind key scripts.
-2. Check the "Power" window that Right opens just south of Isaac's house (docs/G4.md gap 2): event or port bug.
+2. Run tests/web_touch.cjs again on the new game.wasm (not rerun here: Chrome desktop run is 0 errors).
 3. G4: palette fade kernels, BitDecoder_DecodeImage + battle blitters before the first battle; m4a audio; mosaic.
 
 ### Notes

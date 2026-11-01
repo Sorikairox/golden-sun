@@ -17,7 +17,8 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 - GS4 (2026-11-01): **G3 exit met**; G4 started. 42/42 hand ports EQUIV (D20). From a blank save the prologue
   plays: name entry, Isaac's house, Vale in the storm, free walking; the Pause menu saves; with that save the
   boot shows the real title intro, title (PRESS START, copyright) and the File Screen menu, in node and muted
-  headless Chrome. 0 linker warnings (K&R/veneer adapters). Touch controls in the page (GS-touch). No audio.
+  headless Chrome. 0 linker warnings (K&R/veneer adapters); function pointers at 0x10000+ (TABLE_BASE) and
+  tolerant indirect calls; the first rock falls. Touch controls in the page (GS-touch). No audio.
   Details: docs/G4.md (field), docs/G3.md (boot).
 - Next: script the rest of the prologue to the plaza; palette fade kernels and the battle routines before the
   first battle; m4a audio; mosaic.
@@ -253,3 +254,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     wasm-ld (signature mismatch): link.py routes them through per-signature adapters; keep "0 linker warnings".
 25. Headless Chrome shows its own error page (another origin) for an empty 404: a test that needs the page's
     origin before start (IndexedDB) loads a real page of the test server (web_shot.cjs setup.html).
+26. The game tells code addresses from message ids by size (TRIGGER_RESULT_MESSAGE_END = 65536): wasm function
+    pointers must be >= 65536 (link.py -sTABLE_BASE=65536, data at -sGLOBAL_BASE=131072; gba.h
+    PORT_IS_TABLE_INDEX), or a routine shows as a message.
+27. Indirect calls with another type than the target (routines called as void(s32) taking nothing) trap in
+    wasm: -sEMULATE_FUNCTION_POINTER_CASTS=1 (ARM-like tolerance). Do not drop it without another answer.
