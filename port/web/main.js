@@ -83,6 +83,7 @@ async function start(rom) {
   let frames = 0;
   let next = performance.now();
   let lastFlashGen = 0;
+  let run = 0;   // GS10: each (re)start of the game module is a new run; a dropped run's frame wait never resolves
   const savedFlash = await dbGet('flash');
   console.log('page: save looked up');
   // each completed frame (line 160): draw it, latch the keys, and wait for the next display refresh at the GBA's
@@ -124,28 +125,70 @@ async function start(rom) {
     requestAnimationFrame((now) => { rafOut = false; if (pendingTick) pendingTick(now); });
   };
   if (window.GSNet) GSNet.tickers.push(() => { if (document.hidden && pendingTick) pendingTick(performance.now()); });
-  console.log('page: instantiating the game module');
-  m = await GoldenSun({
-    print: (s) => console.log(s),
-    printErr: (s) => console.warn(s),
-    onFrame,
-  });
-  m.HEAPU8.set(rom, 0x08000000);
-  window.__gs = m;
-  if (window.GSNet) { GSNet.module = m; m.linkTransport = GSNet.transport; GSNet.enable(ROM_SHA1); }
-  // main() resets the hardware with a blank chip unless the host put a save there first (Port_KeepFlash)
-  if (savedFlash && savedFlash.length === 65536) {
-    m.HEAPU8.set(savedFlash, m._Port_FlashMemory());
-    m._Port_KeepFlash();
+  // one run of the game: a fresh module instance (memory, C state) with the ROM bytes we hold and the given save
+  async function launch(flash) {
+    const myRun = ++run;
+    console.log('page: instantiating the game module');
+    const mod = await GoldenSun({
+      print: (s) => console.log(s),
+      printErr: (s) => console.warn(s),
+      onFrame: () => (myRun === run ? onFrame() : new Promise(() => {})),   // an old run stays suspended for good
+    });
+    m = mod;
+    m.HEAPU8.set(rom, 0x08000000);
+    window.__gs = m;
+    if (window.GSNet) { GSNet.module = m; m.linkTransport = GSNet.transport; }
+    // main() resets the hardware with a blank chip unless the host put a save there first (Port_KeepFlash)
+    if (flash && flash.length === 65536) {
+      m.HEAPU8.set(flash, m._Port_FlashMemory());
+      m._Port_KeepFlash();
+    }
+    lastFlashGen = m._Port_FlashGeneration();
+    try {
+      m.callMain([]);
+    } catch (e) {
+      status('The game stopped: ' + (e.message || e));
+      console.error(e);
+    }
   }
+  // GS10 "Return to title": the game's own soft reset (A+B+Select+Start -> System_SoftReset -> Cart_Start) is not
+  // available in the port (Cart_Start is ROM entry code with no C port), so the page restarts the game the way a
+  // power cycle would: the current run is dropped (its frame wait never resolves, its memory is garbage) and a fresh
+  // module boots with the same ROM bytes (nothing re-read) and the save as it is now. The game then shows its logos
+  // and title / File Screen as at power-on.
+  window.GSPage = {
+    restart() {
+      if (!m) return null;
+      const f = m._Port_FlashMemory();
+      const flash = m.HEAPU8.slice(f, f + 65536);
+      pendingTick = null;
+      if (window.GSNet && GSNet.active()) GSNet.leave();
+      frames = 0; next = performance.now();
+      m = null; window.__gs = null;
+      status('Restarting...');
+      return launch(flash);
+    },
+  };
+  if (window.GSNet) GSNet.enable(ROM_SHA1);
   if (window.GSTouch) GSTouch.started();
-  try {
-    m.callMain([]);
-  } catch (e) {
-    status('The game stopped: ' + (e.message || e));
-    console.error(e);
+  // "Return to title" (page menu): two taps within 3 s, so a stray tap never throws the game away
+  const tb = $('opt-title');
+  if (tb) {
+    let armed = 0;
+    tb.onclick = () => {
+      if (!m) return;
+      if (!armed) { tb.classList.add('armed'); tb.textContent = 'Tap again: restart (save kept)'; armed = setTimeout(disarm, 3000); return; }
+      disarm();
+      GSPage.restart();
+      if (window.GSTouch && GSTouch.back) GSTouch.back();
+    };
+    const disarm = () => { clearTimeout(armed); armed = 0; tb.classList.remove('armed'); tb.textContent = 'Return to title'; };
+    $('opts-game').hidden = false;
   }
+  $('status').addEventListener('click', () => { if (window.GSNet) GSNet.clearNote(); });
+  await launch(savedFlash);
 }
+
 
 async function useFile(file) {
   status('Checking the ROM...');

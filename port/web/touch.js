@@ -193,6 +193,7 @@
 
   window.GSTouch = {
     started() { t.playing = true; apply(); },              // main.js, when the game starts
+    back() { if (t.menu) { t.menu = false; apply(); } },   // main.js: close the page menu (after "Return to title")
     keys: () => (tplay() ? bits() : 0),                     // main.js ORs this into the keyboard's key state
     state: () => ({ on: t.on, playing: t.playing, menu: t.menu, keys: tplay() ? bits() : 0, w: innerWidth, h: innerHeight }),
     layout,
