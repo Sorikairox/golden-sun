@@ -61,6 +61,15 @@ addEventListener('keydown', (e) => { if (KEYMAP[e.code] !== undefined) { held |=
 addEventListener('keyup', (e) => { if (KEYMAP[e.code] !== undefined) { held &= ~KEYMAP[e.code]; e.preventDefault(); } });
 addEventListener('blur', () => { held = 0; });
 
+// test only (tests/web_link.cjs): window.__gsScript = [{mask, a, b, per}] holds keys by game frame (link routes)
+function scriptKeys(f) {
+  const sc = window.__gsScript;
+  if (!sc) return 0;
+  let k = 0;
+  for (const s of sc) if (f >= s.a && f <= s.b && (!s.per || (f - s.a) % s.per < 3)) k |= s.mask;
+  return k;
+}
+
 // ---- the game ----
 async function start(rom) {
   $('picker').style.display = 'none';
@@ -83,7 +92,7 @@ async function start(rom) {
     const p = m._Port_FrameBuffer();
     image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
     ctx.putImageData(image, 0, 0);
-    m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0));   // keyboard + touch pad: one key state
+    m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0) | scriptKeys(frames));   // keyboard + touch pad: one key state
     if (window.GSAudio) GSAudio.feed(m);   // this frame's samples to the audio worklet (never waits)
     const gen = m._Port_FlashGeneration();
     if (gen !== lastFlashGen) {
@@ -93,16 +102,28 @@ async function start(rom) {
     }
     if (frames === 1) status('');
     window.__gsFrames = frames;
+    if (window.GSNet) GSNet.onFrame(m);   // G7: per-turn hash of a link battle (only in an online session)
     return new Promise((resolve) => {
       const tick = (now) => {
         if (now + 1 >= next) {
           next = Math.max(next + FRAME_MS, now - FRAME_MS);
+          pendingTick = null;
           resolve();
-        } else requestAnimationFrame(tick);
+        } else schedule(tick);
       };
-      requestAnimationFrame(tick);
+      schedule(tick);
     });
   };
+  // the frame wait runs from rAF, or, while the page is hidden in an online session, from net.js's worker ticks
+  // (rAF stops in a hidden tab and the partner would see the link drop)
+  let pendingTick = null, rafOut = false;
+  const schedule = (f) => {
+    pendingTick = f;
+    if (rafOut) return;
+    rafOut = true;
+    requestAnimationFrame((now) => { rafOut = false; if (pendingTick) pendingTick(now); });
+  };
+  if (window.GSNet) GSNet.tickers.push(() => { if (document.hidden && pendingTick) pendingTick(performance.now()); });
   console.log('page: instantiating the game module');
   m = await GoldenSun({
     print: (s) => console.log(s),
@@ -111,6 +132,7 @@ async function start(rom) {
   });
   m.HEAPU8.set(rom, 0x08000000);
   window.__gs = m;
+  if (window.GSNet) { GSNet.module = m; m.linkTransport = GSNet.transport; GSNet.enable(ROM_SHA1); }
   // main() resets the hardware with a blank chip unless the host put a save there first (Port_KeepFlash)
   if (savedFlash && savedFlash.length === 65536) {
     m.HEAPU8.set(savedFlash, m._Port_FlashMemory());
