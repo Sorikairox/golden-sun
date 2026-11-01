@@ -2,6 +2,32 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS-touch — 2026-11-01: touch controls (orchestrator rule 11)
+
+### Done
+- `port/web/touch.js` + `touch.css` (design from GoldenEye's touch.js / Conker): 8-way D-pad (one zone, the finger
+  slides between directions incl. diagonals, pointer capture), A, B, L, R, Start, Select, a page-menu button (the
+  page with the setting and "Back to the game"). Multi-touch (per-pointer state), buttons light up, short vibration
+  where supported. Portrait: picture on top at full width, pad below; landscape: picture centred, D-pad/L/Select left,
+  A/B/R/Start right. Every key released on rotation (layout sees portrait<->landscape, orientationchange,
+  screen.orientation change), touchcancel, blur, hidden page. No scroll/zoom/selection while playing (viewport
+  user-scalable=no, touch-action, user-select, gesture/dblclick/touchmove blocked).
+- Setting "Touch controls" Auto (default; coarse pointer or touch + mobile UA) / On / Off: only an explicit choice is
+  stored (localStorage `gs-touch`, try/catch); `?touch=1` / `?touch=0` override. On touch devices the ROM picker
+  drops its `accept` filter (iOS greys out .gba).
+- One input path: main.js does `Port_SetKeys(held | GSTouch.keys())` once per frame; keyboard unchanged.
+- `tests/web_touch.cjs` (muted headless Chrome, phone emulation 390x844 then 844x390, waits for other headless
+  Chromes): **ALL PASS** — Auto on, layout checks, D-pad up -> KEYINPUT 0x3bf, multi-touch up+R, lift one finger,
+  slide up -> up-right -> right, release, name-entry cursor moves (~470 px changed) in both orientations, rotation
+  while holding releases everything, keyboard still drives KEYINPUT, menu/back by touch, 0 console errors.
+  `tests/web_shot.cjs` (desktop) still 0 errors, pad hidden. Screenshots: `port_work/touch/portrait*.png`,
+  `landscape*.png`, `landscape_menu.png` (gitignored).
+
+### Notes
+- CDP trap: in `Input.dispatchTouchEvent`, touchStart/Move list the active points but **touchEnd lists the lifted
+  ones** (empty = all); leaving a point out of a touchMove does not release it.
+- Not done: gamepad API (would OR into the same `held`), a full-screen button, real-device check (iOS Safari).
+
 ## GS3 — 2026-11-01: G3 partial: test interpreter (D20), 39 EQUIV ports, boot to the File Screen, page v1
 
 ### Done
