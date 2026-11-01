@@ -1,0 +1,6 @@
+# GS13, after sol_jewels.keys (the second relief room, both Small Jewels set): Start, Save, file 1, "OK to save over
+# this file?" LEFT to Yes, A: "Your game was saved." (written ~f33470). tools/regress.sh sol_jewels keeps its SHA-1.
+START@33100-33102,A@33190-33192   # pause menu, Save
+A@33290-33292                     # file 1
+LEFT@33390-33392,A@33440-33442    # Yes: save over it
+A@33550-33552                     # close

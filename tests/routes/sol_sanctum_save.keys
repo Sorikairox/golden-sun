@@ -1,0 +1,8 @@
+# GS13, after sol_sanctum.keys (from the Vale day-one save; SolSanctumCorridor at 29,10 after the first random battle):
+# Start, Save, file 1, "OK to save over this file?" LEFT to Yes, A: "Your game was saved." (written ~f22070), closed.
+# The Sol Sanctum save: tools/regress.sh sol_sanctum_save writes it to port_work/regress/sol_sanctum.sav; later routes
+# start from it with vale_day1_continue.keys (title, Continue, file 1) and --flash-in. Inputs only.
+START@21700-21702,A@21790-21792   # pause menu, Save
+A@21890-21892                     # file 1
+LEFT@21990-21992,A@22040-22042    # Yes: save over it
+A@22150-22152                     # close "Your game was saved."
