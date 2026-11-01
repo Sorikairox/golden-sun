@@ -2,7 +2,8 @@
 // MAP_LAYER (default the leader's) as ASCII around the leader, 128 cells wide (MapGrid_GetCellBehaviorAt):
 // '@' leader, ' ' open ground, '#' wall (255), L ledge, C climb, J jump, 'e' encounter ground, other cells their
 // event id in base 36 (1-239, the scene's step/examine triggers: '?' above 35). MAP_W/MAP_H set the window;
-// MAP_MODE=height prints each cell's first height sample / 16 instead (gMapGridShapes).
+// MAP_MODE=height prints each cell's first height sample instead (shape byte 1, signed, in 8-pixel units: 4 = y 32;
+// negative heights print '-'; gMapGridShapes). GS18: was byte 1 >> 4, which printed y 32 as 0.
 'use strict';
 const AT = +(process.env.MAP_AT || 0);
 module.exports = (m, frame) => {
@@ -22,9 +23,10 @@ module.exports = (m, frame) => {
     let row = '';
     for (let x = x0; x < x0 + W; x++) {
       const b = H[cells + 4 * (x + (z << 7)) + 2];
-      if (process.env.MAP_MODE === 'height') { // the shape's first height sample / 16, base 36 ('#' wall behavior)
+      if (process.env.MAP_MODE === 'height') { // the shape's first height sample (8 px units), base 36 ('#' wall behavior)
         const sh = 0x0202c000 + 4 * H[cells + 4 * (x + (z << 7)) + 3];
-        row += x === lx && z === lz ? '@' : b === 255 ? '#' : Math.min(35, H[sh + 1] >> 4).toString(36);
+        const hs = (H[sh + 1] << 24) >> 24;
+        row += x === lx && z === lz ? '@' : b === 255 ? '#' : hs < 0 ? '-' : Math.min(35, hs).toString(36);
         continue;
       }
       row += x === lx && z === lz ? '@' : b === 0 ? ' ' : b === 255 ? '#' : b === 252 ? 'L' : b === 253 ? 'C' : b === 254 ? 'J'
