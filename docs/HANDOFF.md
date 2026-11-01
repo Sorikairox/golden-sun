@@ -18,13 +18,24 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
   veneers; leak check PASS (0 of 1.9 M ROM data windows).
 - `port/overrides.tsv` updated: the seven files are handled by build-time transforms and shim macros.
 
+- **G3 started** (one step): relocated tables filled at run time (`Port_RelocateAll`/`Port_RelocateOverlay`,
+  412 symbols, 3,022 patched slots), the PC layer compiled through the same binding, game.js is a factory
+  (`GoldenSun`, no auto-run). `tests/reloc_probe.cjs` (node, in the emsdk image) passes.
+
 ### Next (G3)
-1. PC layer core: frame driver with a fiber (Port_BiosHalt yields), IRQ dispatch, DMA (Port_DmaWritten),
-   timers, KEYINPUT, BIOS SWIs, the IWRAM routines (Port_Iwram*), the 23 asm stubs by priority of the boot path.
-2. `Port_RelocateAll` (fill reloc_* buffers from the ROM, patch slots from relocs.tsv; generate the table in C).
-3. Overlay dispatch (entry tables at 0x02008000) and the code-as-data calls.
-4. Renderer v1 + page v1 (ROM picker, SHA-1, keyboard); boot in muted headless Chrome (one at a time; check no
-   other Chrome is running first).
+1. **Decide how to test the hand ports of the asm routines (D6).** Their exact behaviour matters and is not
+   always C's (e.g. IwramSignedRemainder gives the remainder the sign of dividend XOR divisor). GS0 planned
+   unit tests against the original ARM code run on the ROM's bytes: that needs an ARM/Thumb interpreter for
+   tests. Options: write our own small one (no download), or use an existing emulator core (a download: needs
+   approval). Ask the user/coordinator before writing the 23 boot-path ports.
+2. PC layer core: frame driver (Port_BiosHalt yields: synchronous in node tests, a fiber/asyncify in the page,
+   D8), IRQ dispatch in the dispatcher's priority order (HBlank, VBlank, VCount, Timer3, Serial, Timer1,
+   Timer2, Keypad, GamePak; handlers that are still GBA addresses after the IWRAM copy need a GBA->wasm map),
+   DMA (Port_DmaWritten: immediate now, VBlank/HBlank/FIFO later), timers, KEYINPUT, Port_Iwram*, BIOS SWIs.
+3. Overlay dispatch (entry tables at 0x02008000) + Port_RelocateOverlay in the load path; the 51 code-as-data
+   uses (`build/wasm/code_as_data.tsv`).
+4. Renderer v1 + page v1 (ROM picker, SHA-1, keyboard; touch controls are required before the first public
+   build); boot in muted headless Chrome (one at a time; wait until no other Chrome runs).
 
 ## GS1 — 2026-11-01: toolchain, reference builds, address map (G1)
 
