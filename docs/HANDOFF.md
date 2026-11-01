@@ -2,6 +2,45 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS16 — 2026-11-02: Vault by real play: the chase, Mind Read, Move on the crate, grinding, the thieves' battle won, the Shaman's Rod
+
+### Done
+- **Real play, no probe** (story order from log_rooms_a.c / vault.c first; docs/G16.md 2), three new saves + regress cases:
+  - `vault_crate.keys` (+ `_save`): the **cornering chase** (Isaac up the east crossbar and west along the top row squeezes
+    both suspects against Ivan: "Uh-oh! I'm surrounded!"), **Ivan's Mind Read**, out of the inn, Vault's ladder into the
+    room with the crate, **Move** on the crate (LEFT to column 42); save (regress `vault_crate`).
+  - `vault_grind.keys` (+ `_save`): out by the south gate (**Ivan stays behind**), **78 World Map battles** (Isaac Lv 2 -> 6,
+    Garet 2 -> 5; Cure between battles); save on the World Map (regress `vault_grind`, ~75 s).
+  - `vault_thieves.keys` (+ `_save`): back in (**Ivan rejoins**), the way behind the crate to **the loft**, the tied-up
+    villager, **the thieves' battle won** (thieves first: their Herbs fully heal the Bandit), the thieves jailed, the
+    chests, **the Shaman's Rod**, Ivan leaves for Lunpa; save (regress `vault_thieves`). Furthest saved point:
+    `port_work/g16/final/furthest_vault_thieves_35300.png`; highlights in story order `port_work/g16/final/sheet.png`
+    (frames in final/frames.txt). Lost-battle path (wake in the Sanctum) also seen in scratch runs.
+- **Tools**: `tests/probes/grindbot.cjs` (walk, fight, Cure after battles, stop at a level) and `tests/probes/battlebot.cjs`
+  (reads the battle command box on screen; Fight, Attack with a target shift), both record plain keys like autowalk.
+- **No port bug found**; 0 distinct stubs hit. The encounter transition (white backdrop, an ellipse round the leader on odd
+  frames, fade to black) matches Field_StartEncounterTransition + WINDOW_TRANSITION_LEADER_INVERSE; the loft and World Map
+  battle backgrounds match the vendor's interior.png / grassland.png. No asm/C change: no EQUIV spec or audit row, the
+  wasm was not rebuilt.
+- **Audio per second**: vault_crate 125/128 s with sound, vault_grind (first 334 s) 331/334, vault_thieves 570/591 (silent:
+  power-on, and the loft's scripted SOUND_FADE_OUT_BGM until the thieves come out). Battle music reaches the 10-bit DAC limit
+  in up to 0.36 % of a window's samples (0.02 % at the title, also on GS15's routes): apu.c clamps to -512..511 as the GBA
+  does. G16.md 5.
+
+### Next
+1. From the vault_thieves save: Isaac is down (0 HP) after the battle: revive at the Vault Sanctum; then out by the north
+   gate (route in G16.md 2 end: World Map 365,96 at f3064) to the Goma Range (Goma Cave Entrance actor at cell ~401,81):
+   Ivan rejoins at the stump (Whirlwind), pillars, Bilibin, Kolima, Lunpa.
+2. Use grindbot/battlebot for later fights (battlebot only attacks; Psynergy/Djinn choices would need more box hashes).
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14, web tests not rerun): regress 26/26 OK (`--update` only for the three new
+  cases), test_arm 79/79 EQUIV, leak check PASS, code-range audit untouched.
+- Battle menus need key presses of 3+ frames; the stairs down on the inn's guests' floor are LEFT from 22,39; Vault's
+  ladder climbs only near x 152; after entering the loft, A closes the groan before the party can move.
+- No downloads, installs, deploys or permission denials.
+
 ## GS15 — 2026-11-02: the Mars Star to Vault's inn by real play (eruption, Vale, World Map, Flint, Ivan); menu pause confirmed; the wipe is the game's
 
 ### Done

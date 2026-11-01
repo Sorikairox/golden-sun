@@ -51,9 +51,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   eruption and the Wise One, Retreat, Vale's eruption, the quest, the World Map, Flint and his lesson battle, Hammet's caravan,
   **Ivan joins**, the suspects flee in the inn; three saves, regress 23 cases. Menu pause of scene tasks confirmed (probe), the
   GS14 jagged wipe is the game's WINDOW_TRANSITION_NOISE, audio checked on all routes. No port bug found.
+- GS16 (2026-11-02): **Vault by real play to the Shaman's Rod** (vault_crate, vault_grind, vault_thieves.keys; docs/G16.md): the
+  cornering chase, Mind Read, Move on the crate, Ivan staying behind and rejoining, 78 World Map battles (Isaac Lv 6), the loft,
+  the thieves' battle won, the rod; three saves, regress 26 cases. New test-only bots: tests/probes/grindbot.cjs, battlebot.cjs.
+  No port bug found (encounter transition and battle backgrounds checked against the vendor).
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  Vault's cornering chase, the crate, the loft and the thieves' battle by real play from the vault_inn save (G15.md 2); run
+  from the vault_thieves save: revive Isaac at the Vault Sanctum, the north gate, Goma Range (G16.md 2 end), Bilibin; run
   tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
