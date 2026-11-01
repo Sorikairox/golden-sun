@@ -29,7 +29,8 @@
 # kolima, Cure, the World Map to Kolima Forest; save), kolima_grind (GS19: from kolima_forest, 82 battles by grindbot, Lv 9; save),
 # kolima_glade (GS19: from kolima_grind, the entrance's logs (the river log), the glade's logs, to the cliff; save),
 # kolima_cliff (GS19: from kolima_glade, the cliff's three logs, the river log tips in, the cliff top, to the floodgate; save),
-# kolima_floodgate (GS19: from kolima_cliff, the Floodgate Switch twice, a log rolled on the riverbed, the floating logs; save), battle_fight,
+# kolima_floodgate (GS19: from kolima_cliff, the Floodgate Switch twice, a log rolled on the riverbed, the floating logs; save),
+# tret_tree (GS19: from kolima_floodgate, Laurel, Tret's wrathful side, the vine into the Tret Tree; save), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -81,9 +82,10 @@ CASES=(
   "kolima_glade|10800|2700,3800,5132,5400,9100,10000,10650,10800||$R/vale_day1_continue.keys,$R/kolima_glade.keys,$R/kolima_glade_save.keys||--flash-in $W/kolima_grind.sav --flash-out $W/kolima_glade.sav"
   "kolima_cliff|9750|2500,3200,4300,5300,5600,8300,8972,9600,9750||$R/vale_day1_continue.keys,$R/kolima_cliff.keys,$R/kolima_cliff_save.keys||--flash-in $W/kolima_glade.sav --flash-out $W/kolima_cliff.sav"
   "kolima_floodgate|7100|2500,2700,3100,3800,4300,5200,6000,6280,6900,7100||$R/vale_day1_continue.keys,$R/kolima_floodgate.keys,$R/kolima_floodgate_save.keys||--flash-in $W/kolima_cliff.sav --flash-out $W/kolima_floodgate.sav"
+  "tret_tree|9950|2300,2700,3233,7871,8300,8900,9075,9800,9950||$R/vale_day1_continue.keys,$R/tret_tree.keys,$R/tret_tree_save.keys||--flash-in $W/kolima_floodgate.sav --flash-out $W/tret_tree.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; $W/kolima_forest.sav) echo kolima_forest;; $W/kolima_grind.sav) echo kolima_grind;; $W/kolima_glade.sav) echo kolima_glade;; $W/kolima_cliff.sav) echo kolima_cliff;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; $W/kolima_forest.sav) echo kolima_forest;; $W/kolima_grind.sav) echo kolima_grind;; $W/kolima_glade.sav) echo kolima_glade;; $W/kolima_cliff.sav) echo kolima_cliff;; $W/kolima_floodgate.sav) echo kolima_floodgate;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected
