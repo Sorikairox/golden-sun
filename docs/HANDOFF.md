@@ -2,6 +2,67 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS10 — 2026-11-01: link robustness, Return to title, phone check + memory, optional GBA screen colours
+
+### Done
+- **Link loss (node, tests/link2.cjs `--silence F-G`, `--cut F`, `--rejoin G`, `--stop0 F`)**: a lost link **never froze
+  the game** (LINK.md 3's "permanent pause" reading did not show up anywhere): ~25 frames after "both heard" drops, the
+  battle ends on **both** screens with the game's own "The link was disconnected." and the Battle Arena lobby; the lobby
+  re-links by itself if messages come back. Tried at battle start, menus, animations, SyncTurn waits (f2450-f3800 in
+  150-frame steps) and inside the party exchange. Captures: `port_work/g10/cut2_sheet.png`, `sil_sheet.png`, `ex2_sheet.png`.
+- **Short drops**: fresh 300: 2 s / 4 s drops resume; 6.7 s ends the battle cleanly. **Online fresh window now 900**
+  (15 s): 10 s drops at 8 points of the battle all resume (20/20 checkpoints agree, same winner); only a 10 s drop over
+  the party exchange / battle start ends it (Arena's own 600/900 windows), cleanly. A 5 s drop inside the exchange: the
+  exchange completes afterwards.
+- **Epoch fix (port/pc/link.c)**: link.c forgets the peer while the transport is not connected, so a new session with a
+  partner whose game restarted (reload / Return to title: epochs start again at 1) is accepted; before, every message of
+  it would have been dropped as stale. Clean-run RAM digests unchanged (a 48b30b8b, b 032b7941). Stale bulk after a failed
+  exchange: dropped by the epoch rule (tested: failure inside the exchange, link back clean). Not routed: a second
+  application in the same Arena visit after a failed exchange (the re-join test plays a whole second exchange instead).
+- **Page (net.js)**: partner closes the tab -> `bye` on pagehide, the other page at once: "partner left (they left). A
+  battle in progress ends ("The link was disconnected.") ... Host or Join to link again, or Return to title." plus a notice
+  in the status line (visible over the touch layout, tap clears). Silent partner: watchdog "partner not responding for N s"
+  after 4 s, "partner left (no answer for 21 s ...)" after 20 s. Odd Host/Join (all tested, `web_link --odd`): wrong code,
+  both Host, Host twice, room full (third player), Leave + Host again: clear statuses, Host/Join never stuck (a failed
+  join or expired room used to leave a half-open session). Hash keys now count battles per session.
+- **Return to title** (page menu, two taps within 3 s): the game's own soft reset does not work in the port (trap 36), so
+  the page drops the running module and boots a fresh one with the ROM bytes it holds (nothing re-read) and the current
+  save. Leaves a link session first. `tests/web_link.cjs --leave 3000 [--silent]`: a's tab closes (or goes silent)
+  mid-battle, b sees partner left (0.0 s / 20.6 s), b returns to title, a new tab a, b hosts, a joins, the **whole link
+  battle plays again**, 20/20 hashes on both, same winner on both screens. PASS both.
+- **Memory (phones)**: game.wasm memory section min = max = 3600 pages = **225 MiB, no growth** (identity map up to flash
+  at 0x0E000000, D5); C stack 1 MiB, ASYNCIFY stack 64 KiB, audio queue a few KiB. Only **~9.3 MiB of the 225 is ever
+  written** (149 non-zero 64 KiB pages at f3000 of a link battle; 8 MiB of it the ROM). Chrome (phone emulation): the
+  page's renderer 147 MiB on the ROM picker -> 209 MiB with the game running (+62: wasm code, ROM copies, touched pages);
+  JS heap 11 MiB; three restarts: 243 -> 254 MiB (old runs freed). Not changed: under 256 MiB, and shrinking needs D5's
+  offset-mapped fallback (a C/bind.py change) — not justified by these numbers. Real iOS Safari still has to confirm the
+  225 MiB reservation is granted (older 2-3 GB iPhones are the risk).
+- **tests/web_phone.cjs** (new; mobile iPhone UA, touch): 390x844, 412x915, 844x390: no pad control over the picture,
+  all inside the viewport, link notice off picture and pad (fixed for landscape: status strip under the picture),
+  menu by touch: touch setting, Mute, Volume, GBA screen colours, Return to title, link panel Host/code/Join all
+  reachable and >= 44 px, toggles work, code field focuses; restarts; **ALL PASS, 0 console errors**. Screenshots
+  `port_work/phone/{portrait,portrait_menu,portrait412,portrait412_menu,landscape,landscape_menu,portrait_after_restart}.png`.
+- **GBA screen colours** (rule 7: default off, localStorage `gs-lcd` in try/catch, page menu checkbox, `?lcd=1/0` test
+  override): higan/bsnes GBA LCD curve (LCD gamma 4.0, channel mix, out gamma 2.2, white 255/280) as a 32768-entry LUT
+  on the canvas copy only; game memory, hashes and online untouched. Storm-night Vale before/after:
+  `port_work/g10/lcd0/web_02101.png` / `port_work/g10/lcd1/web_02100.png` (save port_work/g4/flash.sav, Continue).
+
+### Next
+1. C side (another session, hw.c/codemap): make the game's own soft reset work (trap 36), then "Return to title" can
+   press it instead of restarting the module.
+2. Real phones: iOS Safari memory (225 MiB reservation), touch feel, pagehide `bye`, a backgrounded tab > 15 s (ends the
+   battle the game's way). Real network drops between two machines.
+3. Optional: a route for "failed exchange -> apply again in the same Arena visit".
+
+### Notes
+- Regressions: tools/link2.sh (private copy of my build) 20/20, b won, same digests; 76/76 EQUIV + negative controls;
+  prologue save cmp OK; leak check PASS; tests/web_touch.cjs ALL PASS; tests/web_link.cjs clean PASS and
+  `--netsim 100,0.1,20` PASS (RTT ~213 ms, 20/20); `--odd --leave 3000` PASS; `--leave 3000 --silent` PASS.
+- One wasm rebuild (link.c only) at 20:53 while the tree had no foreign C edits; GS9's later hw.c/ppu.c edits are not in
+  it and were not staged. No downloads, installs, deploys or permission denials.
+- Confidence: high for the link-loss behaviour and page handling (seen on both screens, node + two-page Chrome); high for
+  the restart (three restarts, memory flat, full second battle); medium for phones (emulation only).
+
 ## GS8 — 2026-11-01: online link battle between two pages (G7, local): WebRTC transport, rooms, hello, hash guard
 
 ### Done

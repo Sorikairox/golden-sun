@@ -431,3 +431,70 @@ tab in a desktop browser (headless "hidden" was tested); mobile Safari.
    step (e.g. copy it next to the functions dir and `npm install`, as GoldenEye's deploy_web.sh does), not committed.
    Deploy e.g. `netlify deploy --dir build/site --functions port/netlify/functions` on a new site (user's account).
 3. Then the PLAN G7 exit's second half: one real session across two machines/networks, reported by the user.
+
+## 9. Link robustness, return to title (GS10)
+
+### What each side sees (node: `tests/link2.cjs`, new `--silence F-G`, `--cut F`, `--rejoin G`, `--stop0 F`)
+
+Contrary to section 3's reading of `BattleCamera_Update`, **a link loss never froze the game** in any test. The battle's
+link waits return -1 once "both heard" has been gone 24 frames, the battle ends, and **both** screens show the game's own
+**"The link was disconnected."** and the player is back in the Battle Arena lobby (field, can walk, the lobby keeps
+looking for the partner and links again by itself if the partner comes back). Seen at every point tried: battle start
+(f2700), command menus, attack animations, SyncTurn waits (f2450-f3800 in 150-frame steps), and during the party
+exchange (f2380).
+
+| Case (online settings, `--fresh N` = net.js's FRESH window) | Result |
+|---|---|
+| `--cut F` (partner gone: transport says not connected, as net.js after a `bye` / closed channel) | ~25 frames later the battle ends on both, "The link was disconnected.", Arena lobby. No stuck state. |
+| `--silence F-(F+400)` with `--fresh 300` (6.7 s network drop, channels still "open") at 9 points f2450-f3600 | link held 300 frames, then the same clean abort on both; the lobby re-links when the messages flow again |
+| `--silence` 2 s / 4 s, `--fresh 300` | battle resumes, 20/20 checkpoints agree, same winner |
+| `--silence F-(F+600)` (10 s) with `--fresh 900` at 8 points f2600-f3600 (turns, menus, transfers) | **battle resumes**, 20/20 agree, b wins as in the clean run |
+| same, f2450 (10 s silence over the party exchange / battle start) | the Arena's own windows (600/900 frames) end it: "The link was disconnected." on both, lobby; no stale data |
+| `--silence 2380-2700` (5 s inside the party exchange), `--fresh 300` | the exchange completes after the drop (held bulks delivered), battle plays to the end |
+| `--silence 2380-3000` (10 s inside the exchange), `--fresh 300` | exchange fails on both: "The link was disconnected.", lobby, link back up (`SGMC/EFG3` both) |
+
+So online **FRESH_FRAMES_ONLINE = 900** (15 s, was 300): any network drop up to ~10-15 s inside a battle resumes it; a
+longer one ends it the game's way. A partner who closes the tab is seen at once (net.js sends `bye` on `pagehide`; the
+channels close), so the larger window only delays the verdict on a *silent* partner. The silence model holds bulk
+messages and delivers them after the drop (SCTP retransmits), frames are lost.
+
+Bulk/epoch fix (port/pc/link.c): a new link **session** may come from a partner whose game restarted (page reload or
+"Return to title"): its sender epochs start again at 1, and the old `AcceptEpoch` rule (newer only) would have dropped
+every message of it as stale, so the second session would never link. link.c now forgets the peer while the transport
+says not connected; the first message of the next session sets the epoch. Within a session nothing changes (same
+RAM digests as before: `ram digest a 48b30b8b b 032b7941`). Stale bulk after a failed exchange: each side's
+Serial_Initialize (the Arena re-runs it after the disconnect message) starts a new epoch, the peer drops queued and
+late bulks of the old one (tested: failure inside the exchange, then the link comes back clean). A scripted second
+application in the same Arena visit (failure -> walk back to the attendant -> apply again) was **not** routed; the
+re-join test below plays a whole second exchange + battle after a leave instead.
+
+### Page (port/web/net.js, main.js; `tests/web_link.cjs --odd --leave F [--silent]`)
+
+- Partner leaves (tab closed): the other page shows at once **"partner left (they left). A battle in progress ends
+  ("The link was disconnected.") and you are back in the Battle Arena lobby. Host or Join to link again, or Return to
+  title."**, and a short notice in the page's status line ("Link partner left. Menu: Link battle online"; shown over the
+  bottom edge while the touch pad is up, a tap clears it). Its game keeps running.
+- Silent partner (crashed tab, lost network: no `bye`, channels stay open): a watchdog on every received message says
+  "partner not responding for N s (the game waits up to 15 s, then ends a battle)" after 4 s and ends the session
+  ("partner left (no answer for 20 s ...)") after 20 s, past the game's own 15 s window. If messages come back first,
+  the status returns to "linked".
+- **Return to title** (page menu, two taps within 3 s): the game's own soft reset (A+B+Select+Start ->
+  Input_HandleKeyInterrupt -> System_SoftReset -> Cart_Start) does not work in the port: the combination does nothing
+  (KEYCNT 0xC00F armed, IE bit 12, but gResetRequested is never set: to investigate in hw.c's keypad IRQ) and Cart_Start
+  (0x08000000, entry.s) has no C port, so Port_ResolveCode would abort. The page therefore restarts the way a power
+  cycle does: the running module is dropped (its pending frame wait never resolves) and a fresh module instance boots
+  with the ROM bytes already in memory (nothing re-read, no picker) and the save as it is now (flash copied over);
+  logos, title / File Screen follow. In a link session it leaves first. Old instances are garbage-collected (tested:
+  three restarts, renderer memory back to where it was).
+- Host/Join the awkward ways (all tested, `--odd`): wrong code -> "No room with the code QQQQQ. Check the code ...";
+  both press Host -> both get their own room, the status says the other player presses Join, not Host; Host again
+  while hosting -> "you are already hosting room X: give that code to the other player, or Leave first" (the first
+  room keeps running); room taken by a third player -> "Room X already has two players. Ask the host to make a new
+  room (Leave, then Host)."; a failed join or an expired room ends the attempt, so Host and Join work again at once
+  (before, a failed join left a half-open session: "already in a link session").
+- Re-join after a leave (`--leave`): page a closes its tab mid-battle (f3000), b sees "partner left", b uses Return to
+  title, a opens a new tab, b hosts, a joins: both link and play the whole exchange and battle again to the same
+  result on both screens (needs the link.c epoch fix above).
+
+Not tested here: a real network drop between two machines (ICE consent / NAT rebinding), a mobile browser putting a
+hidden tab to sleep for longer than 15 s (the battle then ends the game's way), iOS Safari's `pagehide` delivery.

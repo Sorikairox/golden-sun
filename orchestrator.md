@@ -21,6 +21,11 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   ?netsim. tests/web_link.cjs: two pages in one headless Chrome reach the end of a link battle with 20/20 turn hashes
   equal and the same winner, clean and at ~210 ms / ~510 ms round trips with 10 % frame loss; no WaitSync override
   needed. Nothing deployed (D14). Details: docs/LINK.md section 8.
+- GS10 (2026-11-01): link robustness: a lost link never freezes the game (both sides: "The link was disconnected.",
+  Arena lobby); online fresh window 900 (a ~10 s drop resumes the battle); link.c forgets the peer between sessions
+  (re-join after a partner restart works); page: partner-left notice, silence watchdog, clear Host/Join errors,
+  "Return to title" (fresh module, same ROM bytes), optional "GBA screen colours" (default off); tests/web_phone.cjs
+  (phone emulation of the whole page, ALL PASS). Memory: 225 MiB fixed linear memory, ~10 MiB of it touched. LINK.md 9.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry; route to a real prologue fight.
 
@@ -287,3 +292,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     game loop runs from a Worker's ticks while hidden (net.js); the netsim queue is drained every game frame.
 35. In headless Chrome the second page target (another browser context) is `visibilityState: hidden` while the first
     is visible: tests/web_link.cjs's page b exercises the hidden-page path (it must still run ~60 frames/s).
+36. The game's soft reset (A+B+Select+Start) does nothing in the port: KEYCNT is armed (0xC00F, IE bit 12) but
+    gResetRequested is never set (keypad IRQ path in hw.c to investigate), and Cart_Start (0x08000000, entry.s) has no C
+    port, so Port_ResolveCode would abort on it anyway. The page's "Return to title" restarts the module instead (GS10).
+37. `offsetParent` is null for `position: fixed` elements (the picture and pad in play): page tests must test
+    visibility with `getClientRects().length`, not offsetParent.
