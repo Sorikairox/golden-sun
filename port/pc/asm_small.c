@@ -1,5 +1,5 @@
 /* Small vendor assembly routines hand-ported to C (D6), each checked against the original Thumb/ARM code by
- * tests/arm/diff.cjs (D20): trig.s, heap_release.s, umul_high.s. */
+ * tests/arm/diff.cjs (D20): trig.s, heap_release.s, umul_high.s, q16_dot_product.s. */
 #include "gba.h"
 
 extern const u16 Trig_SineTable[]; /* 257 halfwords: sin over a quarter turn in 0.16, ROM data */
@@ -42,3 +42,10 @@ void HeapSlot_Release(s32 slot) {
 
 /* High word of the unsigned 64-bit product */
 u32 umul3232H32(u32 a, u32 b) { return (u32)(((u64)a * b) >> 32); }
+
+/* q16_dot_product.s (ARM; Transform_BuildLookAt copies it to its stack and calls it there): the 64-bit sum
+ * ax*bx + ay*by + az*bz (wrapping), bits 16..47. */
+s32 RelocatedQ16DotProduct(s32 ax, s32 bx, s32 ay, s32 by, s32 az, s32 bz) {
+  u64 sum = (u64)((s64)ax * bx) + (u64)((s64)ay * by) + (u64)((s64)az * bz);
+  return (s32)(u32)(sum >> 16);
+}

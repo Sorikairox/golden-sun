@@ -50,6 +50,11 @@ function routines(h) {
       while (o.length < n) o.push([s32()]); return o;
     }, 80000),
     pure('umul3232H32', 'umul3232H32', T('umul3232H32'), pairs, 50000),
+    // six words: ax, bx, ay, by in r0-r3, az, bz on the stack (Transform_BuildLookAt's Dot3Fn)
+    pure('RelocatedQ16DotProduct', 'RelocatedQ16DotProduct', A('RelocatedQ16DotProduct'), (n) => {
+      const o = []; for (const a of S32) for (const b of S32) o.push([a, b, b, a, a, a], [a, b, 0, 0, 0, 0]);
+      while (o.length < n) o.push([s32(), s32(), s32(), s32(), s32(), s32()]); return o;
+    }, 50000),
     pure('ArcTan2FarArm', 'ArcTan2FarArm', A('ArcTan2FarArm'), (n) => {
       const o = []; for (const a of S32) for (const b of S32) o.push([a, b]);
       while (o.length < n) { const k = R.range(0, 20); o.push([(R() | 0) >> k, (R() | 0) >> k]); } return o;
@@ -355,6 +360,27 @@ function routines(h) {
       },
     },
     {
+      // battle backgrounds (background_decode.s): run from a RAM copy (the original relocates its handler table
+      // inside the copy, ignored), on random bit streams: uniform bytes and streams biased to each command kind,
+      // the source at either halfword alignment; the whole 30720-byte output is compared
+      name: 'BitDecoder_DecodeImage', spec: { orig: 0x03003400, port: 'BitDecoder_DecodeImage', returns: 'none', ignore: [[0x03003400, 0x230]] },
+      setup: () => { const a = A('BitDecoder_DecodeImage'); h.mem.copyWithin(0x03003400, a, a + 0x230); },
+      memoryEvery: 1,
+      cases: function* () {
+        for (let i = 0; i < 400; i++) {
+          const src = EW + 0x10000 + 2 * R.range(0, 8), kind = i % 9;
+          for (let k = 0; k < 40000; k += 2) {
+            let hw = R() & 0xffff;
+            if (kind < 8) { // bias: every 4th-ish nibble group forced to command kind `kind`
+              if ((R() & 3) === 0) hw = (hw & ~7) | kind;
+            }
+            h.mem[src + k] = hw & 0xff; h.mem[src + k + 1] = hw >> 8;
+          }
+          yield [src, EW + 4 * R.range(0, 16)];
+        }
+      },
+    },
+    {
       name: 'Tile_CopyStrided', spec: { orig: A('Tile_CopyStrided'), port: 'Tile_CopyStrided', returns: 'none' },
       setup: () => fillRandom(EW + 0x8000, 0x8000),
       cases: () => {
@@ -440,7 +466,8 @@ async function main() {
     if (r.setup) r.setup();
     let n = 0, bad = null, i = 0, skipped = 0;
     for (const args of r.cases()) {
-      const d = h.compare(r.spec, args, { checkMemory: !r.memoryEvery || i % r.memoryEvery === 0 });
+      // arguments past the fourth go on the stack (AAPCS), as the original reads them
+      const d = h.compare(r.spec, args.slice(0, 4), { checkMemory: !r.memoryEvery || i % r.memoryEvery === 0, stackArgs: args.slice(4) });
       i++;
       if (d && r.skipOriginalErrors && d.startsWith('original:')) { skipped++; continue; }
       n++;

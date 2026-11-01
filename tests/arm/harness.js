@@ -93,7 +93,7 @@ class Harness {
     try { ro = this.cpu.call(spec.orig, args, { stackArgs }) >>> 0; } catch (e) { err = 'original: ' + e.message; }
     const afterOrig = checkMemory ? this.snapshot() : null;
     if (checkMemory) this.restore(before);
-    try { rp = (spec.call ? spec.call(...args) : this.m['_' + spec.port](...args)) >>> 0; } catch (e) { err = err || 'port: ' + e.message; }
+    try { rp = (spec.call ? spec.call(...args, ...stackArgs) : this.m['_' + spec.port](...args, ...stackArgs)) >>> 0; } catch (e) { err = err || 'port: ' + e.message; }
     if (err) return err;
     if (spec.returns !== 'none' && ro !== rp) return `result original 0x${ro.toString(16)} port 0x${rp.toString(16)}`;
     if (checkMemory) {
