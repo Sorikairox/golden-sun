@@ -1,0 +1,7 @@
+# After prologue.keys (in control outside Isaac's house, frame ~4900): Start, Save your quest, file 1, saved.
+# tests/boot.cjs --keys-file tests/routes/prologue.keys,tests/routes/first_save.keys --flash-out port_work/...
+A@4820-4822,A@4880-4882   # "You know the way... Be careful!" and close
+START@4960-4962           # Pause menu
+A@5050-5052               # Save your quest
+A@5150-5152               # file 1 (No saved data): "Saving..." then "Your game was saved."
+A@5250-5252,A@5400-5402   # close the messages

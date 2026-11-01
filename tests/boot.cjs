@@ -4,7 +4,7 @@
 // Usage: node tests/boot.cjs build/wasm/game.js ROM FRAMES [--shot 60,120,...] [--keys START@300-305,A@400-402]
 //        [--out port_work/g3] [--quiet] [--every N] [--flash-in FILE] [--flash-out FILE]
 // Keys: NAME[+NAME]@A-B holds over frames A..B; NAME@A-B/P taps (3 frames held) every P frames in A..B.
-// --keys-file FILE: key specs one or more per line (comma separated, # comments), added to --keys.
+// --keys-file FILE[,FILE]: key specs one or more per line (comma separated, # comments), added to --keys.
 // --regs F1,F2 prints the display registers at those frames (palette RAM to OUT/palette_F.bin); --every N also captures every N-th frame; --flash-in loads a 64 KB save before power-on; --flash-out writes the
 // flash region whenever the game programs it (both files belong in port_work/: they hold game data).
 'use strict';
@@ -43,7 +43,7 @@ async function main() {
   const out = opt('--out', path.resolve(__dirname, '../port_work/g3'));
   const quiet = args.includes('--quiet');
   const keyFile = opt('--keys-file', '');
-  const keyText = [opt('--keys', ''), keyFile ? fs.readFileSync(keyFile, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean).join(',') : '']
+  const keyText = [opt('--keys', ''), ...keyFile.split(',').filter(Boolean).map((f) => fs.readFileSync(f, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean).join(','))]
     .filter(Boolean).join(',');
   const keySpans = keyText.split(',').filter(Boolean).map((s) => {
     const [k, r0] = s.split('@'); const [r, per] = r0.split('/'); const [a, b] = r.split('-').map(Number);
