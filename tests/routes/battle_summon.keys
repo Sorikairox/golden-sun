@@ -1,0 +1,9 @@
+# GS9 (after prologue.keys + first_rock.keys, with PARTY_STANDBY=1 BATTLE_ZONE=60 and --probe
+# tests/probes/party.cjs,tests/probes/battle.cjs: the three-member party, Forge on standby, Ravager + 2 Fighter Bees;
+# test-only probes): Fight; Isaac Quake; Garet Summon > Mars (the summon sequence, "Garet's Fire Power rises by 10!");
+# Ivan Attack; then A every 40 frames (a Fighter Bee calls allies, Bear Claw downs Garet, more turns).
+A@6220-6222,A@6300-6302,A@6380-6382,A@6460-6462,A@6500-6502
+RIGHT@6530-6532,A@6560-6562,A@6600-6602,A@6640-6642                 # Isaac: Psynergy, Quake, target
+RIGHT@6680-6682,RIGHT@6700-6702,RIGHT@6720-6722,A@6750-6752,A@6790-6792,A@6830-6832   # Garet: Summon, Mars
+A@6880-6882,A@6920-6922                                             # Ivan: Attack, target
+A@6970-9000/40

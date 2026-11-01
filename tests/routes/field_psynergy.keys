@@ -1,0 +1,4 @@
+# GS9 (after prologue.keys + first_rock.keys, with --probe tests/probes/party.cjs: Isaac knows Cure, Move and Catch;
+# test-only probe): field menu > Psynergy > Isaac > Move (the blue hand), then again > Catch (the red hand).
+A@5750-5752,A@5790-5792,A@5830-5832,DOWN@5860-5862,A@5890-5892
+A@6100-6102,A@6140-6142,A@6180-6182,DOWN@6210-6212,DOWN@6230-6232,A@6260-6262

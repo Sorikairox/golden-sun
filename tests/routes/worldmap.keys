@@ -1,0 +1,5 @@
+# GS9 (after prologue.keys + first_rock.keys, with WARP_AT=5400 and --probe tests/probes/warp.cjs: the game's own
+# Event_SetDestination(WorldMap, 0); test-only): walk on the World Map, stand still (the camera turns back north:
+# the affine-reference reload case), open the field menu (the still picture: TileMap_DrawRows) and close it, walk
+# south into a random encounter (a Zombie, forest background).
+LEFT@5700-5760,A@5800-5802,B@6000-6002,DOWN@6100-6300

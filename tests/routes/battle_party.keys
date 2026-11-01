@@ -1,0 +1,10 @@
+# GS9 (after prologue.keys + first_rock.keys, with --probe tests/probes/party.cjs,tests/probes/battle.cjs: Isaac,
+# Garet, Ivan at level 10 with Psynergy and set Djinn, the stormy night's battle at f5400; test-only probes):
+# Fight; Isaac Psynergy > Quake; Garet Djinn > Forge (unleashed: Attack up for all); Ivan Psynergy > Ray; A through
+# the turn (both Wild Mushrooms fall), the spoils, back to the field; the extra taps open the field Psynergy menu
+# and cast Cure ("Your HP is maxed out!").
+A@6220-6222,A@6300-6302,A@6460-6462,A@6500-6502       # messages, Fight
+RIGHT@6530-6532,A@6560-6562,A@6600-6602,A@6640-6642   # Isaac: Psynergy, Quake, target
+RIGHT@6680-6682,RIGHT@6700-6702,A@6730-6732,A@6770-6772   # Garet: Djinn, Forge
+RIGHT@6880-6882,A@6910-6912,A@6950-6952,A@6990-6992   # Ivan: Psynergy, Ray, target
+A@7040-8400/40

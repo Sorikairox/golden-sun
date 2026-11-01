@@ -1,0 +1,5 @@
+# GS9 (after prologue.keys + first_rock.keys, with BATTLE_ZONE=60 and --probe tests/probes/battle.cjs: Isaac alone,
+# level 1, against a Ravager and 2 Fighter Bees; test-only probe): Fight, Attack, "Isaac takes 73 damage! Isaac goes
+# down in defeat..." -> the game's defeat path: Isaac wakes in his house (CottageRoomsB, scene 8, f~6392), HP full,
+# coins 0. The later taps open the field menu.
+A@5800-7000/40
