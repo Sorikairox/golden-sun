@@ -131,9 +131,13 @@ def main():
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     objs = code_objects()
-    stages = ['ll', 'bind', 'obj', 'link', 'leak']
+    stages = ['audit', 'll', 'bind', 'obj', 'link', 'leak']
     if a.only:
         stages = a.only.split(',')
+    if 'audit' in stages:  # vendor tests of code addresses by range/bits: every hit audited (GS14, trap 41)
+        import code_range_audit
+        if not code_range_audit.run():
+            sys.exit(1)
     if 'll' in stages and not stage_src_ll(objs, a.jobs):
         sys.exit(1)
     if 'bind' in stages:

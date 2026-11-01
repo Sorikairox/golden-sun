@@ -1,0 +1,53 @@
+# Code-range audit (GS14; traps 26, 40, 41): vendor C (vendor/alchemy/games/tbs at the pinned commit) that
+# tells code from data by a value's numeric range or high bits, or measures code by address differences.
+# In wasm a code address is a function-table index (0x10000-0x1ffff). Rows are produced by the patterns of
+# tools/wasm/code_range_audit.py (run by tools/web_build.sh as stage "audit": a hit with no row fails the build).
+# verdict: data (the value is never code), safe (the test still works on table indices), fixed (port/c_rules.tsv
+# or port/pc changes it), replaced (the vendor code is not compiled), unused. Cites file:line + pattern id only.
+file	line	pattern	verdict	why
+include/gamepak/flash.h	10	topmask	data	FLASH_BASE: the flash chip window, a data address (identity-mapped, D5)
+include/gamepak/rom_header.h	12	region	fixed	Cart_Start, the soft reset jumps to the constant 0x08000000: codemap.c Port_ResolveCode sends it to Port_SystemEntry (trap 36)
+include/module/field/field_sequence.h	137	msgend	safe	TRIGGER_RESULT_MESSAGE_END 65536: message ids below it, code above; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+include/module/field/field_sequence.h	157	msgend	fixed	FIND_FUNCTION_BITS definition; its test in triggers.c is widened by c_rules.tsv (PORT_IS_CODE_INDEX, trap 40)
+include/module/field/field_sequence.h	157	topmask	fixed	same line as above (FIND_FUNCTION_BITS 0x0f000000)
+include/system/io_reg.h	201	msgend	data	IWRAM_START / EWRAM_END / VRAM: RAM region constants, data addresses (identity-mapped, D5)
+include/system/io_reg.h	201	region	data	IWRAM_START / EWRAM_END / VRAM: RAM region constants, data addresses (identity-mapped, D5)
+include/system/io_reg.h	204	msgend	data	IWRAM_START / EWRAM_END / VRAM: RAM region constants, data addresses (identity-mapped, D5)
+include/system/io_reg.h	204	region	data	IWRAM_START / EWRAM_END / VRAM: RAM region constants, data addresses (identity-mapped, D5)
+include/system/io_reg.h	206	region	data	IWRAM_START / EWRAM_END / VRAM: RAM region constants, data addresses (identity-mapped, D5)
+include/system/ram_buffer.h	15	region	data	fixed EWRAM buffer address (gMapGridCellBuffer), data
+src/battle_effect/battle_effect/procne.c	272	below64k	data	a velocity in 16.16 fixed point
+src/field/event_commands/carry.c	299	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/field/event_commands/force.c	90	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/field/event_commands/lift.c	115	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/field/event_commands/move.c	392	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/field/event_commands/move.c	396	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/scene/xian.c	446	below64k	data	an actor scale in 16.16 fixed point (grow to 1.0)
+src/field/field_sequence/walking.c	294	below64k	data	walking distance in 16.16 fixed point (encounter steps)
+src/field/event_commands/field_psynergy.c	252	msgend	safe	Psynergy event script: message below 65536 else routine; table indices >= 65536 (trap 26)
+src/field/field_sequence/items.c	135	msgend	safe	item trigger value: message below 65536 else routine (trap 26)
+src/field/field_sequence/triggers.c	233	msgend	safe	trigger result: message below 65536 else routine (trap 26)
+src/field/field_sequence/triggers.c	271	msgend	safe	trigger result: message below 65536 else routine (trap 26)
+src/field/field_sequence/triggers.c	323	msgend	safe	trigger result: message below 65536 else routine (trap 26)
+src/field/field_sequence/triggers.c	361	msgend	safe	trigger result: message below 65536 else routine (trap 26)
+src/field/field_sequence/triggers.c	489	msgend	fixed	Field_ExamineCell: routine by bits 27-24 (FIND_FUNCTION_BITS); c_rules.tsv adds PORT_IS_CODE_INDEX (GS13, trap 40)
+src/field/field_sequence/triggers.c	491	msgend	fixed	the same test again inside the branch; the same c_rules.tsv rule replaces both
+src/field/event_commands/mind_read.c	231	topmask	data	a divisor overflow test in arithmetic
+src/field/field/sprite_draw.c	66	codediff	safe	Sprite_ComposePicture: DMA count = end label - routine address; the routine is declared as data there, so bind.py binds it to its ROM address (build/wasm/code_as_data.tsv) and the difference is the real length. A Port_CodeGbaOf rule broke it (GS14: tried, crashed, reverted)
+src/field/field/terrain.c	621	shr24	data	encounter region bits of a map cell word
+src/field/field/world_map.c	646	shr24	data	World Map quarter (512-px tile) from a 16.16 position
+src/field/field/world_map.c	647	shr24	data	World Map quarter (512-px tile) from a 16.16 position
+src/field/field/world_map.c	684	shr24	data	World Map quarter (512-px tile) from a 16.16 position
+src/field/field/world_map.c	685	shr24	data	World Map quarter (512-px tile) from a 16.16 position
+src/gamepak/flash/flash.c	266	codediff	replaced	flash driver copies its read loop to RAM by address difference; the whole flash driver is port/pc/flash.c (overrides.tsv)
+src/gamepak/flash/flash.c	313	codediff	replaced	the same for the verify loop; replaced by port/pc/flash.c
+src/scene/file_screen.c	1238	shr24	data	password stats packed in words, byte extraction
+src/scene/file_screen.c	1242	shr24	data	the same, second word
+src/system/system/heap.c	37	msgend	data	EWRAM_END: heap pool limit compared with heap (data) addresses
+src/system/system/heap.c	71	msgend	data	EWRAM_END: heap pool limit compared with heap (data) addresses
+src/system/system/heap.c	101	msgend	data	EWRAM_END: heap pool limit compared with heap (data) addresses
+src/system/system/heap.c	137	msgend	data	EWRAM_END: heap pool limit compared with heap (data) addresses
+src/system/system/heap.c	159	msgend	data	EWRAM_END: heap pool limit compared with heap (data) addresses
+src/system/system/start_up.c	32	msgend	data	IWRAM_START: clears IWRAM at boot (data)
+src/system/system/task.c	219	shr24	fixed	Task_SuspendOverlayTasks: an overlay task by its routine top byte 0x02 (EWRAM); wasm routines are table indices, so menus never suspended scene tasks. c_rules.tsv: Port_CodeIsOverlay (GS14, trap 41)
+src/system/system/task.c	287	shr24	fixed	Task_ResumeOverlayTasks: the same test; the same c_rules.tsv rule replaces both

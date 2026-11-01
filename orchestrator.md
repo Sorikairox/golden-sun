@@ -332,3 +332,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     takes a search result as an event routine only when bits 27-24 are set (FIND_FUNCTION_BITS), so every examine event (the
     minotaur reliefs) ran as a locked chest ("but Isaac can't open it..."). GS13: c_rules.tsv adds PORT_IS_CODE_INDEX (port_api.h)
     to that test. Look for the same pattern when an event shows the wrong message (task.c `func >> 24 == 2` is another one).
+41. Code-range audit (GS14): every vendor C test of a value's range/high bits that may see code is listed in
+    `port/tools/code_range_audit.tsv` (46 hits: 30 data, 9 safe, 5 fixed, 2 replaced); `tools/wasm/code_range_audit.py`
+    runs as the build's first stage and fails on a hit with no row (re-pin or new pattern). Real fix: task.c's
+    `(task->func >> 24) == 2` (overlay tasks suspended while a menu is open) never matched a table index, so scene
+    tasks (World Map, Luna/Sol rooms' falling lights, eruption...) kept running under menus; c_rules.tsv adds
+    Port_CodeIsOverlay (codemap.c). Before "fixing" an address difference, check build/wasm/code_as_data.tsv: bind.py
+    binds asm routines declared as data to their ROM address, so `End - (u32)Routine` is already right there
+    (sprite_draw.c:66; a Port_CodeGbaOf rule broke it).

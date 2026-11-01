@@ -72,6 +72,21 @@ u32 Port_CodeGbaOf(u32 fn) {
   return 0;
 }
 
+/* Is `fn` a scene overlay's function? On the GBA an overlay runs from EWRAM, so Task_SuspendOverlayTasks and
+ * Task_ResumeOverlayTasks (system/system/task.c) pick a task's routine by its top byte (0x02); in wasm the routine
+ * is a table index with no such byte (traps 26, 40): look it up among the overlays' rows (port/c_rules.tsv). */
+int Port_CodeIsOverlay(u32 fn) {
+  int i;
+  if (mainEnd < 0)
+    index_main();
+  if (!PORT_IS_TABLE_INDEX(fn))
+    return 0;
+  for (i = mainEnd; i < gPortCodeMapCount; i++)
+    if ((u32)(uintptr_t)gPortCodeMap[i].fn == fn)
+      return 1;
+  return 0;
+}
+
 /* Overlay `id` is now in gOverlayArea: its functions answer for the overlay area's addresses. */
 void Port_CodeMapOverlay(u32 id) {
   int i;

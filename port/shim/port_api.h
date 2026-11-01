@@ -17,4 +17,9 @@ void Port_BlitterBuilt(unsigned int gba, int widthShift, int heightShift, int fl
  * value (set in every GBA code address); a table index has none of them (port/c_rules.tsv, trap 40). */
 #define PORT_IS_CODE_INDEX(a) ((unsigned int)(a) - 0x10000u < 0x10000u)
 
+/* port/pc/codemap.c: is a table index a scene overlay's function? Task_SuspendOverlayTasks/ResumeOverlayTasks pick
+ * overlay tasks by the routine's top byte 0x02 (port/c_rules.tsv; code-range audit port/tools/code_range_audit.tsv,
+ * GS14, trap 41). */
+int Port_CodeIsOverlay(unsigned int fn);
+
 #endif
