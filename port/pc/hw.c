@@ -20,6 +20,7 @@ void Port_PpuVBlank(void);
 void *Port_ResolveCode(void *p);
 void *Port_CodeAt(u32 gba);
 void Port_CodeAlias(u32 to, u32 from);
+u32 Port_CodeGbaOf(u32 fn);
 void Port_CodeUnalias(u32 to, u32 bytes);
 void port_frame_ready(void); /* JS library (port/web/port_lib.js) */
 
@@ -61,7 +62,15 @@ static void dma_run(int ch) {
   s32 dstep = dctl == 0 || dctl == 3 ? (s32)unit : dctl == 1 ? -(s32)unit : 0;
   s32 sstep = sctl == 0 ? (s32)unit : sctl == 1 ? -(s32)unit : 0;
   u32 s = dma[ch].src & ~(unit - 1), d = dma[ch].dst & ~(unit - 1), n = dma[ch].count;
-  u32 src0 = s, dst0 = d;
+  u32 src0, dst0 = d;
+  if (((ctl >> 12) & 3) == 0 && dctl == 0 && sctl == 0 && dma[ch].src < 0x10000u) {
+    /* the source is a wasm function pointer (a vendor C routine copied to RAM to run): copy the ROM's bytes
+     * of that function instead, as the game does, and alias the copy */
+    u32 gba = Port_CodeGbaOf(dma[ch].src);
+    if (gba)
+      s = gba & ~(unit - 1);
+  }
+  src0 = s;
   if (((ctl >> 12) & 3) == 0 && dctl == 0) {
     Port_CodeUnalias(dst0, n * unit);
     if (sctl == 0 && Port_CodeAt(src0))

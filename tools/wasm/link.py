@@ -98,6 +98,116 @@ def signatures(ll_files):
     return sig
 
 
+def convert(val, frm, to, tmp):
+    """IR lines converting `val` of type `frm` to `to` (integers by zext/trunc, pointers by int casts); returns
+    (lines, value)."""
+    if frm == to:
+        return [], val
+    bits = lambda t: 32 if t == 'ptr' else int(t[1:]) if t.startswith('i') else None
+    if bits(frm) is None or bits(to) is None:
+        return [], zero(to) or 'undef'
+    lines, v, f = [], val, frm
+    if f == 'ptr':
+        lines.append(f'  %{tmp}p = ptrtoint ptr {v} to i32'); v, f = f'%{tmp}p', 'i32'
+    t2 = 'i32' if to == 'ptr' else to
+    if bits(f) < bits(t2):
+        lines.append(f'  %{tmp}x = zext {f} {v} to {t2}'); v = f'%{tmp}x'
+    elif bits(f) > bits(t2):
+        lines.append(f'  %{tmp}t = trunc {f} {v} to {t2}'); v = f'%{tmp}t'
+    if to == 'ptr':
+        lines.append(f'  %{tmp}q = inttoptr i32 {v} to ptr'); v = f'%{tmp}q'
+    return lines, v
+
+
+def adapter(ret, params, tret, tparams, target):
+    """Body of a veneer whose callers declare (ret, params) for a target defined as (tret, tparams): on the GBA
+    both pass words in r0-r3 and return r0, so arguments are converted word for word, missing ones are 0, extra
+    ones dropped, a missing result is 0 (wasm-ld would otherwise turn the call into a trap)."""
+    lines, args = [], []
+    for i, t in enumerate(tparams):
+        if i < len(params):
+            l, v = convert(f'%a{i}', params[i], t, f'c{i}')
+            lines += l
+        else:
+            v = zero(t) or 'undef'
+        args.append(f'{t} {v}')
+    call = f'call {tret} @"{target}"({", ".join(args)})'
+    if tret == 'void':
+        lines.append(f'  {call}')
+        lines.append(f'  ret {ret} {zero(ret)}' if ret != 'void' else '  ret void')
+    else:
+        lines.append(f'  %r = {call}')
+        if ret == 'void':
+            lines.append('  ret void')
+        else:
+            l, v = convert('%r', tret, ret, 'cr')
+            lines += l + [f'  ret {ret} {v}']
+    return '\n'.join(lines)
+
+
+CALL_RX = re.compile(r'\bcall (\S+) @(?:"([^"]+)"|([-\w$.]+))\(')
+
+
+def split_args(text, start):
+    """The top-level argument list of a call starting after its '(' at `start`: (types, end index)."""
+    depth, cur, parts, i = 0, '', [], start
+    while i < len(text):
+        ch = text[i]
+        if ch == ')' and depth == 0:
+            break
+        if ch == ',' and depth == 0:
+            parts.append(cur)
+            cur = ''
+        else:
+            depth += (ch in '([{<') - (ch in ')]}>')
+            cur += ch
+        i += 1
+    parts.append(cur)
+    return [p.strip().split()[0] for p in parts if p.strip()], i
+
+
+def adapt_unprototyped_calls(files):
+    """Calls of functions declared without a prototype (K&R `f()`, IR `(...)`) pass whatever the caller wrote
+    (the vendor's Import_ActorSetAnimation takes two words, some scenes pass three); wasm needs one signature per
+    symbol or wasm-ld turns the call into a trap. Each such call is sent to `NAME$c<signature>`, an adapter that
+    link generates (converting word for word, as r0-r3 would carry them). Rewrites the bound IR in place
+    (idempotent: adapters are not `(...)`). Returns {adapter: (ret, params, name)}."""
+    adapters = {}
+    rx_decl = re.compile(r'^declare (\S+) @(?:"([^"]+)"|([-\w$.]+))\(\.\.\.\)', re.M)
+    for path in files:
+        text = open(path, encoding='utf-8').read()
+        knr = {m.group(2) or m.group(3) for m in rx_decl.finditer(text)}
+        if not knr:
+            continue
+        out, pos, new = [], 0, {}
+        for m in CALL_RX.finditer(text):
+            name = m.group(2) or m.group(3)
+            if name not in knr or m.start() < pos:
+                continue
+            types, _ = split_args(text, m.end())
+            ret = m.group(1)
+            if ret == '(...)' or ret.endswith(')'):
+                continue
+            a = f'{name}$c{ret}_' + '_'.join(types)
+            adapters[a] = (ret, types, name)
+            new[a] = (ret, types)
+            out.append(text[pos:m.start()] + f'call {ret} @"{a}"(')
+            pos = m.end()
+        if not new:
+            continue
+        out.append(text[pos:])
+        text = ''.join(out)
+        have = set(re.findall(r'^declare \S+ @"([^"]+\$c[^"]*)"', text, re.M))
+        decls = ''.join(f'\ndeclare {r} @"{a}"({", ".join(t)})' for a, (r, t) in sorted(new.items()) if a not in have)
+        open(path, 'w', encoding='utf-8').write(text + decls + '\n')
+    # adapters already in the IR from an earlier run (the rewrite is done once per bound file)
+    rx_ad = re.compile(r'^declare (\S+) @"(([^"$]+)\$c[^"]*)"\(([^)]*)\)', re.M)
+    for path in files:
+        for m in rx_ad.finditer(open(path, encoding='utf-8').read()):
+            adapters[m.group(2)] = (m.group(1), [t.strip() for t in m.group(4).split(',') if t.strip()], m.group(3))
+    return adapters
+
+
 def zero(ret):
     return {'void': None, 'ptr': 'null', 'float': '0.0', 'double': '0.0'}.get(ret, '0')
 
@@ -118,6 +228,7 @@ def run(objs, out, root, clang, jobs, stages):
             cmd = [clang] + flags
         rc, _, err = sh(cmd)
         return o, (err[-1500:] if rc else None)
+    adapters = adapt_unprototyped_calls(bound) if 'obj' in stages or 'link' in stages else {}
     if 'obj' in stages:
         fails = []
         with cf.ThreadPoolExecutor(jobs) as ex:
@@ -145,7 +256,10 @@ def run(objs, out, root, clang, jobs, stages):
     libc = {'memcpy', 'memset', 'memmove', 'printf', 'iprintf', 'puts', 'fflush', 'stdout', 'putchar', 'abort', 'port_frame_ready', 'abort', 'malloc', 'free', 'strlen', 'memcmp',
             '__stack_pointer', '__heap_base', '__indirect_function_table', '__memory_base', '__table_base',
             'emscripten_stack_get_current', '__stack_low', '__stack_high', '__data_end'}
-    missing = {n: u for n, u in undefined.items() if n not in defined and n not in libc}
+    missing = {n: u for n, u in undefined.items() if n not in defined and n not in libc and n not in adapters}
+    for a, (_, _, name) in adapters.items():  # an adapter's target needs its veneer or stub like any other call
+        if name not in defined and name not in libc:
+            missing.setdefault(name, set()).add('(K&R calls)')
     sig = signatures(bound + [os.path.join(out, 'll', o + '.ll') for _, o in objs])
     vmap = veneer_map(root)
     overlay_def = defaultdict(list)
@@ -167,13 +281,17 @@ def run(objs, out, root, clang, jobs, stages):
     lines = ['; generated by tools/wasm/link.py: veneers and logged stubs', 'declare void @Port_StubHit(i32)']
     stubs, veneers, mismatched = [], 0, 0
     declared = set()
+    final_sig = {}
+    knr_targets = {n for _, _, n in adapters.values()}
     for name in sorted(missing):
         s = sig.get(name)
         if s is None:
             continue  # data symbol: reported by the link
         ret, params, variadic = s
-        plist = ', '.join([f'{t} %a{i}' for i, t in enumerate(params)] + (['...'] if variadic else []))
         target = resolve(name)
+        if variadic and not target and name in knr_targets:
+            variadic = False  # a stub called only through adapters: no arguments
+        plist = ', '.join([f'{t} %a{i}' for i, t in enumerate(params)] + (['...'] if variadic else []))
         if target and target != name and variadic:
             # declared without a prototype (K&R `f()`): callers pass the promoted arguments, so the veneer takes
             # its target's signature
@@ -189,10 +307,14 @@ def run(objs, out, root, clang, jobs, stages):
                 declared.add(target)
                 dt = sig.get(target) or sig.get(re.sub(r'^ov[0-9a-f]{3}_', '', target)) or (ret, params, False)
                 lines.insert(2, f'declare {dt[0]} @"{target}"({", ".join(dt[1] + (["..."] if dt[2] else []))})')
-            args = ', '.join(f'{t} %a{i}' for i, t in enumerate(params))
-            call = f'call {ret} @"{target}"({args})'
-            body = f'  %r = {call}\n  ret {ret} %r' if ret != 'void' else f'  {call}\n  ret void'
+            if (tret, tparams) == (ret, params):
+                args = ', '.join(f'{t} %a{i}' for i, t in enumerate(params))
+                call = f'call {ret} @"{target}"({args})'
+                body = f'  %r = {call}\n  ret {ret} %r' if ret != 'void' else f'  {call}\n  ret void'
+            else:
+                body = adapter(ret, params, tret, tparams, target)
             lines.append(f'define {ret} @"{name}"({plist}) {{\n{body}\n}}')
+            final_sig[name] = (ret, params)
             veneers += 1
             continue
         idx = len(stubs)
@@ -201,6 +323,19 @@ def run(objs, out, root, clang, jobs, stages):
         z = zero(ret)
         lines.append(f'define {ret} @"{name}"({plist}) {{\n  call void @Port_StubHit(i32 {idx})\n'
                      f'  ret {ret}{" " + z if z else ""}\n}}')
+        final_sig[name] = (ret, params)
+    # the K&R call adapters (adapt_unprototyped_calls), now that every target has its one signature
+    for a, (ret, params, name) in sorted(adapters.items()):
+        if name in final_sig:
+            tret, tparams = final_sig[name]
+        else:
+            d = sig.get(name) or (ret, params, False)
+            tret, tparams = d[0], d[1]
+            if name not in declared and name not in final_sig:
+                declared.add(name)
+                lines.insert(2, f'declare {tret} @"{name}"({", ".join(tparams)})')
+        plist = ', '.join(f'{t} %a{i}' for i, t in enumerate(params))
+        lines.append(f'define {ret} @"{a}"({plist}) {{\n{adapter(ret, params, tret, tparams, name)}\n}}')
     names_c = os.path.join(out, 'gen', 'stub_names.c')
     with open(names_c, 'w') as f:
         f.write('/* generated by tools/wasm/link.py */\nconst char *const gPortStubNames[] = {\n')

@@ -58,6 +58,21 @@ void *Port_CodeAt(u32 gba) {
   return search(0, mainEnd, gba & ~1u);
 }
 
+/* The GBA address of the main image's function whose wasm function pointer (table index) is `fn`, or 0. A RAM
+ * copy of a vendor C routine compiled as ARM (RamCode_Load(routine, Tile_BuildCellPictures, ...)) takes the
+ * function's address as data: in wasm that is a table index, not its place in the ROM. */
+u32 Port_CodeGbaOf(u32 fn) {
+  int i;
+  if (mainEnd < 0)
+    index_main();
+  if (!fn || fn >= TABLE_LIMIT)
+    return 0;
+  for (i = 0; i < mainEnd; i++)
+    if ((u32)(uintptr_t)gPortCodeMap[i].fn == fn)
+      return gPortCodeMap[i].gba;
+  return 0;
+}
+
 /* Overlay `id` is now in gOverlayArea: its functions answer for the overlay area's addresses. */
 void Port_CodeMapOverlay(u32 id) {
   int i;
