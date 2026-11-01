@@ -9,11 +9,11 @@ still resolve). The rules are mechanical and generic:
    A nested function reads and writes its parent's locals in place; a block copies them unless they are
    __block. So every parent local a block uses is marked __block (found from clang's AST of the block
    version). The blocks are never copied to the heap, so the tiny runtime they need is port/pc/blocks.c.
-2. Empty asm statements (FAKEMATCH register barriers) lose their ARM register clobbers ("r0".."r12", "ip",
+2. Empty asm statements (FAKEMATCH register barriers) use "r" for Thumb's "l"/"h" and lose their ARM register clobbers ("r0".."r12", "ip",
    "lr", "sp"); wasm has no such registers and an empty asm emits nothing either way.
 
-Usage: port_src.py VENDOR_FILE OUT_FILE -- CLANG [clang flags...]   (the flags are used for the AST pass)
-Prints one line per change.
+Usage: see main(). The wasm build mirrors games/tbs/src as symlinks under build/wasm/src and writes only the
+changed .c files, so every relative #include (including the many .c files that are #included) still resolves.
 """
 import json
 import os
@@ -152,6 +152,10 @@ REG = re.compile(r'\s*"(?:r\d+|ip|lr|sp|fp|sl)"\s*,?')
 def strip_clobbers(src, log):
     def fix(m):
         rest = m.group('rest')
+        thumb = re.sub(r'"([=+&]*)[lh]"\s*\(', r'"\1r"(', rest)  # Thumb low/high register classes
+        if thumb != rest:
+            log.append('empty asm: Thumb register class -> r')
+            return m.group(0).replace(rest, thumb)
         parts = rest.split(':')
         if len(parts) >= 4 and REG.search(parts[3]):
             parts[3] = REG.sub('', parts[3]).rstrip().rstrip(',') + ' '
@@ -193,89 +197,167 @@ def walk(node, fn, stack=()):
         walk(ch, fn, stack + (node,))
 
 
-def mark_block_captures(src, path_for_clang, clang_cmd, log):
-    """Parse the block version and put __block on every parent local that a block refers to. A parameter
-    cannot be __block: it is renamed NAME__param and copied into a __block local NAME at the top of the body."""
-    r = subprocess.run(clang_cmd + ['-fblocks', '-Xclang', '-ast-dump=json', '-fsyntax-only', path_for_clang],
+class FileTracker:
+    """clang's JSON AST writes "file" only when it changes from the previous location it printed; this
+    follows the printing order (loc, then range begin/end; spelling before expansion) to name every one."""
+    def __init__(self):
+        self.cur = None
+
+    def see(self, loc):
+        if not isinstance(loc, dict):
+            return None
+        if 'spellingLoc' in loc or 'expansionLoc' in loc:
+            sp = self.see(loc.get('spellingLoc'))
+            ex = self.see(loc.get('expansionLoc'))
+            return ex
+        if 'file' in loc:
+            self.cur = loc['file']
+        if 'offset' in loc:
+            return (self.cur, loc['offset'])
+        return None
+
+
+def mark_block_captures(top, clang_cmd, log):
+    """Parse a translation unit that uses the blocks (from nested functions) and put __block on every parent
+    local a block refers to; a parameter (which cannot be __block) is renamed NAME__param and copied into a
+    __block local NAME at the top of the body. Edits go to whichever files of the TU hold the declarations."""
+    r = subprocess.run(clang_cmd + ['-fblocks', '-Xclang', '-ast-dump=json', '-fsyntax-only', top],
                        capture_output=True, text=True)
     if not r.stdout:
-        raise SystemExit(f'clang failed on the block version:\n{r.stderr[-3000:]}')
+        raise SystemExit(f'clang failed on {top}:\n{r.stderr[-3000:]}')
     ast = json.loads(r.stdout)
-    decls, parent_fn, body_of, captured = {}, {}, {}, set()
-    inside_block = {}
+    ft = FileTracker()
+    decls, parent_fn, body_of, captured, inside_block, where = {}, {}, {}, set(), {}, {}
 
     def visit(node, stack):
+        loc = ft.see(node.get('loc'))
+        rng = node.get('range', {})
+        begin = ft.see(rng.get('begin'))
+        ft.see(rng.get('end'))
         kind = node.get('kind')
+        if kind == 'CompoundStmt' and stack and stack[-1].get('kind') == 'FunctionDecl':
+            body_of[stack[-1]['id']] = begin
         fns = [s_ for s_ in stack if s_.get('kind') == 'FunctionDecl']
         blocks = tuple(s_['id'] for s_ in stack if s_.get('kind') == 'BlockDecl')
-        if kind == 'FunctionDecl':
-            for ch in node.get('inner', []) or []:
-                if ch.get('kind') == 'CompoundStmt':
-                    body_of[node['id']] = ch['range']['begin'].get('offset')
         if kind in ('VarDecl', 'ParmVarDecl') and fns:
             decls[node['id']] = node
             parent_fn[node['id']] = fns[-1]['id']
             inside_block[node['id']] = set(blocks)
+            where[node['id']] = (loc, begin)
         if kind == 'DeclRefExpr' and blocks:
             ref = node.get('referencedDecl', {})
             if ref.get('kind') in ('VarDecl', 'ParmVarDecl'):
                 captured.add((ref['id'], blocks))
     walk(ast, visit)
-    edits = {}
-    for vid, blocks in captured:
+    edits = {}  # (file, offset) -> ('insert', text) | ('replace', old, new)
+    for vid, blocks in sorted(captured):
         d = decls.get(vid)
         if d is None or inside_block[vid] & set(blocks):
             continue
-        if 'storageClass' in d and d['storageClass'] in ('static', 'extern'):
+        if d.get('storageClass') in ('static', 'extern'):
             continue
         name = d.get('name')
+        loc, begin = where[vid]
         if d['kind'] == 'ParmVarDecl':
-            loc = d.get('loc', {}).get('offset')
             body = body_of.get(parent_fn[vid])
-            if loc is None or body is None:
+            if not loc or not body or not loc[0]:
                 log.append(f'WARNING: parameter {name}: no location')
                 continue
             edits[loc] = ('replace', name, name + '__param')
-            prev = edits.get(body + 1, ('insert', ''))[1]
+            prev = edits.get((body[0], body[1] + 1), ('insert', ''))[1]
             line = f" __block {d['type']['qualType']} {name} = {name}__param;"
             if line not in prev:
-                edits[body + 1] = ('insert', prev + line)
-            log.append(f'parameter {name} -> __block copy')
-        else:
-            off = d.get('range', {}).get('begin', {}).get('offset')
-            if off is not None:
-                edits.setdefault(off, ('insert', '__block '))
-                log.append(f'__block {name}')
-    for off in sorted(edits, reverse=True):
-        e = edits[off]
-        if e[0] == 'insert':
-            src = src[:off] + e[1] + src[off:]
-        else:
-            assert src[off:off + len(e[1])] == e[1], (off, e)
-            src = src[:off] + e[2] + src[off + len(e[1]):]
-    return src
+                edits[(body[0], body[1] + 1)] = ('insert', prev + line)
+            log.append(f'{os.path.basename(loc[0])}: parameter {name} -> __block copy')
+        elif begin and begin[0]:
+            if begin not in edits:
+                edits[begin] = ('insert', '__block ')
+                log.append(f'{os.path.basename(begin[0])}: __block {name}')
+    by_file = {}
+    for (f, off), e in edits.items():
+        by_file.setdefault(f, []).append((off, e))
+    for f, es in by_file.items():
+        src = open(f, encoding='utf-8').read()
+        for off, e in sorted(es, key=lambda x: -x[0]):
+            if e[0] == 'insert':
+                if e[1] == '__block ' and src.startswith('__block', off):
+                    continue  # already marked by another translation unit
+                if e[1] != '__block ' and e[1].strip() and e[1].strip() in src[off:off + len(e[1]) + 400]:
+                    continue
+                src = src[:off] + e[1] + src[off:]
+            else:
+                assert src[off:off + len(e[1])] == e[1], (f, off, e)
+                src = src[:off] + e[2] + src[off + len(e[1]):]
+        if os.path.islink(f):
+            os.unlink(f)
+        open(f, 'w').write(src)
+
+
+def transform_text(path, log):
+    """The text rules on one file; returns (new text, had nested functions)."""
+    src = open(path, encoding='utf-8').read()
+    out = strip_clobbers(src, log)
+    rules = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/asm_rules.tsv')
+    out = replace_asm(out, load_rules(rules), log)
+    nested = bool(find_nested(out))
+    if nested:
+        out = to_blocks(out, log)
+    return out, out != src, nested
+
+
+def mirror(vendor_src, out_src):
+    """out_src mirrors vendor_src with symlinks; every .c file the text rules change is written as a real
+    file. Returns the files with nested functions (they need mark_block_captures on the TUs that use them)."""
+    nested_files = []
+    for d, _, files in os.walk(vendor_src):
+        rel = os.path.relpath(d, vendor_src)
+        od = os.path.join(out_src, rel)
+        os.makedirs(od, exist_ok=True)
+        for name in files:
+            src, dst = os.path.join(d, name), os.path.join(od, name)
+            log = []
+            if name.endswith('.c'):
+                text, changed, nested = transform_text(src, log)
+            else:
+                changed, nested = False, False
+            if os.path.lexists(dst):
+                os.unlink(dst)
+            if changed:
+                open(dst, 'w').write(text)
+                for line in log:
+                    print(f'{os.path.join(rel, name)}: {line}')
+                if nested:
+                    nested_files.append(os.path.join(rel, name))
+            else:
+                os.symlink(src, dst)
+    return nested_files
+
+
+def includes_closure(path, seen=None):
+    seen = seen if seen is not None else set()
+    if path in seen or not os.path.exists(path):
+        return seen
+    seen.add(path)
+    for m in re.finditer(r'^\s*#\s*include\s+"([^"]+\.c)"', open(path, encoding='utf-8', errors='replace').read(), re.M):
+        includes_closure(os.path.normpath(os.path.join(os.path.dirname(path), m.group(1))), seen)
+    return seen
 
 
 def main():
-    if '--' not in sys.argv:
-        raise SystemExit(__doc__)
-    k = sys.argv.index('--')
-    vendor, out = sys.argv[1:k]
-    clang_cmd = sys.argv[k + 1:]
-    src = open(vendor, encoding='utf-8').read()
-    log = []
-    src = strip_clobbers(src, log)
-    rules = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/asm_rules.tsv')
-    src = replace_asm(src, load_rules(rules), log)
-    nested = find_nested(src)
-    if nested:
-        src = to_blocks(src, log)
-        open(out, 'w').write(src)
-        src = mark_block_captures(src, out, clang_cmd, log)
-    # keep diagnostics and __FILE__ pointing at the vendor file
-    open(out, 'w').write(f'#line 1 "{vendor}"\n' + src)
-    for line in log:
-        print(f'{vendor.split("/src/")[-1]}: {line}')
+    """port_src.py --tree VENDOR_SRC OUT_SRC                 mirror + text rules; prints the changes
+       port_src.py --captures TOP_C -- CLANG [flags...]     __block marks for one translation unit"""
+    if sys.argv[1] == '--tree':
+        nested = mirror(sys.argv[2], sys.argv[3])
+        with open(os.path.join(sys.argv[3], '.nested'), 'w') as f:
+            f.write('\n'.join(nested) + '\n')
+    elif sys.argv[1] == '--captures':
+        k = sys.argv.index('--')
+        log = []
+        mark_block_captures(sys.argv[2], sys.argv[k + 1:], log)
+        for line in log:
+            print(line)
+    else:
+        raise SystemExit(main.__doc__)
 
 
 if __name__ == '__main__':
