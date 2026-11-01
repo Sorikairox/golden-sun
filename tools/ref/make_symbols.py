@@ -261,6 +261,15 @@ def main():
                 cpt_rows.append((overlay or '', n, a, size, len(ptrs), len(optrs)))
             sym_rows.append((overlay, n, a, ra, size, skind, s.name, mapparse.short_obj(s.obj), sym_check))
 
+    with open(os.path.join(outdir, 'absolute.tsv'), 'w') as f:
+        f.write('# Absolute symbols of the reference build (message ids, resource ids and other constants the game\n'
+                '# uses as addresses). Names and values only.\nname\tvalue\n')
+        seen = set()
+        for sym in sorted(final.symbols, key=lambda x: x.name):
+            if sym.shndx == 0xfff1 and sym.name and sym.type != 'FILE' and sym.name not in seen \
+                    and not sym.name.startswith(('$', '.L')):
+                seen.add(sym.name)
+                f.write(f'{sym.name}\t0x{sym.value:08x}\n')
     reloc_rows = []
     for s, kind, r, check, src, info, overlay in sec_index:
         if not info or kind in ('code', 'ram') or not info.targets.get(s.name):
