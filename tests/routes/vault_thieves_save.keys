@@ -1,0 +1,3 @@
+# GS16: save in the inn's loft after the thieves are jailed (after vault_thieves.keys): Start, Save your quest,
+# file 1, LEFT to Yes, A (written ~f34900), B.
+START@34500-34503,A@34600-34603,A@34700-34703,LEFT@34800-34803,A@34850-34853,B@35060-35063

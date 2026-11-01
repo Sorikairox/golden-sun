@@ -15,7 +15,9 @@
 # eruption, Retreat, Sol Entrance, Vale's eruption, the Sanctum's quest, Vale's farewell, the World Map save; SHA-1 kept), vault (GS15: from it,
 # Flint and the Djinn lesson, the World Map to Vault, Hammet's caravan, Ivan joins in the mayor's house, save; SHA-1 kept),
 # vault_inn (GS15: from it, the inn's guests' room, the suspects flee Ivan, the plan to corner one; save, SHA-1 kept), vault_crate (GS16: from it,
-# the cornering chase, Ivan's Mind Read, out of the inn, Move on the crate; save, SHA-1 kept), battle_fight,
+# the cornering chase, Ivan's Mind Read, out of the inn, Move on the crate; save, SHA-1 kept), vault_grind (GS16: from it, Ivan stays
+# behind, 78 World Map battles to Isaac Lv 6; save), vault_thieves (GS16: from it, Ivan rejoins, the loft, the thieves'
+# battle won, the Shaman's Rod, Ivan leaves; save), battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
 set -uo pipefail
@@ -52,9 +54,11 @@ CASES=(
   "vault|27800|2400,4200,7000,9800,11400,14600,16800,18800,19800,20400,21400,24400,26400,27800||$R/vale_day1_continue.keys,$R/vault.keys,$R/vault_save.keys||--flash-in $W/mt_aleph.sav --flash-out $W/vault.sav"
   "vault_inn|7300|2440,3150,3400,3700,4000,4300,4800,5300,5800,6700,7300||$R/vale_day1_continue.keys,$R/vault_inn.keys,$R/vault_inn_save.keys||--flash-in $W/vault.sav --flash-out $W/vault_inn.sav"
   "vault_crate|7700|2700,2880,3400,4000,4600,5300,5900,6100,6300,6700,7700||$R/vale_day1_continue.keys,$R/vault_crate.keys,$R/vault_crate_save.keys||--flash-in $W/vault_inn.sav --flash-out $W/vault_crate.sav"
+  "vault_grind|216000|2600,3044,50000,100000,150000,215300,216000||$R/vale_day1_continue.keys,$R/vault_grind.keys,$R/vault_grind_save.keys||--flash-in $W/vault_crate.sav --flash-out $W/vault_grind.sav"
+  "vault_thieves|35300|2200,3300,3700,8400,12000,16000,20100,24000,28000,32000,35300||$R/vale_day1_continue.keys,$R/vault_thieves.keys,$R/vault_thieves_save.keys||--flash-in $W/vault_grind.sav --flash-out $W/vault_thieves.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected
