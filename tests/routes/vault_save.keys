@@ -1,0 +1,6 @@
+# GS15: save in Vault's mayor's house after Ivan joins (after vault.keys, from the World Map save):
+# Start, Save your quest, file 1, "OK to save over this file?" LEFT to Yes, A (written ~f27170), B.
+START@26800-26802,A@26890-26892    # pause menu, Save
+A@26990-26992                      # file 1
+LEFT@27090-27092,A@27140-27142     # Yes: save over it
+B@27350-27352                      # close "Your game was saved."
