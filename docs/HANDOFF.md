@@ -2,6 +2,43 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS11 — 2026-11-01: the whole prologue by real play (four monster fights won, to Vale three years later); soft reset works
+
+### Done
+- **Story order** read from the vendor scenes first (docs/G11.md 1): the way on from ValeKradensCottage is the rockslide
+  survivor's escape path, down the W->E slope at 5-6,29 on the **west** side (GS9 tried the kind-3/4 cliff edges).
+- **Real play, no probe** (tests/routes, inputs only): `vale_monsters.keys`: survivor ("No", he runs off), **Vermin won**
+  (f11465-12392), **Bat won** (f12686-13252), south exit, **Wild Mushrooms won** (f13553-14762); `vale_felix.keys`:
+  Felix in the river and Dora's scene, the south bridge, **Bat + Vermin won** (f20159-21727), into ValePlaza;
+  `vale_plaza.keys`: the mayor sends the boys back, the Boulder sweeps Felix, his parents and Kyle away, Garet follows,
+  the strangers' battle (lost as scripted), the title after the prologue (f36728), **Vale three years later** (scene 4,
+  f36842), Garet's Move lesson (f40000, furthest point). Screens: `port_work/g11/final/sheet.png`,
+  `frame_12300.png` (first win), `frame_35500.png` (strangers), `frame_40000.png` (furthest).
+- **Soft reset (trap 36)** works (a fork of this session; commits 1be5bc6, 45a3d09): the keypad IRQ slot held garbage
+  (gDefaultIrqHandlers relocated for 10 of the 14 handlers the game copies: port/symbols/reloc_extents.tsv) and
+  System_SoftReset's constant call of Cart_Start was not routed through Port_ResolveCode. Cart_Start/System_Entry run
+  Port_SystemEntry (port_lib.js unwinds with ASYNCIFY, drops the stack, Port_Restart = System_Entry again); System_Entry's
+  prologue EQUIV. Tested in node from the field (no save: logos + naming; with a save: title, Continue loads), a battle,
+  the link lobby (link2: a resets, b stays in the lobby), the page (web_shot keys). Route `soft_reset.keys`. The page's
+  "Return to title" keeps the fresh-module restart (also recovers a stopped run).
+- **tools/regress.sh**: 15 cases (+ soft_reset, vale_monsters, vale_felix, vale_plaza), all OK twice. **expected.tsv
+  rewritten for every case** on the soft-reset build: only RAM digests changed (function-table indices +1 for the new
+  address-taken Port_SystemEntry, emscripten data +0x60, IRQ table entries 10-13 now correct); every picture digest,
+  the prologue save SHA-1 and link2's 20/20 agreement were unchanged (checked case by case before `--update`).
+
+### Next
+1. Day one in Vale by real play (G11.md 1, row 16 onwards): Garet's Move lesson, Jenna, Kraden's cottage (Saturos and
+   Menardi, Kraden's plan), Sol Sanctum; then the first real World Map walk and a town (Vault).
+2. Optional: "Return to title" could press the game's own reset when the run is healthy (fresh module only on a stop).
+3. Run `tools/regress.sh` after every build (~75 s now); `--update` only for intended changes.
+
+### Notes
+- Tests on the final build: regress 15/15 OK (twice), test_arm 79/79 EQUIV, leak check PASS, web_touch ALL PASS,
+  web_phone ALL PASS, web_link clean PASS (all 0 console errors). 0 distinct stubs hit in every run.
+- One wasm build this session (the fork's); the routing used a private copy of the GS10 build and was replayed on the
+  new build with the same scenes and frames.
+- No downloads, installs, deploys or permission denials.
+
 ## GS9 — 2026-11-01: prologue to the Boulder by real play; Psynergy/Djinn/summon/defeat/World Map exercised; regress.sh
 
 ### Done

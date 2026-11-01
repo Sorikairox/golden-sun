@@ -32,9 +32,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   party, Psynergy (battle + field Move/Catch/Cure), Djinn unleash, Mars summon, a lost battle (wakes at home), World
   Map (warp), credits slides. Fixed the World Map idle-camera garbage (trap 38); ported TileMap_DrawRows and
   Credits_DecodeBackground (78/78 EQUIV). tools/regress.sh: 11 cases with stored digests, all OK.
+- GS11 (2026-11-01): **the whole prologue by real play**: the four stormy-night monster fights won (Vermin, Bat, Wild
+  Mushrooms, Bat + Vermin), Felix, the plaza, the Boulder sweeping them away, the strangers' battle, the title, Vale
+  three years later (tests/routes/vale_monsters, vale_felix, vale_plaza.keys; docs/G11.md). The game's own soft reset
+  (A+B+Select+Start) works (trap 36). tools/regress.sh 15 cases, digests rewritten on the soft-reset build (RAM only).
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
-  across two networks; tests for partner-leaves mid-battle and failed exchange + retry; route to a real prologue fight (G9.md 1);
-  run tools/regress.sh after every build.
+  across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
+  day one in Vale by real play (G11.md); run tools/regress.sh after every build.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -313,4 +317,6 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     shows garbage (GS9: hw.c reports DMA writes to I/O, ppu.c Port_PpuIoWritten).
 39. Routing on the field: a cell's height is shape byte 1 x 8 pixels; shape kinds 1/2 are walkable west->east slopes,
     kinds 3/4/7 behave as cliff edges (the game slides the leader off). tests/probes/pathfind.cjs models it roughly;
-    trust a walk (tests/probes/autowalk.cjs) over the model.
+    trust a walk (tests/probes/autowalk.cjs) over the model. GS11: slopes push the leader sideways when he turns north/south on
+    them (end the leg on the flat cell past the slope); bridges live on another map layer (the river looks walled in
+    layer 0); kind-4 pairs on a diagonal are cliff edges; read the scene's story order before walking (docs/G11.md 1).
