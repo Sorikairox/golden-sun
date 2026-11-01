@@ -2,6 +2,49 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS6 — 2026-11-01: battles run (node + Chrome); battle-path ports EQUIV; link battle survey
+
+### Done
+- **Battle entry (test only)**: `tests/probes/battle.cjs` writes the ROM's formation for zone 12 slot 2 (the stormy
+  night's monster, formation 3: two Wild Mushrooms) into `gFieldWork->encounter` at frame 5400 of the prologue
+  route. That is what `Field_RequestBattleFromEncounterTable` writes; the game's own path does the rest (transition,
+  SEQUENCE_BATTLE, Battle_RunFar, return to the scene). In Chrome: `tests/web_shot.cjs --battle FRAME`. No scripted
+  route to the prologue's own fights yet (they are past the bridge, docs/G6.md section 1).
+- **What plays** (node and muted headless Chrome, 59 fps, 0 console errors): the transition, the rainy Vale
+  background, Isaac and the mushrooms, "appeared!", Fight/Attack/target menus, Isaac's slash with damage, the enemy
+  attacking (HP 30 -> 26), both enemies felled, 2 XP and 4 coins, back to ValePrologue. Flee works too. Psynergy:
+  Isaac knows none in the prologue. Routes `tests/routes/battle_fight.keys`, `battle_flee.keys`.
+- **Ports (D6/D20)**: BitDecoder_DecodeImage (the last battle-path asm stub), RelocatedQ16DotProduct, the eight
+  PaletteFade_*Kernel routines, and the generated battle-effect blitters (vendor builder kept; Port_BlitterBuilt
+  hook aliases each built routine to a C blitter with the same parameters; EQUIV over every width/flag/mode set,
+  negative controls fail). Harness: arguments 5+ on the stack. **76/76 EQUIV** (incl. GS-audio's 22).
+- **Division fix**: vendor divisions by a variable now call our libgcc ports (bind.py): a zero divisor no longer
+  traps (Unit_UpdateGauges, enemy ppMax 0) and `%` has the ROM's sign rule. Prologue save byte-identical.
+- **Link survey** (task 3): `docs/LINK.md`: call graph File Screen -> Battle Arena -> serial.c/link.c/turn.c, partner
+  detection (multiplayer SIO, SD/SI, timer 3 reload 0xC963 clocking ~20 halfwords a frame on the parent), the
+  per-VBlank 24-byte payload, party exchange (3 x 340-byte units + 320-byte Djinn table), the per-turn header +
+  actions and RNG check, the sync signatures, timeouts, sub-frame assumptions (timer-3 handler reads SIOMULTI
+  without a busy check; a packet must fit between VBlanks; nested IRQs), PC-layer gaps (no SIO emulation, no serial
+  IRQ, no nesting), and the proposed B' cut at serial.c's API via fn_overrides. Written by a research subagent,
+  reviewed here.
+- Captures (gitignored): `port_work/g6/t/sheet.png` (whole fight), `port_work/g6/b/sheet.png` (opening),
+  `port_work/g6/p/sheet.png` (flee), Chrome `port_work/g6/web/web_02401.png`, `web_02900.png`.
+
+### Next
+1. A real route to the prologue's monster cells (behavior 16 at cells 4-5,54 across the bridge; 17 at 23,85):
+   walking west stops at 15,56, so find the way down to the bridge (mapdump/where).
+2. Psynergy, Djinn and summon effects (other effect handlers, particle streams) once a party has them; a lost battle.
+3. G6 per docs/LINK.md section 6: port/pc/link.c behind fn_overrides (Serial_*), in-memory message channel
+   between two instances (the survey suggests this over register-level SIO: orchestrator decision, PLAN G6 note).
+
+### Notes
+- Traps 29-31 (new): generated blitters; wasm division traps; committing shared test files holds other sessions'
+  edits (it happened once this session: undone with `git reset --soft`, re-staged hunk-only, nothing of GS-audio's
+  went in under GS6's name).
+- `tools/g6run.sh`: node runs on a private copy of build/wasm (a concurrent session's rebuild cannot change it).
+- Build: leak check PASS on every build; 0 linker warnings; 1 logged stub (`_call_via_r0`, dead code).
+- No downloads, no installs, no permission denials. port/web/ not touched; audio files not touched.
+
 ## GS-audio — 2026-11-01: sound: m4a sequencer and Camelot's mixer in C, GBA sound output, page AudioWorklet
 
 ### Done

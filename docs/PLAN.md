@@ -61,6 +61,9 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 - Battle Arena link battle from both sides with two saves; test harness records both inputs and hashes.
 - **Exit:** an e2e replay of a full local link battle (connect, party exchange, 3+ turns, result) is
   deterministic across two runs.
+- GS6 survey (docs/LINK.md): the cut is at serial.c's API (Serial_Initialize/PollStatus/ExchangePayloads/
+  StartSend/StartReceive/StepBlockTransfer); it proposes wiring the two instances with an in-memory version of the
+  G7 message channel instead of register-level SIO (which only tests code G7 replaces). Orchestrator to decide.
 
 ## G7 — Online link battle (link transport)
 

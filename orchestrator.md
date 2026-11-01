@@ -14,14 +14,12 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
-- GS4 (2026-11-01): **G3 exit met**; G4 started. 42/42 hand ports EQUIV (D20). From a blank save the prologue
-  plays: name entry, Isaac's house, Vale in the storm, free walking; the Pause menu saves; with that save the
-  boot shows the real title intro, title (PRESS START, copyright) and the File Screen menu, in node and muted
-  headless Chrome. 0 linker warnings (K&R/veneer adapters); function pointers at 0x10000+ (TABLE_BASE) and
-  tolerant indirect calls; the first rock falls. Touch controls in the page (GS-touch). No audio.
-  Details: docs/G4.md (field), docs/G3.md (boot).
-- Next: script the rest of the prologue to the plaza; palette fade kernels and the battle routines before the
-  first battle; m4a audio; mosaic.
+- GS6 (2026-11-01): **battles run** (node and Chrome): encounter transition, background, party/enemies, menus,
+  attacks with effects, enemy turns, win (XP, coins) or flee, back to the field. Entry is test-only
+  (tests/probes/battle.cjs writes a ROM formation into gFieldWork->encounter; the game's own path follows).
+  76/76 EQUIV (GS-audio's sound ports included). Prologue plays to free walking, saves, title + file menu.
+  Link battle path surveyed: docs/LINK.md. Details: docs/G6.md, docs/G4.md, docs/G5.md, docs/AUDIO.md.
+- Next: route to a real prologue fight; Psynergy/Djinn effects; G6 transport per docs/LINK.md section 6.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -182,7 +180,7 @@ units + a 320-byte Djinn table; turn actions: a 20-byte header + 16 bytes per ac
 20-byte blocks, resent on a gap (`Serial_StartSend`/`Serial_StartReceive`/`Serial_StepBlockTransfer`). Battles
 are **turn-based**: each turn the consoles run a signature handshake (`LinkBattle_WaitSync`, "ex"/"TU"/"rn"/
 "EXEC"/"tu"/"RN"), exchange the turn's actions, and the **parent sends the turn's RNG seed** while the child
-checks both agree on the next random number. Timeouts: 300 frames per transfer, `LINK_MAX_MISSED_FRAMES` for
+checks both agree on the next random number. Timeouts (GS6, docs/LINK.md): 300 frames per turn transfer (turn.c), 600/900 in the Arena, 600,000 in serial.c itself, `LINK_MAX_MISSED_FRAMES` for
 link loss, 30 frames for the sync signature.
 
 Options:
@@ -261,3 +259,12 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     wasm: -sEMULATE_FUNCTION_POINTER_CASTS=1 (ARM-like tolerance). Do not drop it without another answer.
 28. bind.py routes every indirect call in port/pc through Port_ResolveCode: the file that defines it (codemap.c)
     cannot contain an indirect call (IR "invalid redefinition"); put pointer-calling hooks elsewhere (call_via.c).
+29. BattleEffect_BuildBlitter assembles ARM blitters at run time from gBlitterTemplate (code generation, not a copy):
+    no alias to a fixed port exists. The vendor builder still runs; a c_rules.tsv hook (Port_BlitterBuilt) aliases
+    the built address to a C blitter holding the same parameters (port/pc/blitter.c, Port_CodeAliasFn).
+30. wasm's i32.div/rem trap on a zero divisor; the GBA calls libgcc (__divsi3...), which returns a value, and its
+    `%` takes the sign of dividend XOR divisor. bind.py sends every vendor division by a variable to our EQUIV
+    libgcc ports (G6); port/pc is left alone (iwram.c implements them).
+31. Shared test files (tests/arm/diff.cjs, harness.js) may hold another session's uncommitted edits: `git add` of the
+    file commits theirs too. Stage only your hunks (an index blob built from HEAD + your edits, `git update-index
+    --cacheinfo`), and check `git diff --cached` before committing.
