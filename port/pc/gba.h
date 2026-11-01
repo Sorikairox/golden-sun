@@ -25,6 +25,14 @@ typedef int64_t s64;
 #define ROM_BASE 0x08000000u
 #define FLASH_BASE_ADDR 0x0E000000u
 
+/* wasm function pointers are table indices from PORT_TABLE_BASE (link.py: --table-base): the game keeps code
+ * addresses and message ids in the same words and tells them apart by size (TRIGGER_RESULT_MESSAGE_END is
+ * 65536), so a function pointer must not look like a message id. Emscripten's own data and stack start at
+ * 0x20000 (GLOBAL_BASE), so [0x10000, 0x20000) holds table indices only (fewer than 65536 functions). */
+#define PORT_TABLE_BASE 0x10000u
+#define PORT_TABLE_END 0x20000u
+#define PORT_IS_TABLE_INDEX(a) ((u32)(a) >= PORT_TABLE_BASE && (u32)(a) < PORT_TABLE_END)
+
 #define IO16(offset) (*(volatile u16 *)(uintptr_t)(IO_BASE + (offset)))
 #define IO32(offset) (*(volatile u32 *)(uintptr_t)(IO_BASE + (offset)))
 #define GBA_PTR(type, address) ((type *)(uintptr_t)(address))

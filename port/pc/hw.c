@@ -63,7 +63,7 @@ static void dma_run(int ch) {
   s32 sstep = sctl == 0 ? (s32)unit : sctl == 1 ? -(s32)unit : 0;
   u32 s = dma[ch].src & ~(unit - 1), d = dma[ch].dst & ~(unit - 1), n = dma[ch].count;
   u32 src0, dst0 = d;
-  if (((ctl >> 12) & 3) == 0 && dctl == 0 && sctl == 0 && dma[ch].src < 0x10000u) {
+  if (((ctl >> 12) & 3) == 0 && dctl == 0 && sctl == 0 && PORT_IS_TABLE_INDEX(dma[ch].src)) {
     /* the source is a wasm function pointer (a vendor C routine copied to RAM to run): copy the ROM's bytes
      * of that function instead, as the game does, and alias the copy */
     u32 gba = Port_CodeGbaOf(dma[ch].src);

@@ -1,6 +1,6 @@
 /* Calls to code by GBA address (orchestrator D7, G3). Every indirect call of the game goes through
  * Port_ResolveCode (tools/wasm/bind.py rewrites the IR): a wasm function pointer (a table index, small) passes
- * through; anything else is a GBA code address and is looked up:
+ * through (PORT_IS_TABLE_INDEX, gba.h); anything else is a GBA code address and is looked up:
  *   1. aliases: RAM copies of code (Port_DmaWritten registers the destination of any copy whose source is a
  *      known function start, which covers RamCode_Load and the stack copies of ARM kernels);
  *   2. the loaded overlay's functions (gOverlayArea entry table pointers and overlay code addresses);
@@ -20,7 +20,6 @@ struct CodeMapRow {
 extern const int gPortCodeMapCount;
 extern const struct CodeMapRow gPortCodeMap[];
 
-#define TABLE_LIMIT 0x10000u /* wasm function table indices are below this; data addresses are not */
 #define MAX_ALIASES 64
 
 static struct {
@@ -65,7 +64,7 @@ u32 Port_CodeGbaOf(u32 fn) {
   int i;
   if (mainEnd < 0)
     index_main();
-  if (!fn || fn >= TABLE_LIMIT)
+  if (!PORT_IS_TABLE_INDEX(fn))
     return 0;
   for (i = 0; i < mainEnd; i++)
     if ((u32)(uintptr_t)gPortCodeMap[i].fn == fn)
@@ -138,7 +137,7 @@ void *Port_ResolveCode(void *p) {
   u32 a = (u32)(uintptr_t)p;
   void *fn;
   int i;
-  if (a < TABLE_LIMIT)
+  if (a < PORT_TABLE_END) /* a wasm function pointer (or null) */
     return p;
   a &= ~1u;
   for (i = aliasCount - 1; i >= 0; i--)

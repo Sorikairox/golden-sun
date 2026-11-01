@@ -32,7 +32,17 @@ LINK_FLAGS = ['-sINITIAL_MEMORY=230400kb', '-sALLOW_MEMORY_GROWTH=0', '-sSTACK_S
               '-sEXPORTED_RUNTIME_METHODS=HEAPU8,HEAP32,HEAPU32,ccall,callMain',
               # keep every game function and overlay even before anything calls it: the G2 check is that all
               # of them link; G3's boot path will make them reachable
-              '-Wl,--no-gc-sections']
+              '-Wl,--no-gc-sections',
+              # function pointers start at 65536: the game stores code addresses and message ids in the same
+              # words and tells them apart by size (TRIGGER_RESULT_MESSAGE_END), so a table index must not look
+              # like a message id (port/pc/gba.h PORT_TABLE_BASE)
+              '-sTABLE_BASE=65536',
+              # emscripten's data and stack above the table indices: [0x10000, 0x20000) is never an address
+              '-sGLOBAL_BASE=131072',
+              # indirect calls whose function type differs from the target's (a step trigger's routine called as
+              # void(s32) that takes nothing...): on the ARM extra or missing words in r0-r3 are harmless, in wasm
+              # call_indirect traps; this makes every indirect call tolerate it, as the GBA does
+              '-sEMULATE_FUNCTION_POINTER_CASTS=1']
 
 
 def sh(cmd):
