@@ -650,13 +650,13 @@ main	src/gamepak/far_call/SYSTEM	code	768	0	0	96
 main	src/gamepak/far_call/TITLE	code	40	0	0	5
 main	src/gamepak/far_call/WINDOW	code	1072	0	0	134
 main	src/gamepak/flash/atmel	mixed	700	40	0	0
-main	src/gamepak/flash/flash	mixed	1124	132	0	0
+main	src/gamepak/flash/flash	mixed	1124	132	0	14
 main	src/gamepak/flash/flashat	data	0	112	0	8
 main	src/gamepak/flash/flashmx	data	0	136	0	8
 main	src/gamepak/flash/flashsst	data	0	112	0	8
 main	src/gamepak/flash/flashtab	data	0	32	0	0
 main	src/gamepak/flash/program_flash_sector	mixed	164	8	0	0
-main	src/gamepak/flash/sst	mixed	680	40	0	0
+main	src/gamepak/flash/sst	mixed	680	40	0	4
 main	src/gamepak/resource_directory	data	0	4016	0	0
 main	src/gamepak/rom_header	data	0	192	0	0
 main	src/graphics/battle_backgrounds/battle_backgrounds	data	0	558776	0	0
@@ -882,10 +882,10 @@ main	src/menu/menu_strings	data	0	136	0	0
 main	src/menu/menu_tables	data	0	128	0	0
 main	src/menu/title_intro	mixed	6292	258	0	12
 main	src/shop/shop	mixed	14544	2498	0	4
-main	src/sound/audio	code	1144	0	0	0
+main	src/sound/audio	code	1144	0	0	12
 main	src/sound/channel_update_entry	code	116	0	0	1
 main	src/sound/clear_buffer	code	2018	0	0	0
-main	src/sound/driver	code	4376	0	0	0
+main	src/sound/driver	code	4374	0	0	22
 main	src/sound/empty_callback	code	2	0	0	0
 main	src/sound/mixer	code	932	0	0	0
 main	src/sound/resident_mixer	mixed	632	4	0	0
@@ -919,7 +919,7 @@ main	src/system/trig	mixed	56	512	0	0
 main	src/window/articles	data	0	212	0	0
 main	src/window/decompress_4bpp	mixed	780	8	0	0
 main	src/window/expand_opaque	mixed	112	12	0	0
-main	src/window/glyph_arm	code	1324	0	0	0
+main	src/window/glyph_arm	code	1324	0	0	41
 main	src/window/keyboard	data	0	280	0	0
 main	src/window/message_decode	code	416	0	0	0
 main	src/window/message_speed	data	0	9	0	0

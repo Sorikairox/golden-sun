@@ -129,14 +129,16 @@ that edition's address map, not a port. Out of scope until asked.
   packages of `golden-sun-tools` (binutils-arm-none-eabi build-essential pkg-config libpng-dev libutf8proc-dev
   curl patch git), image FROM the local ubuntu:24.04; (b) the `PascalPixel/alchemy-gcc` submodule (GPL-2.0);
   (c) `binutils-2.10.tar.gz` from ftp.gnu.org as fetched by alchemy's `make bootstrap`. Nothing else: any other
-  download needs approval (stop and report). `alchemy-devtools` is **not** approved. Still pending (GS1):
-  `pret/agbcc` (alchemy-gcc's nested submodule) and `gcc-2.95.2.tar.gz` (alchemy-gcc `arm/`).
+  download needs approval (stop and report). `alchemy-devtools` is **not** approved. Approved later the same day
+  (user, via the coordinator, GS1 addendum), inside Docker only: (d) `github.com/pret/agbcc` at `da598c1d`
+  (alchemy-gcc's nested submodule) and (e) `ftp.gnu.org/gnu/gcc/gcc-2.95.2.tar.gz`, SHA-256 verified against
+  alchemy-gcc's `arm/Makefile` pin (`064e1cb0...7d72482`). Kept in `vendor/agbcc`, `vendor/downloads/`.
 - **D14 Licence (user, 2026-11-01):** none of the vendor projects has a licence. Build privately. Before the
   first **public** deploy the user asks alchemy's author for permission or a licence, so G5 is gated on that.
   Never copy vendor code into our tree: our tree holds our headers, shims and tools and builds from the pinned
   vendor checkout. (Supersedes the open question in D2.)
 - **D15 Online without TURN (user, 2026-11-01):** STUN only, no TURN server, the same as GoldenEye.
-- **D16 Stand-ins until approved (GS1):** while old_agbcc and GCC 2.95.2 are not built, `tools/build_ref.sh`
+- **D16 Stand-ins (fallback only since the GS1 addendum):** while old_agbcc and GCC 2.95.2 are not built, `tools/build_ref.sh`
   compiles their ten objects with alchemy GCC and fits them to the original layout (`tools/ref/standin_fix.py`,
   docs/G1.md); every other byte of the ROM is verified equal. The address map marks those symbols
   `standin-xref`/`standin-offset`. When the sources are approved the script uses the real compilers.

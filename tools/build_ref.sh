@@ -19,6 +19,8 @@ IMAGE=golden-sun-tools
 VOL=golden-sun-ref
 OUT=$ROOT/port_work/g1
 ALCHEMY_GCC_SHA=9bc4e65a2540ef4717ca4c11fb34279023673ab9   # alchemy@24b72a32's gitlink
+AGBCC_SHA=da598c1d918402c42c0c0d7128ba14567f3175e9         # alchemy-gcc@9bc4e65a's agbcc gitlink
+GCC2952_SHA256=064e1cb06ea5d2f4a07ec46c1c64d771f74d04f404b6a6766bca2477f7d72482  # alchemy-gcc arm/Makefile
 SHA1_TBS_EN=5c4695205413df7db52b9a184815a07783999971
 step=${1:-all}
 mkdir -p "$OUT/alchemy" "$OUT/gsret"
@@ -41,16 +43,35 @@ fetch() { # alchemy-gcc (approved, GPL-2.0) into vendor/, fetched from inside Do
       git -C \$d fetch -q --depth 1 origin $ALCHEMY_GCC_SHA; git -C \$d checkout -q FETCH_HEAD"
     echo "fetch: vendor/alchemy-gcc -> $ALCHEMY_GCC_SHA"
   fi
+  # pret/agbcc (alchemy-gcc's nested submodule) and gcc-2.95.2.tar.gz: approved 2026-11-01 (D13), in Docker only
+  if [ -d vendor/agbcc/.git ]; then echo "fetch: vendor/agbcc present"; else
+    docker run --rm -u "$(id -u):$(id -g)" -v "$ROOT/vendor":/vendor $IMAGE bash -c "
+      set -e; d=/vendor/agbcc; git init -q \$d; git -C \$d remote add origin https://github.com/pret/agbcc.git
+      git -C \$d fetch -q --depth 1 origin $AGBCC_SHA; git -C \$d checkout -q FETCH_HEAD"
+    echo "fetch: vendor/agbcc -> $AGBCC_SHA"
+  fi
+  if [ -f vendor/downloads/gcc-2.95.2.tar.gz ]; then echo "fetch: gcc-2.95.2.tar.gz present"; else
+    mkdir -p vendor/downloads
+    docker run --rm -u "$(id -u):$(id -g)" -v "$ROOT/vendor":/vendor $IMAGE bash -c "
+      set -e; f=/vendor/downloads/gcc-2.95.2.tar.gz
+      curl --fail --location --silent --show-error -o \$f.download https://ftp.gnu.org/gnu/gcc/gcc-2.95.2.tar.gz
+      echo '$GCC2952_SHA256  '\$f.download | sha256sum -c - >/dev/null; mv \$f.download \$f"
+    echo "fetch: gcc-2.95.2.tar.gz, SHA-256 verified"
+  fi
   docker volume inspect $VOL >/dev/null 2>&1 || docker volume create $VOL >/dev/null
   docker run --rm -v $VOL:/ref $IMAGE chown "$(id -u):$(id -g)" /ref
   run 'set -e; git config --global --add safe.directory "*"
     [ -d /ref/alchemy/.git ] || { git clone -q /vendor/alchemy /ref/alchemy 2>/dev/null; rmdir /ref/alchemy/alchemy-gcc; }
     [ -d /ref/alchemy/alchemy-gcc/.git ] || git clone -q /vendor/alchemy-gcc /ref/alchemy/alchemy-gcc 2>/dev/null
+    if [ -d /vendor/agbcc/.git ] && [ ! -d /ref/alchemy/alchemy-gcc/agbcc/.git ]; then
+      rmdir /ref/alchemy/alchemy-gcc/agbcc 2>/dev/null || true; git clone -q /vendor/agbcc /ref/alchemy/alchemy-gcc/agbcc 2>/dev/null; fi
+    if [ -f /vendor/downloads/gcc-2.95.2.tar.gz ] && [ ! -f /ref/alchemy/alchemy-gcc/arm/sources/gcc-2.95.2.tar.gz ]; then
+      mkdir -p /ref/alchemy/alchemy-gcc/arm/sources; cp /vendor/downloads/gcc-2.95.2.tar.gz /ref/alchemy/alchemy-gcc/arm/sources/; fi
     [ -d /ref/gsret/.git ] || { git clone -q /vendor/goldensun /ref/gsret 2>/dev/null; ln -s /rom/baserom.gba /ref/gsret/baserom.gba; }
     echo "fetch: volume has alchemy $(git -C /ref/alchemy rev-parse --short HEAD), alchemy-gcc $(git -C /ref/alchemy/alchemy-gcc rev-parse --short HEAD), gsret $(git -C /ref/gsret rev-parse --short HEAD)"'
 }
 
-bootstrap() { # what `make bootstrap` does, minus the two compilers whose sources are not approved
+bootstrap() { # what `make bootstrap` does (stand-ins only if the agbcc/gcc-2.95.2 sources are absent)
   run 'set -e; cd /ref/alchemy; C=tools/out/compilers; mkdir -p $C/agbcc
     make -C alchemy-gcc gcc -j8 >/ref/log.gcc 2>&1 || { tail -20 /ref/log.gcc; exit 1; }
     make -C alchemy-gcc generated-check 2>&1 | grep -E "match|differ"
@@ -75,6 +96,7 @@ alchemy() {
     mkdir -p /g1/alchemy/pass1; cp out/tbs-en/tbs-en.{gba,map,elf} /g1/alchemy/pass1/
     arm-none-eabi-readelf -sW out/tbs-en/tbs-en.elf | awk "NF>=8 {print \$8, \$2, \$4}" | sort -u > /g1/alchemy/pass1/syms.txt
     echo "alchemy pass 1: $(sha1sum out/tbs-en/tbs-en.gba | cut -c1-40)"'
+  rm -rf "$OUT/alchemy/standin" "$OUT/alchemy/standin_fit.tsv" "$OUT/alchemy/standin_fit.log"
   if grep -q "Stand-in for alchemy" <(run 'cat /ref/alchemy/tools/out/compilers/gcc2952_arm | head -3'); then
     rm -rf "$OUT/alchemy/standin"
     python3 tools/ref/standin_fix.py "$OUT"/alchemy/pass1/tbs-en.{map,gba} "$ROM" "$OUT/alchemy/pass1/syms.txt" \

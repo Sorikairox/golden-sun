@@ -40,10 +40,10 @@ overlay	address	rom	size	section	object	kind	code_ptrs	check
 	0x08002e00	0x08002e00	14948	.text	src/system/system	code	3	rom
 	0x08006864	0x08006864	10	.text	src/system/bios	code	0	rom
 	0x08006870	0x08006870	6	.text.sound_vsync_on	src/system/bios	code	0	rom
-	0x08006878	0x08006878	1124	.text	src/gamepak/flash/flash	code	0	standin
-	0x08006cdc	0x08006cdc	680	.text	src/gamepak/flash/sst	code	0	standin
-	0x08006f84	0x08006f84	164	.text	src/gamepak/flash/program_flash_sector	code	0	standin
-	0x08007028	0x08007028	700	.text	src/gamepak/flash/atmel	code	0	standin
+	0x08006878	0x08006878	1124	.text	src/gamepak/flash/flash	code	7	rom
+	0x08006cdc	0x08006cdc	680	.text	src/gamepak/flash/sst	code	2	rom
+	0x08006f84	0x08006f84	164	.text	src/gamepak/flash/program_flash_sector	code	0	rom
+	0x08007028	0x08007028	700	.text	src/gamepak/flash/atmel	code	0	rom
 	0x080072e4	0x080072e4	60	.text	tools/out/compiler-runtime/libgcc.a(_call_via_rX.o)	code	0	rom
 	0x08007320	0x08007320	40	.rodata.irq_head	src/system/irq_table	data	10	rom
 	0x08007348	0x08007348	8	.rodata.irq_middle	src/system/irq_table	data	2	rom
@@ -54,22 +54,22 @@ overlay	address	rom	size	section	object	kind	code_ptrs	check
 	0x08007994	0x08007994	28	.text	src/system/q16_dot_product	code	0	rom
 	0x080079b0	0x080079b0	79	.rodata	src/system/savedata	data	0	rom
 	0x08007a00	0x08007a00	32	.rodata	src/gamepak/flash/flashtab	data	0	rom
-	0x08007a20	0x08007a20	132	.rodata	src/gamepak/flash/flash	data	0	standin
+	0x08007a20	0x08007a20	132	.rodata	src/gamepak/flash/flash	data	7	rom
 	0x08007aa4	0x08007aa4	112	.rodata	src/gamepak/flash/flashsst	data	8	rom
-	0x08007b14	0x08007b14	40	.rodata	src/gamepak/flash/sst	data	0	standin
+	0x08007b14	0x08007b14	40	.rodata	src/gamepak/flash/sst	data	2	rom
 	0x08007b3c	0x08007b3c	136	.rodata	src/gamepak/flash/flashmx	data	8	rom
-	0x08007bc4	0x08007bc4	8	.rodata	src/gamepak/flash/program_flash_sector	data	0	standin
+	0x08007bc4	0x08007bc4	8	.rodata	src/gamepak/flash/program_flash_sector	data	0	rom
 	0x08007bcc	0x08007bcc	112	.rodata	src/gamepak/flash/flashat	data	8	rom
-	0x08007c3c	0x08007c3c	40	.rodata	src/gamepak/flash/atmel	data	0	standin
+	0x08007c3c	0x08007c3c	40	.rodata	src/gamepak/flash/atmel	data	0	rom
 	0x08009000	0x08009000	696	.text	src/gamepak/far_call/FIELD	code	87	rom
 	0x080092b8	0x080092b8	1280	.rodata	src/field/sprite_color_tables	data	0	rom
 	0x080097b8	0x080097b8	1024	.rodata	src/field/sprite_color_remap	data	0	rom
 	0x08009bb8	0x08009bb8	472	.text	src/field/picture_decode	code	0	rom
 	0x08009d90	0x08009d90	236	.data	src/field/picture_decode	data	0	rom
 	0x08009e7c	0x08009e7c	636	.text.draw_map	src/field/picture_decode	code	0	rom
-	0x0800a0f8	0x0800a0f8	644	.text	src/field/world_map_lines	code	0	standin
+	0x0800a0f8	0x0800a0f8	644	.text	src/field/world_map_lines	code	0	rom
 	0x0800a37c	0x0800a37c	280	.text	src/field/map_grid_convert	code	0	rom
-	0x0800a494	0x0800a494	1220	.text	src/field/actor_update_arm	code	0	standin
+	0x0800a494	0x0800a494	1220	.text	src/field/actor_update_arm	code	0	rom
 	0x0800a958	0x0800a958	36	.text	src/field/actor_update_far	code	1	rom
 	0x0800a97c	0x0800a97c	34212	.text	src/field/field	code	135	rom
 	0x08012f20	0x08012f20	348	.rodata	src/field/actor_shadow	data	0	rom
@@ -83,7 +83,7 @@ overlay	address	rom	size	section	object	kind	code_ptrs	check
 	0x08013784	0x08013784	2248	.rodata	src/map/maps	data	0	rom
 	0x08015000	0x08015000	1072	.text	src/gamepak/far_call/WINDOW	code	134	rom
 	0x08015430	0x08015430	416	.text	src/window/message_decode	code	0	rom
-	0x080155d0	0x080155d0	1324	.text	src/window/glyph_arm	code	0	standin
+	0x080155d0	0x080155d0	1324	.text	src/window/glyph_arm	code	41	rom
 	0x08015afc	0x08015afc	52	.text	src/window/decompress_4bpp	code	0	rom
 	0x08015b30	0x08015b30	8	.rodata	src/window/decompress_4bpp	data	0	rom
 	0x08015b38	0x08015b38	728	.text.decompress_4bpp_loop	src/window/decompress_4bpp	code	0	rom
@@ -189,12 +189,12 @@ overlay	address	rom	size	section	object	kind	code_ptrs	check
 	0x080f9a18	0x080f9a18	1968	.text	src/sound/clear_buffer	code	0	rom
 	0x080fa1c8	0x080fa1c8	10	.text.command_byte_reader	src/sound/clear_buffer	code	0	rom
 	0x080fa1d4	0x080fa1d4	40	.text.command_byte_setters	src/sound/clear_buffer	code	0	rom
-	0x080fa1fc	0x080fa1fc	1144	.text	src/sound/audio	code	0	standin
+	0x080fa1fc	0x080fa1fc	1144	.text	src/sound/audio	code	12	rom
 	0x080fa674	0x080fa674	4	.text	src/sound/sound_get_jump_list	code	0	rom
-	0x080fa678	0x080fa678	4376	.text	src/sound/driver	code	0	standin
+	0x080fa678	0x080fa678	4374	.text	src/sound/driver	code	22	rom
 	0x080fb790	0x080fb790	2	.text	src/sound/empty_callback	code	0	rom
 	0x080fb794	0x080fb794	12	.rodata	src/sound/sound	data	0	rom
-	0x080fb7a0	0x080fb7a0	728	.rodata	src/sound/tables	data	48	standin
+	0x080fb7a0	0x080fb7a0	728	.rodata	src/sound/tables	data	48	rom
 	0x080fba78	0x080fba78	2844	.rodata	sound/voice_groups	data	0	rom
 	0x080fc594	0x080fc594	144	.rodata	sound/programmable_wave_samples	data	0	rom
 	0x080fc624	0x080fc624	96	.rodata	sound/music_player_table	data	0	rom

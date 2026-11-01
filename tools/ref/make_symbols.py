@@ -189,7 +189,7 @@ def main():
             check = ''
             if r is not None and rom_check:
                 same = built[r - ROM:r - ROM + s.size] == rom[r - ROM:r - ROM + s.size]
-                check = 'standin' if STANDIN.search(s.obj) else ('rom' if same else 'DIFF')
+                check = 'rom' if same else ('standin' if STANDIN.search(s.obj) else 'DIFF')
                 by_kind[kind] += s.size
             cps = len(info.codeptrs.get(s.name, [])) if info else 0
             sec_rows.append((overlay or '', s.addr, r, s.size, s.name, mapparse.short_obj(s.obj), kind, cps, check))
