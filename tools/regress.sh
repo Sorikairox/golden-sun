@@ -56,15 +56,18 @@ CASES=(
   "vault_crate|7700|2700,2880,3400,4000,4600,5300,5900,6100,6300,6700,7700||$R/vale_day1_continue.keys,$R/vault_crate.keys,$R/vault_crate_save.keys||--flash-in $W/vault_inn.sav --flash-out $W/vault_crate.sav"
   "vault_grind|216000|2600,3044,50000,100000,150000,215300,216000||$R/vale_day1_continue.keys,$R/vault_grind.keys,$R/vault_grind_save.keys||--flash-in $W/vault_crate.sav --flash-out $W/vault_grind.sav"
   "vault_thieves|35300|2200,3300,3700,8400,12000,16000,20100,24000,28000,32000,35300||$R/vale_day1_continue.keys,$R/vault_thieves.keys,$R/vault_thieves_save.keys||--flash-in $W/vault_grind.sav --flash-out $W/vault_thieves.sav"
+  "goma_entrance|9400|2700,3500,4600,5200,6600,7720,8300,9400||$R/vale_day1_continue.keys,$R/goma_entrance.keys,$R/goma_entrance_save.keys||--flash-in $W/vault_thieves.sav --flash-out $W/goma_entrance.sav"
+  "goma_ivan|13100|2560,3700,4100,5300,7000,9400,10900,11900,12200,13100||$R/vale_day1_continue.keys,$R/goma_ivan.keys,$R/goma_ivan_save.keys||--flash-in $W/goma_entrance.sav --flash-out $W/goma_ivan.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
-maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; esac; } # bash 3.2: no associative arrays
+maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; esac; } # bash 3.2: no associative arrays
 flash_out() { [[ "$1" =~ --flash-out\ ([^ ]+) ]] && echo "${BASH_REMATCH[1]}"; }
 case_of() { local c; for c in "${CASES[@]}"; do [ "${c%%|*}" = "$1" ] && echo "$c"; done; }
 premake() { # the save this case starts from, written by its maker case (and that one's own first), unless selected
   [[ "$1" =~ --flash-in\ ([^ ]+) ]] || return 0
   local f=${BASH_REMATCH[1]}; local m; m=$(maker "$f")
   [ -z "$m" ] && return 0; want "$m" && return 0
+  [ -n "${REUSE:-}" ] && [ -f "$f" ] && return 0 # REUSE=1: keep a save an earlier run made (same build)
   local n fr a e k p x; IFS='|' read -r n fr a e k p x <<< "$(case_of "$m")"
   premake "$x"; rm -f "$f"
   perl -e "alarm ${LIMIT:-240}; exec @ARGV" node tests/boot.cjs $BIN/game.js "$ROM" "$fr" --keys-file "$k" --quiet --out $W/shots $x > $W/$m.pre.log 2>&1

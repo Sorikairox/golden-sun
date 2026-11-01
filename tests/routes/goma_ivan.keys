@@ -1,0 +1,16 @@
+# GS17: from the goma_entrance save (Goma Cave Entrance; continue with vale_day1_continue.keys + --flash-in). Up the
+# west bank (5,17), across the pool's posts to 13,17, round to 14,19: walking east twice pushes the west pillar off the
+# ladder (16,18-19); up it to the y-32 ledge (14,12), east along row 17 to 22,17: Move on the east pillar, LEFT pulls it
+# to column 23 where it sinks into the floor (A/B/L/R end Move); over it, up the north-east ladder (27,14) to the y-64
+# level, west below the trees (row 15, 18,15), up to 16,11, west to 14,11 facing the ivy-bound stump (12,11 at y 64:
+# Move reaches only 8 px of height): Move, LEFT, A ends it: "It's no use..." (GomaCaveEntrance_IvanRejoins), Ivan's
+# Whirlwind, Ivan joins (f~9400); Move on the stump again, LEFT: it leaps into the pool (column 11); onto the pedestal
+# (12,11), facing north: Ivan's Whirlwind blows the tall ivy off the cave mouth; north into Goma Cave (f12177).
+UP@2000-2155,RIGHT@2157-2288,DOWN@2290-2312,RIGHT@2314-2500,RIGHT@2560-2580,UP@2600-2800,RIGHT@2810-2883
+DOWN@2890-2936,RIGHT@2938-3112,RIGHT@3120-3125,A@3140-3143,A@3190-3193,A@3240-3243,DOWN@3300-3303,A@3350-3353
+LEFT@3600-3606,RIGHT@3900-3972,UP@3974-4100,UP@4110-4194,LEFT@4200-4250,DOWN@4260-4271,LEFT@4273-4367,UP@4369-4380
+LEFT@4390-4418,UP@4420-4466,LEFT@4468-4520,A@4560-4563,A@4610-4613,A@4660-4663,DOWN@4720-4723,A@4770-4773
+LEFT@5000-5006,A@5100-5103,A@5500-10000/40,B@10100-10103,B@10150-10153,B@10200-10203,B@10250-10253,DOWN@10300-10309
+LEFT@10311-10330,A@10360-10363,A@10410-10413,A@10460-10463,DOWN@10520-10523,A@10570-10573,LEFT@10800-10806
+A@10900-10903,LEFT@11400-11427,UP@11430-11445,A@11460-11463,A@11510-11513,RIGHT@11560-11563,RIGHT@11600-11603
+A@11650-11653,A@11750-11753,UP@12150-12176
