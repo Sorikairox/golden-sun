@@ -1,0 +1,6 @@
+# GS15: save in the inn's guests' floor after the suspects flee (after vault_inn.keys, from the Vault save):
+# Start, Save your quest, file 1, "OK to save over this file?" LEFT to Yes, A (written ~f6670), B.
+START@6300-6302,A@6390-6392    # pause menu, Save
+A@6490-6492                    # file 1
+LEFT@6590-6592,A@6640-6642     # Yes: save over it
+B@6850-6852                    # close "Your game was saved."

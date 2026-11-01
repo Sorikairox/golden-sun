@@ -1,0 +1,14 @@
+# GS15: from the Vault save in the mayor's house (vault_save.keys; continue with vale_day1_continue.keys + --flash-in).
+# Out of the mayor's house (round the table, south door): Vault at the mayor's door (f2435)
+DOWN@2100-2109,RIGHT@2110-2125,RIGHT@2127-2240,RIGHT@2242-2245,DOWN@2246-2277,LEFT@2279-2349,DOWN@2351-2378
+LEFT@2380-2383,DOWN@2384-2434
+# Row 11 east to the steps (14,11), down to the cliff foot (14,13), west to 7,13, down column 7, east on row 21,
+# north into the inn's door (13,19): LogRoomsA, the inn (f3142)
+DOWN@2500-2509,RIGHT@2511-2636,DOWN@2638-2746,LEFT@2760-2857,DOWN@2859-2981,RIGHT@2983-3070,UP@3072-3074
+RIGHT@3076-3079,UP@3080-3141
+# The inn: up the stairs (46,39) to the guests' floor (f3385), down the corridor, west on row 47, north into the
+# guests' room (15,44): the two suspects see Ivan and run (A taps; B closes the menu a late A opened)
+RIGHT@3200-3204,UP@3205-3331,RIGHT@3333-3344,RIGHT@3346-3350,UP@3351-3384,DOWN@3420-3525,LEFT@3527-3567
+DOWN@3569-3583,LEFT@3585-3630,LEFT@3632-3636,UP@3637-3675,LEFT@3677-3691,A@3720-4300/40,B@4400-4600/40
+# Out by the guests' room door (15,45): Garet and Ivan plan to corner one of them (A taps, B)
+RIGHT@4700-4741,DOWN@4743-4800,A@4850-5800/40,B@5900-6100/40
