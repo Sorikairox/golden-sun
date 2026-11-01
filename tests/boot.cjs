@@ -53,6 +53,8 @@ async function main() {
   const regFrames = new Set((opt('--regs', '') || '').split(',').filter(Boolean).map(Number));
   const flashIn = opt('--flash-in', ''), flashOut = opt('--flash-out', '');
   let flashGen = 0;
+  // --probe FILE[,FILE]: test-only hooks, each a module exporting (m, frame, keys) => void, run every frame.
+  const probes = (opt('--probe', '') || '').split(',').filter(Boolean).map((f) => require(path.resolve(f)));
   fs.mkdirSync(out, { recursive: true });
   const log = [];
   let frame = 0, m, done;
@@ -83,6 +85,7 @@ async function main() {
       let keys = 0;
       for (const s of keySpans) if (frame >= s.a && frame <= s.b && (!s.per || (frame - s.a) % s.per < 3)) keys |= s.mask;
       m._Port_SetKeys(keys);
+      for (const pr of probes) pr(m, frame, keys);
       if (frame >= frames) { done(); return new Promise(() => {}); } // suspend the game for good
       return undefined;
     },

@@ -84,7 +84,8 @@ class Harness {
     }
     return null;
   }
-  // One case: spec.orig (GBA address, |1 for Thumb), spec.port (exported name), args, returns ('u32'|'none'),
+  // One case: spec.orig (GBA address, |1 for Thumb), spec.port (exported name; spec.call, a JS function, calls
+  // it instead, e.g. Port_CallCode4 for vendor C), args, returns ('u32'|'none'),
   // checkMemory. Returns null if equal, else a description.
   compare(spec, args, { checkMemory = true, stackArgs = [] } = {}) {
     const before = checkMemory ? this.snapshot() : null;
@@ -92,7 +93,7 @@ class Harness {
     try { ro = this.cpu.call(spec.orig, args, { stackArgs }) >>> 0; } catch (e) { err = 'original: ' + e.message; }
     const afterOrig = checkMemory ? this.snapshot() : null;
     if (checkMemory) this.restore(before);
-    try { rp = this.m['_' + spec.port](...args) >>> 0; } catch (e) { err = err || 'port: ' + e.message; }
+    try { rp = (spec.call ? spec.call(...args) : this.m['_' + spec.port](...args)) >>> 0; } catch (e) { err = err || 'port: ' + e.message; }
     if (err) return err;
     if (spec.returns !== 'none' && ro !== rp) return `result original 0x${ro.toString(16)} port 0x${rp.toString(16)}`;
     if (checkMemory) {

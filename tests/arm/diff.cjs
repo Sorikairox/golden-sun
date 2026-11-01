@@ -398,6 +398,31 @@ function routines(h) {
         }
       },
     },
+    {
+      // vendor C (not a hand port): PaletteFade_Build compiled to wasm vs the ROM's Thumb code, through
+      // Port_CallCode4. The storm night's dark/lit colours (PALETTE_TINT_WARM/PALE) and every other tint
+      // computed per colour; one-colour and ready-buffer modes (DMA copies) are not covered.
+      name: 'PaletteFade_Build', spec: {
+        orig: T('PaletteFade_Build'), port: 'Port_CallCode4', returns: 'none',
+        call: (...a) => h.m._Port_CallCode4(A('PaletteFade_Build'), ...a),
+      },
+      cases: function* () {
+        const modes = [0x10000, 0x10001, 0x10002, 0x10003, 0x10004, 0x10005, 0x10006, 0x10007, 0x10008, 0x1ffff];
+        for (let i = 0; i < 1200; i++) {
+          let mode = modes[i % modes.length];
+          if (i % 13 === 11) mode = 0x200000 | (R() & 0x7fff);
+          if (i % 13 === 12) mode = 0x400000 | ((R() & 0x7fff) | 1);
+          if (i % 29 === 28) mode = 0x800000 | (R() & 0x7fff);
+          const src = EW + 2 * R.range(0, 64), dst = EW + 0x1000 + 2 * R.range(0, 64);
+          for (let k = 0; k < 448; k++) {
+            const c = (R() & 7) === 0 ? R.pick([0, 0x7fff, 0x001f, 0x03e0, 0x7c00]) : R() & 0xffff;
+            h.mem[src + 2 * k] = c & 0xff; h.mem[src + 2 * k + 1] = c >> 8;
+          }
+          yield [mode, src, dst, R.range(0, 2)];
+        }
+      },
+      memoryEvery: 1,
+    },
     { name: 'Bios_SoundBiasOn', spec: { orig: T('Bios_SoundBiasOn'), port: 'Bios_SoundBiasOn', returns: 'none' }, cases: () => [[], []], setup: () => { h.mem[0x04000088] = 0x55; h.mem[0x04000089] = 0xc3; } },
     { name: 'Bios_SoundBiasOff', spec: { orig: T('Bios_SoundBiasOff'), port: 'Bios_SoundBiasOff', returns: 'none' }, cases: () => [[], []] },
   ];
