@@ -449,6 +449,93 @@ function routines(h) {
       },
       memoryEvery: 1,
     },
+    // GS-audio: the m4a track commands (clear_buffer.s) on random tracks; player at EW, track at EW+0x100, the
+    // command stream at EW+0x800, a voice table at EW+0x1000; SoundInfo (for TrackStop's cgbMute) at EW+0x4000
+    ...['ply_goto', 'ply_patt', 'ply_pend', 'ply_rept', 'ply_prio', 'ply_tempo', 'ply_keysh', 'ply_voice', 'ply_vol',
+      'ply_pan', 'ply_bend', 'ply_bendr', 'ply_lfos', 'ply_lfodl', 'ply_mod', 'ply_modt', 'ply_tune', 'ply_port',
+      'ply_endtie', 'ply_fine', 'TrackStop'].map((name) => ({
+      name, spec: { orig: T(name), port: name, returns: 'none' },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        const P = EW, TR = EW + 0x100, CMD = EW + 0x800, SI = EW + 0x4000;
+        for (let i = 0; i < 1500; i++) {
+          fillRandom(EW, 0x1800);
+          dv.setUint32(TR + 64, CMD + R.range(0, 64), true);
+          if (name === 'ply_port') for (let k = 0; k < 0x100; k++) h.mem[CMD + k] &= 0x3f; // registers 0x60-0x9f
+          if (name === 'ply_rept' && R() & 1) h.mem[CMD + R.range(0, 64)] = 0;
+          if (name === 'ply_endtie' && R() & 1) for (let k = 0; k < 0x100; k++) h.mem[CMD + k] &= 0x7f;
+          dv.setUint32(P + 48, EW + 0x1000, true);
+          h.mem[TR + 2] = R.range(0, 4);
+          // a chain of 0-3 channels at EW+0x200.. linked to the track
+          const n = R.range(0, 3);
+          dv.setUint32(TR + 32, n ? EW + 0x200 : 0, true);
+          for (let k = 0; k < n; k++) {
+            const c = EW + 0x200 + 64 * k;
+            dv.setUint32(c + 44, TR, true);
+            dv.setUint32(c + 48, k ? c - 64 : 0, true);
+            dv.setUint32(c + 52, k + 1 < n ? c + 64 : 0, true);
+            if (R() & 1) h.mem[c + 1] &= 0xf8; // PCM or CGB
+            if (name === 'ply_endtie' && R() & 1) h.mem[c + 17] = h.mem[TR + 5];
+          }
+          dv.setUint32(0x03007ff0, SI, true);
+          dv.setUint32(SI + 44, A('DummyFunc') | 1, true);
+          yield [P, TR];
+        }
+      },
+    })),
+    {
+      // Mixer_Enter + the resident IWRAM mixer: a SoundInfo with 1-12 random channels (envelope phases, PCM waves
+      // looped or not, fixed rate, synth waves of the three kinds, counts ending inside the frame), random
+      // workspace, buffers and reverb code (one of the five ROM codes in IWRAM); one whole VBlank of 352 samples.
+      // The original runs with its stack in IWRAM below 0x03007800 (so it never takes its sample-DMA-to-stack path)
+      // and patches its own code: those areas are not compared.
+      name: 'Mixer_Enter', spec: {
+        orig: T('Mixer_Enter'), port: 'Mixer_Enter', returns: 'none', sp: 0x03007800,
+        ignore: [[0x03000658, 0x504], [0x03000b60, 0x298], [0x03007000, 0x800]],
+      },
+      cases: function* () {
+        const dv = new DataView(h.mem.buffer);
+        const SI = 0x02030000, WAVES = 0x02034000;
+        for (let i = 0; i < 300; i++) {
+          fillRandom(0x02030000, 0x8000);
+          fillRandom(0x03000df8, 1424);
+          const code = R.range(0, 4);
+          h.mem.copyWithin(0x03000bd8, 0x08000404 + 152 * code, 0x08000404 + 152 * code + 152);
+          dv.setUint32(0x03007ff0, SI, true);
+          dv.setUint32(SI, 0x68736d53, true);
+          dv.setUint32(SI + 32, 0, true);
+          dv.setUint32(SI + 40, A('DummyFunc') | 1, true);
+          h.mem[SI + 4] = R.range(0, 5); h.mem[SI + 11] = 4;
+          dv.setUint32(SI + 16, 352, true);
+          dv.setUint32(SI + 24, R.pick([399, 400, 380, 420]), true); // rateStep: 2^23 / 21024
+          const nch = R.range(1, 12);
+          h.mem[SI + 6] = nch;
+          for (let k = 0; k < nch; k++) {
+            const c = SI + 80 + 64 * k, w = WAVES + 0x800 * k;
+            const size = R.pick([0, 16, 100, 300, 1000, 1500]);
+            dv.setUint32(c + 36, w, true);
+            dv.setUint32(w + 12, size, true);
+            const loop = R() & 1;
+            h.mem[w + 3] = loop ? 0x40 : 0;
+            dv.setUint32(w + 8, loop ? R.range(0, Math.max(0, size - 1)) : 0, true);
+            h.mem[c] = R.pick([0x80, 0xc0, 0x83, 0x82, 0x81, 0x93, 0x92, 0x43, 0x53, 0x04, 0x14, 0x03, 0x02, 0x01, 0x00]) & 0xff;
+            h.mem[c + 1] = R.pick([0, 0, 0, 8, 0x40]);
+            h.mem[c + 13] = R.range(0, 3);
+            let cnt = R.pick([0, 1, 5, 200, 400, 2000, size]);
+            if (h.mem[c + 1] === 8 && (!cnt || !size || (h.mem[c] & 0x80))) { // a fixed-rate wave of 0 samples mixes forever in the original
+              h.mem[c + 1] = 0;
+            }
+            dv.setUint32(c + 24, cnt, true);
+            dv.setUint32(c + 40, w + 16 + R.range(0, 200), true);
+            dv.setUint32(c + 28, R() & 0x7fffff, true);
+            dv.setUint32(c + 32, R.pick([0x800, 0x2000, 0x5000, 0x5200, 0x8000, 0xa000, 0x14000, 0x28000]) + (R() & 0xfff), true); // steps 0.1 to 13
+            if (R() & 1) h.mem[w + 16 + 1 + R.range(0, 200)] = R.range(0, 2); // synth kinds 0/1/other
+          }
+          yield [];
+        }
+      },
+      memoryEvery: 1,
+    },
     { name: 'Bios_SoundBiasOn', spec: { orig: T('Bios_SoundBiasOn'), port: 'Bios_SoundBiasOn', returns: 'none' }, cases: () => [[], []], setup: () => { h.mem[0x04000088] = 0x55; h.mem[0x04000089] = 0xc3; } },
     { name: 'Bios_SoundBiasOff', spec: { orig: T('Bios_SoundBiasOff'), port: 'Bios_SoundBiasOff', returns: 'none' }, cases: () => [[], []] },
   ];

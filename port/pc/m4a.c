@@ -90,7 +90,7 @@ void ply_rept(u32 player, u32 track) {
     goto_jump(track);
     return;
   }
-  n = (u8)(U8(track, 3) + 1);
+  n = U8(track, 3) + 1u; /* compared untruncated (256 after 255) */
   U8(track, 3) = (u8)n;
   count = next_byte(track); /* r2 = p, pointer now p + 1 */
   if (n < count) {

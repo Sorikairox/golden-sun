@@ -155,7 +155,7 @@ static void mix_interp(struct Mix *m, u32 fp, u32 r2, u32 r3) {
     } else
       kernel = 0;
     for (i = 0; i < SAMPLES; i++) {
-      if (i == 0 || !z)
+      if ((i & 3) == 0 || !z) /* each group of four starts with mul, the rest with mulne */
         r9 = r7 * ip;
       if (kernel == 0) {
         r9 = (u32)asr(r9, 22);

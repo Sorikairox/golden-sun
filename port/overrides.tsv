@@ -19,14 +19,14 @@ games/tbs/src/menu/menu/item.c	header	port/shim/system/port_iwram_call.h	done	Iw
 games/tbs/src/field/actor_update_arm.c	header	port/shim/system/port_iwram_call.h	done	ARM C calling IWRAM routines by offset from IwramIrqMain (IWRAM_ENTRY)
 games/tbs/src/system/system/frame.c	transform	tools/wasm/port_src.py	done	asm rules: swi 2/3 -> Port_BiosHalt/Stop, sp read/switch -> no stack copy
 games/tbs/src/system/iwram_routines.s	asm	port/pc/iwram.c	done	IWRAM routines (divide core, signed remainder, sqrt, fill/copy words, bit runs, transform vector/matrix, resident LZ): EQUIV (tests/arm/diff.cjs)
-games/tbs/src/sound/resident_mixer_render.s	asm	port/pc/iwram.c	done	IwramCopyWords only (the mixer is G4): EQUIV
+games/tbs/src/sound/resident_mixer_render.s	asm	port/pc/iwram.c,port/pc/mixer.c	done	IwramCopyWords EQUIV; render, clipping and the reverb codes in mixer.c (Mixer_Enter EQUIV, GS-audio)
 games/tbs/src/system/iwram_entry.s	asm	port/pc/iwram.c	done	__divsi3/__udivsi3/__modsi3/__umodsi3 veneers
 games/tbs/src/field/actor_update_far.s	asm	port/pc/iwram.c	done	ARM veneers to ArcTan2, IwramSqrt, IwramRatioMulQ14: EQUIV
 games/tbs/src/system/trig.s	asm	port/pc/asm_small.c	done	Trig_Sin/Cos: EQUIV on all 65536 angles
 games/tbs/src/system/heap_release.s	asm	port/pc/asm_small.c	done	Heap_Release, HeapSlot_Release: EQUIV
-games/tbs/src/sound/umul_high.s	asm	port/pc/asm_small.c	partial	umul3232H32 EQUIV; SoundMain still a stub (audio is G4)
+games/tbs/src/sound/umul_high.s	asm	port/pc/asm_small.c,port/pc/mixer.c	done	umul3232H32 EQUIV; SoundMain (unused by the game) mixes with Camelot's mixer (SoundMainRAM not ported)
 games/tbs/src/system/bios.s	asm	port/pc/bios.c	done	CpuSet and SoundBias from GBATEK: EQUIV against the harness's GBATEK reference
-games/tbs/src/sound/clear_buffer.s	asm	port/pc/sound_asm.c	partial	SoundMainBTM, RealClearChain EQUIV; MPlayJumpTableCopy copies the relocated template; MPlayMain, TrackStop, ply_* still stubs (G4)
+games/tbs/src/sound/clear_buffer.s	asm	port/pc/sound_asm.c,port/pc/m4a.c	done	SoundMainBTM, RealClearChain, the ply_* commands, ply_endtie, TrackStop EQUIV; MPlayMain, ply_note, m4aSoundVSync in C (not yet EQUIV-tested); MPlayJumpTableCopy copies the relocated template
 games/tbs/src/system/decompress_byte_lz.s	asm	port/pc/oam_kernel.c,port/pc/decompress.c	partial	Oam_BuildBufferKernel, Decompress_ByteLzArm EQUIV; palette fade kernels, Decompress_HalfwordLz todo
 games/tbs/src/system/decompress_tagged_lz.s	asm	port/pc/decompress.c	done	tagged LZ (forms 0/1), move-to-front LZ (form 2), Resource_PatchThumbBranch, Resource_ExecuteTransfer: EQUIV (all ROM resources)
 games/tbs/src/window/message_decode.s	asm	port/pc/text_asm.c	done	Message_FindArm, Text_DecodeSymbol: EQUIV on real messages
@@ -35,3 +35,7 @@ games/tbs/src/window/expand_opaque.s	asm	port/pc/window_asm.c	done	Tile_ExpandOp
 games/tbs/src/field/map_grid_convert.s	asm	port/pc/field_asm.c	done	Tile_ConvertMapGrid, Tile_CopyStrided EQUIV
 games/tbs/src/gamepak/flash/*.c	function	port/pc/flash.c	done	flash driver replaced at its API (port/fn_overrides.tsv): the emulated chip is an SST 39VF512
 games/tbs/src/field/picture_decode.s	asm	port/pc/field_asm.c	partial	Render_DecodePicture EQUIV (its table cache in the RAM copy not kept: the tables are ROM); TileMap_DrawRows (World Map) todo
+games/tbs/src/sound/channel_update_entry.s	asm	port/pc/mixer.c	done	Mixer_Enter/Mixer_Run: EQUIV (whole VBlanks, GS-audio)
+games/tbs/src/sound/resident_mixer.s	asm	port/pc/mixer.c	done	channel envelope, block mixer, resampler kernels, synth waves: EQUIV through Mixer_Enter
+games/tbs/src/sound/resident_mixer_interpolate.s	asm	port/pc/mixer.c	done	general resampling loop, block mixer, normalize: EQUIV through Mixer_Enter
+games/tbs/src/sound/mixer.s	asm	port/pc/mixer.c	partial	SoundMainRAM (library mixer) not ported: unused, the game mixes through Mixer_Enter
