@@ -2,7 +2,8 @@
 // port_work/webtest, local only) on 127.0.0.1, opens the page with ?romurl=, waits for N game frames, and saves
 // screenshots of the canvas to port_work/g3/web_*.png. Prints console errors. One Chrome at a time: the script
 // refuses to start while another headless Chrome runs, and kills only the processes it started.
-// Usage: node tests/web_shot.cjs [frames,frames,...] (default 200,600,1000) [--flash FILE] [--press FRAME:CODE,...]
+// Usage: node tests/web_shot.cjs [frames,frames,...] (default 200,600,1000) [--flash FILE] [--press FRAME:CODE,...] [--audio]
+//   --audio prints the page's audio state (GSAudio.stats(): worklet running, samples sent/received non-zero) at the end;
 //   --flash puts a 64 KB save (port_work/, never committed) into the page's IndexedDB before it starts;
 //   --press holds a key (KeyboardEvent.code, e.g. Enter for Start) for 6 frames from that game frame.
 'use strict';
@@ -116,6 +117,12 @@ async function main() {
       if (errors.length) break;
     }
     const fps = await frames() / ((Date.now() - t0) / 1000);
+    if (process.argv.includes('--audio')) { // GS-audio: the worklet's state and sample counts; fps over 4 s now
+      const f0 = await frames(), a0 = Date.now(); await sleep(4000);
+      const recent = (await frames() - f0) / ((Date.now() - a0) / 1000);
+      const st = (await send('Runtime.evaluate', { expression: 'JSON.stringify(window.GSAudio && GSAudio.stats())', returnByValue: true })).result.result.value;
+      console.log(`audio: ${st}; ~${recent.toFixed(1)} frames/s over the last 4 s`);
+    }
     console.log(`page: ~${fps.toFixed(1)} frames/s overall; ${errors.length} console errors`);
     for (const e of errors.slice(0, 10)) console.log('  error:', e.slice(0, 300));
     ws.close();

@@ -84,6 +84,7 @@ async function start(rom) {
     image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
     ctx.putImageData(image, 0, 0);
     m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0));   // keyboard + touch pad: one key state
+    if (window.GSAudio) GSAudio.feed(m);   // this frame's samples to the audio worklet (never waits)
     const gen = m._Port_FlashGeneration();
     if (gen !== lastFlashGen) {
       lastFlashGen = gen;
