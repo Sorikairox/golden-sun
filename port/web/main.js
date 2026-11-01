@@ -1,5 +1,5 @@
 // Page v1 (G3): ROM picker (SHA-1 check, cached in IndexedDB), the game module (game.js/game.wasm), frames to a
-// canvas, keyboard input, the flash save kept in IndexedDB. Input goes through one key state (`held`) that a
+// canvas, keyboard and touch input (touch.js), the flash save kept in IndexedDB. Input goes through one key state (`held`) that a
 // touch pad and gamepads will feed too (orchestrator rule 11), so all of them share one path.
 'use strict';
 
@@ -83,7 +83,7 @@ async function start(rom) {
     const p = m._Port_FrameBuffer();
     image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
     ctx.putImageData(image, 0, 0);
-    m._Port_SetKeys(held);
+    m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0));   // keyboard + touch pad: one key state
     const gen = m._Port_FlashGeneration();
     if (gen !== lastFlashGen) {
       lastFlashGen = gen;
@@ -115,6 +115,7 @@ async function start(rom) {
     m.HEAPU8.set(savedFlash, m._Port_FlashMemory());
     m._Port_KeepFlash();
   }
+  if (window.GSTouch) GSTouch.started();
   try {
     m.callMain([]);
   } catch (e) {

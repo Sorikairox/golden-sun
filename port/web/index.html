@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="stylesheet" href="touch.css">
 <title>Golden Sun (web port)</title>
 <style>
   :root { --bg: #101014; --fg: #e8e6df; --dim: #8a8780; --accent: #d9a62b; }
@@ -34,7 +35,20 @@
   <canvas id="screen" width="240" height="160"></canvas>
   <div id="status"></div>
   <div id="keys">Keys: arrows = D-pad, X = A, Z = B, Enter = Start, Backspace = Select, A = L, S = R</div>
+  <div id="opts"><label>Touch controls<select id="opt-touch">
+    <option value="auto">Auto (on for touch screens)</option><option value="on">On</option><option value="off">Off</option>
+  </select></label> <span id="opt-touch-state"></span></div>
 </div>
+<div id="touch" hidden>
+  <div id="tk-dpad"><div class="arm u"></div><div class="arm d"></div><div class="arm l"></div><div class="arm r"></div><div class="arm c"></div></div>
+  <div class="tb" id="tk-A" data-k="A">A</div><div class="tb" id="tk-B" data-k="B">B</div>
+  <div class="tb sh" id="tk-L" data-k="L">L</div><div class="tb sh" id="tk-R" data-k="R">R</div>
+  <div class="tb pill" id="tk-SELECT" data-k="SELECT">SELECT</div><div class="tb pill" id="tk-START" data-k="START">START</div>
+  <div class="tb sq" id="tk-menu" title="Page menu">&#9776;</div>
+</div>
+<button id="tk-back" hidden>Back to the game &#9654;</button>
+<div id="tk-safe"></div>
+<script src="touch.js"></script>
 <script src="main.js"></script>
 </body>
 </html>

@@ -3,6 +3,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 rm -rf build/site && mkdir -p build/site
-cp port/web/index.html port/web/main.js build/site/
+cp port/web/index.html port/web/main.js port/web/touch.js port/web/touch.css build/site/
 cp build/wasm/game.js build/wasm/game.wasm build/site/
 echo "site: build/site ($(du -sh build/site | cut -f1))"

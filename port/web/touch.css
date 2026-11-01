@@ -1,0 +1,44 @@
+/* Touch controls (touch.js; orchestrator rule 11). body.tplay: the pad is up in a running game; touch.js places the
+   picture (top in portrait, centred in landscape) and the buttons. body.tmenu: the page menu is open over the game. */
+body.touchdev label.button, body.touchdev select, body.touchdev button { font-size: 16px; min-height: 44px; }
+body.tplay, body.tmenu { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+body.tplay { overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none; }
+body.tplay #app > :not(#screen):not(#status) { display: none !important; }
+body.tplay #status:empty { display: none; }
+body.tplay #status { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: #300; padding: 4px;
+  text-align: center; }
+body.tplay #screen { position: fixed; max-width: none; aspect-ratio: auto; touch-action: none; z-index: 1; }
+body.tmenu #screen { display: none !important; }
+
+#touch { position: fixed; inset: 0; pointer-events: none; z-index: 10; -webkit-user-select: none; user-select: none; }
+#touch[hidden] { display: none; }
+#touch > * { position: absolute; pointer-events: auto; touch-action: none; -webkit-touch-callout: none;
+  box-sizing: border-box; }
+#touch .tb { display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .28); color: rgba(255, 255, 255, .92); background: rgba(60, 60, 68, .55);
+  font: 700 20px/1 system-ui, -apple-system, sans-serif; }
+#touch .tb.on { filter: brightness(1.7); border-color: #fff; }
+#touch .tb.pill { border-radius: 999px; font-size: 12px; letter-spacing: .05em; }
+#touch .tb.sh { border-radius: 10px 10px 18px 18px; font-size: 16px; }
+#touch .tb.sq { border-radius: 8px; font-size: 18px; background: rgba(40, 40, 44, .55); }
+#tk-A { background: rgba(200, 50, 60, .6); }
+#tk-B { background: rgba(210, 160, 30, .6); }
+/* the D-pad: one zone; the arm(s) under the finger light up (8 directions) */
+#tk-dpad { border-radius: 50%; }
+#tk-dpad .arm { position: absolute; background: rgba(60, 60, 68, .6); border: 2px solid rgba(255, 255, 255, .28);
+  box-sizing: border-box; pointer-events: none; }
+#tk-dpad .arm.on { background: rgba(200, 200, 210, .7); border-color: #fff; }
+#tk-dpad .u { left: 33%; top: 0; width: 34%; height: 36%; border-radius: 8px 8px 0 0; border-bottom: 0; }
+#tk-dpad .d { left: 33%; bottom: 0; width: 34%; height: 36%; border-radius: 0 0 8px 8px; border-top: 0; }
+#tk-dpad .l { left: 0; top: 33%; width: 36%; height: 34%; border-radius: 8px 0 0 8px; border-right: 0; }
+#tk-dpad .r { right: 0; top: 33%; width: 36%; height: 34%; border-radius: 0 8px 8px 0; border-left: 0; }
+#tk-dpad .c { left: 33%; top: 33%; width: 34%; height: 34%; border: 0; }
+#tk-back { position: fixed; top: calc(8px + env(safe-area-inset-top)); right: calc(8px + env(safe-area-inset-right));
+  z-index: 30; padding: 10px 16px; min-height: 44px; border-radius: 8px; border: 0; background: var(--accent);
+  color: #1a1406; font-weight: 600; font-size: 16px; }
+#tk-back[hidden] { display: none; }
+#tk-safe { position: fixed; visibility: hidden; pointer-events: none; padding: env(safe-area-inset-top)
+  env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#opts { color: var(--dim); font-size: .9em; }
+#opts select { margin-left: .4em; padding: 4px 6px; border-radius: 6px; }

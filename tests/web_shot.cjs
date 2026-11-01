@@ -37,7 +37,7 @@ async function main() {
   fs.mkdirSync(out, { recursive: true });
 
   // a small static server (node's own: python's http.server stalled Chrome's first load for a minute)
-  const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm' };
+  const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm' };
   const server = require('http').createServer((req, res) => {
     const name = path.basename(decodeURIComponent(req.url.split('?')[0])) || 'index.html';
     const file = path.join(dir, name);
