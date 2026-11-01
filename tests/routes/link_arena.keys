@@ -1,0 +1,4 @@
+# G6 link battle (tests/link2.cjs, both instances; flash = GS4's prologue save with a Djinn flag counted, made by
+# link2.cjs): title (START), File Screen icon menu Continue -> Battle (3 x RIGHT), A, file 1 (A) -> Battle Arena
+# lobby (~f1500, link up at once). Inputs only.
+START@1000-1003, RIGHT@1250-1252, RIGHT@1270-1272, RIGHT@1290-1292, A@1320-1322, A@1400-1402

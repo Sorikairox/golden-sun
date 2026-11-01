@@ -1,0 +1,6 @@
+# Walk from the door (216,288) up and left to the attendant (152,204), talk: her explanation, then "Would you
+# like to apply?" Yes (LOBBY_SLOT_ASKED '0123'), the call into the circle; B closes the last message; walk right
+# and up onto the circle (step trigger 10, '1ABC' -> party exchange, 'EXEC', battle ~f2500).
+UP@1700-1763, LEFT@1764-1827, UP@1828-1840, A@1850-1852
+A@1880-2060/20, B@2080-2240/20
+RIGHT@2260-2330, UP@2331-2380
