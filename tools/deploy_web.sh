@@ -31,6 +31,8 @@ bad=$(cd build/site && ls | grep -Eiv '^(index\.html|[a-z_]+\.js|touch\.css|game
 S=$STAGE/publish; rm -rf "$S"; mkdir -p "$S"
 cp build/site/* "$S"/
 git log -1 --format='%h %ad %s' --date=format:'%Y-%m-%d %H:%M' > "$S/BUILD.txt"
+# Netlify serves .webmanifest as octet-stream by default; sw.js is never HTTP-cached (Netlify's default, kept explicit)
+printf '/manifest.webmanifest\n  Content-Type: application/manifest+json\n/sw.js\n  Cache-Control: no-cache\n' > "$S/_headers"
 F=$STAGE/fn; mkdir -p "$F/functions"
 rm -rf "$F/functions/room"; cp -R port/netlify/functions/room "$F/functions/"
 if ! cmp -s port/netlify/package.json "$F/package.json" || [ ! -d "$F/node_modules/@netlify/blobs" ]; then
@@ -41,7 +43,7 @@ echo "deploying $(ls "$S" | wc -l | tr -d ' ') files + function room"
   grep -E "Deploy is live|Error|error|Function|function" | sed 's/\x1b\[[0-9;]*m//g' | head -8) || true
 cd "$R"
 echo "live BUILD.txt: $(curl -s $URL/BUILD.txt)"
-echo "game.wasm: $(curl -sI $URL/game.wasm | grep -i '^content-type' | tr -d '\r')"
+echo "game.wasm: $(curl -sI $URL/game.wasm | grep -i '^content-type' | tr -d '\r'); manifest: $(curl -sI $URL/manifest.webmanifest | grep -i '^content-type' | tr -d '\r')"
 echo "sw.js: $(curl -s $URL/sw.js | grep -E '^const (BUILD|SITE)' | tr '\n' ' ')"
 # the room server answers (a bad request gives a JSON error; nothing is stored)
 echo "api/room: $(curl -s -X POST -H 'content-type: application/json' -d '{"op":"host","code":"QQQQQ","secret":"x"}' $URL/api/room)"

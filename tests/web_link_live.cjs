@@ -85,7 +85,8 @@ async function main() {
       if (n !== 8388608) throw new Error(`${p.name}: ROM not stored (${n})`);
       await send('Page.reload', {}, p.session);
     }
-    for (const p of pages) await until(p, '(window.__gsFrames || 0) > 200 && !document.getElementById("net").hidden', 'game running from the saved ROM', 60000);
+    // the game started from the saved ROM (picker gone, panel shown); page b is a background tab (no rAF, few frames)
+    for (const p of pages) await until(p, 'typeof window.__gs === "object" && !!window.__gs && !document.getElementById("net").hidden && getComputedStyle(document.getElementById("picker")).display === "none"', 'game running from the saved ROM', 60000);
     console.log(`both pages running (${T()}), build ${await ev(pages[0], 'GSNet.buildId')}`);
     await ev(pages[0], `document.getElementById('net').open = true; document.getElementById('net-host').click(); true`);
     await until(pages[0], `/^[A-Z0-9]{5}$/.test(document.getElementById('net-code-show').textContent)`, 'room code', 20000);
