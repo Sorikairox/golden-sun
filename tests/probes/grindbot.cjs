@@ -4,13 +4,15 @@
 // on the weakest of the first GR_N members when below 55 % HP. Stops at Isaac level GR_LV, at GR_END, or off the
 // World Map; prints "grind keys: ..." (Unit_Get is read only: level, hpMax, hp, pp at +15/+52/+56/+58).
 'use strict';
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), path = require('path'), crypto = require('crypto');
+const FLEEMID = +(process.env.GR_FLEEMID || 0), NOFIGHT = !!process.env.GR_NOFIGHT;
 const AT = +process.env.GR_AT, X1 = +process.env.GR_X1, X2 = +process.env.GR_X2, LV = +(process.env.GR_LV || 6);
 const N = +(process.env.GR_N || 2), ZAX = process.env.GR_AXIS === 'z', TH = +(process.env.GR_TH || 0.55), STOPDOWN = !!process.env.GR_STOPDOWN, SCENE = +(process.env.GR_SCENE || 2), FLEE = !!process.env.GR_FLEE; // GR_SCENE: grind in this field scene // GR_AXIS=z: walk UP/DOWN between rows GR_X1..GR_X2 (GS19)
 const sym = {};
 for (const l of fs.readFileSync(path.resolve(__dirname, '../../port/symbols/tbs-en.tsv'), 'utf8').split('\n')) { const c = l.split('\t'); if (c[1]) sym[c[0]] = parseInt(c[1], 16); }
 const KEY = { A: 1, B: 2, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128 };
-let flee = false, spans = [], state = 'walk', t0 = 0, target = X1, lastX = -1, lastMove = 0, done = false, plan = null, battles = 0;
+// GR_CUREFIRST=1 (GS20): start with the after-battle check (Cure below GR_TH) before walking
+let flee = false, spans = [], state = process.env.GR_CUREFIRST ? 'after' : 'walk', t0 = AT - 60, target = X1, lastX = -1, lastMove = 0, done = false, plan = null, battles = 0;
 const finish = (f, why) => { done = true; console.log(`grind ${why} f${f} battles ${battles}`); console.log(`grind keys: ${spans.map((s) => `${s.k}@${s.a}-${s.b}`).join(',')}`); };
 module.exports = (m, frame, keys) => {
   if (done || frame < AT) return;
@@ -27,6 +29,17 @@ module.exports = (m, frame, keys) => {
       const us = [...Array(N).keys()].map(unit); flee = FLEE && (us[0].pp < 6 || us.some((u) => u.hp < u.hpMax / 2));
     }
     const d = frame - t0;
+    // GR_FLEEMID=f (GS20): when the battle's Fight box (battlebot.cjs's hash) is up and a living member is below
+    // this share of HP, take Run from then on (the tree's Troll pairs wipe a Lv 9 party that only attacks)
+    if (FLEEMID && !flee && frame % 10 === 0) {
+      const p = m._Port_FrameBuffer(), h = crypto.createHash('md5');
+      for (let y = 142; y < 153; y++) h.update(H.subarray(p + (y * 240 + 186) * 4, p + (y * 240 + 234) * 4));
+      if (h.digest('hex').slice(0, 8) === 'f2a3d0a7' && [...Array(N).keys()].map(unit).some((u) => u.hp > 0 && u.hp < u.hpMax * FLEEMID)) { flee = true; t0 = frame - 31; console.log(`grind f${frame} run (a member below ${FLEEMID})`); }
+    }
+    // GS20: GR_NOFIGHT=1 leaves battles to battlebot.cjs (BB_BATTLEONLY, BB_LOOP) unless running (globalThis.grindFlee
+    // tells battlebot to stand aside)
+    globalThis.grindFlee = flee;
+    if (NOFIGHT && !flee) return;
     if (flee && d > 30 && d % 40 < 2) press('RIGHT');
     if (d > 30 && (d - (flee ? 10 : 0)) % 40 < 2) press('A');
     return;

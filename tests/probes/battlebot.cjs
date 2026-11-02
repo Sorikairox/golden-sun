@@ -9,7 +9,10 @@
 'use strict';
 const crypto = require('crypto');
 const AT = +process.env.BB_AT, END = +process.env.BB_END, R = +(process.env.BB_R || 1);
-const SEQ = process.env.BB_SEQ ? process.env.BB_SEQ.split(';') : [];
+const SEQ0 = process.env.BB_SEQ ? process.env.BB_SEQ.split(';') : [], SEQ = SEQ0.slice();
+// GS20: BB_LOOP=1 starts BB_SEQ again when it runs out (one macro per member, so a three-member loop repeats each
+// turn); BB_BATTLEONLY=1 presses nothing outside battles (scene 510), so it can run beside grindbot.cjs GR_NOFIGHT=1
+const LOOP = !!process.env.BB_LOOP, BONLY = !!process.env.BB_BATTLEONLY;
 const FIGHT = 'f2a3d0a7', ATTACK = '7cce568c';
 const KEY = { A: 1, B: 2, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128 };
 let spans = [], seq = null, t0 = 0, lastTap = 0, stable = 0, lastLab = '', done = false;
@@ -17,6 +20,9 @@ module.exports = (m, frame, keys) => {
   if (done || frame < AT) return;
   const press = (k) => { m._Port_SetKeys(keys | KEY[k]); const s = spans[spans.length - 1]; if (s && s.k === k && s.b === frame - 1) s.b = frame; else spans.push({ k, a: frame, b: frame }); };
   if (frame >= END) { done = true; console.log(`bb keys: ${spans.map((s) => `${s.k}@${s.a}-${s.b}`).join(',')}`); return; }
+  if (BONLY && (m.HEAPU8[0x02000400] | m.HEAPU8[0x02000401] << 8) !== 510) { seq = null; return; }
+  if (LOOP && !SEQ.length) SEQ.push(...SEQ0);
+  if (globalThis.grindFlee) { seq = null; return; } // grindbot.cjs is running from this battle
   const p = m._Port_FrameBuffer(), H = m.HEAPU8, h = crypto.createHash('md5');
   for (let y = 142; y < 153; y++) h.update(H.subarray(p + (y * 240 + 186) * 4, p + (y * 240 + 234) * 4));
   const lab = h.digest('hex').slice(0, 8);

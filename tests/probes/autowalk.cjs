@@ -17,7 +17,7 @@ let taps = 0;
 // WALK_FIGHT=N (GS13): random battles do not end the walk: while the field is gone (battle, scene 510) tap A every N
 // frames (Fight, Attack, first target; closes the reward messages), then B once 30 frames after the field is back
 // (closes a field menu a late A opened); the walk then goes on. The taps are recorded with the walk keys.
-const FIGHT = +(process.env.WALK_FIGHT || 0);
+const FIGHT = +(process.env.WALK_FIGHT || 0), FLEE = !!process.env.WALK_FLEE;
 let away = -1, back = -1;
 const CENTER = +(process.env.WALK_CENTER || 0);
 let i = 0, spans = [], lastCell = '', lastMove = 0, done = false, vert = false;
@@ -40,7 +40,9 @@ module.exports = (m, frame, keys) => {
   if (FIGHT && (sc === 510 || leader < 0x02000000 || leader >= 0x03008000)) {
     if (away < 0) away = frame;
     lastMove = frame; back = -1;
-    if (frame - away > 30 && (frame - away) % FIGHT < 2) press('A');
+    // WALK_FLEE=1 (GS20): take Run (RIGHT, then A 10 frames later) instead of Fight, again after a failed run
+    if (FLEE && frame - away > 30 && (frame - away) % FIGHT < 2) press('RIGHT');
+    else if (frame - away > 30 && (frame - away - (FLEE ? 10 : 0)) % FIGHT < 2) press('A');
     return;
   }
   if (FIGHT && away >= 0) { if (back < 0) back = frame; lastMove = frame; if (frame - back < 30) return; if (frame - back < 32) { press('B'); return; } away = -1; }
