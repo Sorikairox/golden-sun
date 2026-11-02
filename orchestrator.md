@@ -69,9 +69,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   rolled on the riverbed, refilled, the floating logs), **Laurel and Tret** (the wrathful side's purple tint), the vine into
   the **Tret Tree**, a battle with **Flint unleashed and Mars summoned**. Six saves, regress 40 cases. No port bug found.
   Story order: the curse lifts only with Hermes' Water from Mercury Lighthouse (after the Tret Tree's battle).
+- GS20 (2026-11-02): **through the Tret Tree to Tret by real play** (tret_cocoon, tret_grind.keys; docs/G20.md): the cocoon
+  webs (torn cocoons are jumped from), the branches' vines, the floors in order, cocoon 50's falls to Tret's room; grinding
+  in Tret's glade (Lv 10/10/9). **Tret fought twice and lost** (summon Venus seen). Two saves, regress 42 cases. No port bug
+  found. New tool options: HPATH_JUMPB, WALK_FLEE, GR_CUREFIRST/GR_FLEEMID/GR_NOFIGHT, BB_LOOP/BB_BATTLEONLY.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the tret_battle save: Cure, the Tret Tree's rooms and cocoons (cocoon 50's falls to Tret), the battle with Tret, then
+  from the tret_grind save: grind more in Tret's glade, walk port_work/g20/legs2.txt to Tret, beat him, then
   north (Fuchin Temple, Mercury Lighthouse, Imil, Mia) and back with Hermes' Water; `tools/regress.sh --quick` between
   builds, the full run at the end.
 
@@ -386,3 +390,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     shows stumps; HPATH_DIAG overstates corners). Logs roll until a cell does not fit, so their order matters; push from the
     log's middle. A party wipe sends the party to the scene's restart point (scene_rules.s) with only the leader at 1 HP,
     by the game's rule. PP returns one per 160 px walked outside towns: grind with GR_FLEE when Cure's PP runs short.
+45. Tret Tree routing (GS20): cocoons (behaviors 21-29, 31, 32, 50-59) tear on the first landing and drop the leader on the
+    next; torn ones are jumped from like jump cells (hpath HPATH_JUMPB, HPATH_BLOCK the four drawn torn: 22, 52, 54, 58).
+    Branch vines are step triggers that move the leader 5-6 cells: give autowalk the destination cell. Climbs change height,
+    not the cell (WALK_STUCK=500). The tree's battles (Troll pairs) wipe a Lv 9 party; grind in Tret's glade instead.

@@ -2,6 +2,36 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS20 — 2026-11-02: through the Tret Tree to Tret by real play: the webs, branches and vines, cocoon 50's falls; Tret not beaten yet
+
+### Done
+- **Real play, no probe** (layout and order from tree_rooms.c / tret_tree_branch.c first; docs/G20.md 1), two saves + regress cases:
+  - `tret_cocoon.keys`: Cure x3, the vine to the second floor, the **cocoon webs** (torn cocoons are jumped from), the east
+    exit, the branches' three **vines** (step triggers), the third floor's climb to the fourth, the fifth floor's east part,
+    cocoon 58 drops back, the west part, cocoons 53, 55, **50** (torn), 57 and back onto 50: **the falls 50-40-30-20-10 land
+    in a ring of dust in front of Tret**; save. Furthest saved point: `port_work/g20/final/furthest_tret_cocoon.png`.
+  - `tret_grind.keys`: out to Tret's glade, grindbot 38 battles (Lv 10/10/9, Cure Well), back up the vine; save.
+  - **Tret fought twice, lost both** (Lv 9 and Lv 10; Isaac summons Venus for 60; Tret's Quake/Thorn wipe the party in ~4
+    turns): Tret is the next milestone (G20.md 4). Highlights in story order `port_work/g20/final/sheet.png` (final/frames.txt).
+- **Tools**: hpath HPATH_JUMPB (cocoons as jump spots), autowalk WALK_FLEE, grindbot GR_CUREFIRST/GR_FLEEMID/GR_NOFIGHT,
+  battlebot BB_LOOP/BB_BATTLEONLY (grindbot + battlebot together).
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: the falls' noise wipe (WINDOW_TRANSITION_NOISE),
+  the rooms' tint and 9/10 scale, Flint on standby since GS19 ("Flint is set"), max HP changes on Djinn set, the
+  unreachable SSW branch (a real gap). No asm/C change: no EQUIV spec or audit row, the wasm was not rebuilt.
+- **Audio per second**: tret_cocoon 206/209 s with sound, tret_grind 2714/2717; silent only at power-on; DAC clamp up to 0.50 %.
+
+### Next
+1. Beat Tret: from `tret_grind` (in the entrance room, Ivan 44/71), grind more in Tret's glade (GR_SCENE=44, x 20-26 at row
+   16-17; Lv 12-13), maybe get Breeze (branch 40,5: not reached from the branch networks of exits 1, 2/4, 5, 6/7/8 — look
+   at exit 3's), then walk port_work/g20/legs2.txt (whole route as one autowalk list) and fight with Cure Well in BB_SEQ.
+2. Then north in story order (check the vendor first): Fuchin Temple, Imil, Mercury Lighthouse with Mia; back with Hermes' Water.
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 41/41 OK (before tret_grind was added; tret_cocoon and
+  tret_grind then OK on their own), test_arm 79/79 EQUIV; leak check not needed (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS19 — 2026-11-02: Kolima Forest to the Tret Tree by real play: grinding, the log puzzles, the floodgate, Laurel and Tret, a summon
 
 ### Done
