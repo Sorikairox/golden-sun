@@ -6,6 +6,7 @@
 'use strict';
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const FLEEMID = +(process.env.GR_FLEEMID || 0), NOFIGHT = !!process.env.GR_NOFIGHT;
+const HEAL = +(process.env.GR_HEALER || 0), HEALPP = HEAL === 3 ? 4 : 3; // GS26: GR_HEALER=3 heals with Mia's Ply after battles
 const AT = +process.env.GR_AT, X1 = +process.env.GR_X1, X2 = +process.env.GR_X2, LV = +(process.env.GR_LV || 6);
 const N = +(process.env.GR_N || 2), ZAX = process.env.GR_AXIS === 'z', TH = +(process.env.GR_TH || 0.55), STOPDOWN = !!process.env.GR_STOPDOWN, SCENE = +(process.env.GR_SCENE || 2), FLEE = !!process.env.GR_FLEE; // GR_SCENE: grind in this field scene // GR_AXIS=z: walk UP/DOWN between rows GR_X1..GR_X2 (GS19)
 const sym = {};
@@ -56,8 +57,20 @@ module.exports = (m, frame, keys) => {
       if (us.every((u) => u.hp === 0 || u.hp === undefined)) return finish(frame, 'all down');
       if (STOPDOWN && us.some((u) => u.hp === 0)) return finish(frame, 'a member down'); // GS19: GR_STOPDOWN, GR_TH (Cure below this share of HP)
       let w = -1, r = TH; us.forEach((u, i) => { if (u.hp > 0 && u.hp / u.hpMax < r) { r = u.hp / u.hpMax; w = i; } });
-      if (w >= 0 && us[0].pp >= 3 && us[0].hp > 0) { state = 'cure'; t0 = frame; plan = w; } else state = 'walk';
+      // GR_STOPLOW=1 (GS26): stop when a member is below GR_TH and Isaac cannot Cure (no PP or down), to rest at an inn
+      if (process.env.GR_STOPLOW && w >= 0 && (us[HEAL].pp < HEALPP || us[HEAL].hp === 0)) return finish(frame, 'low');
+      if (w >= 0 && us[HEAL].pp >= HEALPP && us[HEAL].hp > 0) { state = 'cure'; t0 = frame; plan = w; } else state = 'walk';
     }
+    return;
+  }
+  if (state === 'cure' && HEAL === 3) { // GS26: GR_HEALER=3, Mia's Ply (member row: RIGHT x3 to Mia; Ply is her first)
+    const d = frame - t0;
+    if ([0, 50, 150, 200].some((x) => d >= x && d < x + 2)) press('A');
+    if ([80, 100, 120].some((x) => d >= x && d < x + 2)) press('RIGHT');
+    for (let i = 0; i < plan; i++) if (d >= 240 + 20 * i && d < 242 + 20 * i) press('RIGHT');
+    if (d >= 330 && d < 332) press('A');
+    if ([410, 450, 490, 530].some((x) => d >= x && d < x + 2)) press('B');
+    if (d === 590) { state = 'after'; t0 = frame - 59; }
     return;
   }
   if (state === 'cure') {
