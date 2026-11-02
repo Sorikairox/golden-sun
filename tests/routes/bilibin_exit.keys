@@ -1,0 +1,6 @@
+# GS22: from bilibin_ice (continue with vale_day1_continue.keys + --flash-in): the ice room (scene 47) from 7,26 north round the low ice
+# (8,18 / 11,19), east along row 17 and row 16, down column 23 to row 20 (under the pillar at 26,18), east along row 19 to 32,19;
+# the torch puzzle (bilibin_cave.c BilibinCave_PushTorch, behavior 10/11 cells): the fourth torch pushed south from 33,21
+# to 33,23, east twice from 32,23 to 35,23: the third puddle's ice pillar (36,23) melts and 36,22 / 36,24 become jump cells;
+# then south down column 34 (a random battle fled) through exit 3 to the World Map (389,34, ~f4068).
+UP@2200-2286,RIGHT@2288-2295,RIGHT@2297-2300,UP@2301-2317,RIGHT@2319-2346,UP@2348-2380,RIGHT@2382-2510,UP@2512-2528,RIGHT@2530-2611,DOWN@2613-2666,RIGHT@2668-2706,UP@2708-2709,RIGHT@2711-2809,RIGHT@2812-2835,DOWN@2840-2890,LEFT@2970-2992,DOWN@3000-3012,RIGHT@3020-3040,RIGHT@3170-3190,DOWN@3400-3409,DOWN@3411-3440,RIGHT@3481-3482,A@3491-3492,RIGHT@3521-3522,A@3531-3532,RIGHT@3561-3562,A@3571-3572,RIGHT@3601-3602,A@3611-3612,RIGHT@3641-3642,A@3651-3652,RIGHT@3681-3682,A@3691-3692,RIGHT@3721-3722,A@3731-3732,RIGHT@3761-3762,A@3771-3772,RIGHT@3801-3802,A@3811-3812,RIGHT@3841-3842,B@3880-3881,DOWN@3882-3887,DOWN@3889-4067
