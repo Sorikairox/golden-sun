@@ -63,10 +63,17 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   docs/G18.md): the pond room, Move on the west pillar and both stumps, **Forge's battle won**, the bridge, Bilibin (**Mind Read**
   via the L shortcut, McCoy's audience), the barricade's crates, **Kolima's curse scene**. New `tests/probes/hpath.cjs`
   (height- and layer-aware path search, trap 43); mapdump height scale fixed. Five saves, regress 34 cases. No port bug found.
+- GS19 (2026-11-02): **Kolima Forest to the Tret Tree by real play** (kolima_grind, kolima_glade, kolima_cliff,
+  kolima_floodgate, tret_tree, tret_battle.keys; docs/G19.md): grindbot in the forest (82 battles, Lv 9; GR_SCENE/GR_FLEE),
+  the entrance's, glade's and cliff's **log puzzles** (river logs tip in), the **Floodgate Switch** (river drained, a log
+  rolled on the riverbed, refilled, the floating logs), **Laurel and Tret** (the wrathful side's purple tint), the vine into
+  the **Tret Tree**, a battle with **Flint unleashed and Mars summoned**. Six saves, regress 40 cases. No port bug found.
+  Story order: the curse lifts only with Hermes' Water from Mercury Lighthouse (after the Tret Tree's battle).
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the kolima_forest save: the entrance's logs, the forest to Tret (curse lifted), Kolima, McCoy's reward (grind first,
-  Lv 6); `tools/regress.sh --quick` between builds, the full run at the end.
+  from the tret_battle save: Cure, the Tret Tree's rooms and cocoons (cocoon 50's falls to Tret), the battle with Tret, then
+  north (Fuchin Temple, Mercury Lighthouse, Imil, Mia) and back with Hermes' Water; `tools/regress.sh --quick` between
+  builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -374,3 +381,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     this; search again after Move or a scene event copies cells. Move reaches 32 px (2/3 for ACTOR_NEAR_PSYNERGY): push into the
     cliff edge before casting across a gap. Where A examines something (its reach exceeds Mind Read's), cast from the L/R
     shortcut (Psynergy menu member row: L on the member, pick the Psynergy).
+44. Forest routing and losses (GS19): Kolima Forest's stumps fill their cell; the player control probes 8 px ahead at the
+    heading and +-22.5/+-45 degrees (player_control.c), so stumps touching at a corner block a diagonal (hpath HPATH_MAP=3
+    shows stumps; HPATH_DIAG overstates corners). Logs roll until a cell does not fit, so their order matters; push from the
+    log's middle. A party wipe sends the party to the scene's restart point (scene_rules.s) with only the leader at 1 HP,
+    by the game's rule. PP returns one per 160 px walked outside towns: grind with GR_FLEE when Cure's PP runs short.

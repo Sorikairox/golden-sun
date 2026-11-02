@@ -2,6 +2,48 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS19 — 2026-11-02: Kolima Forest to the Tret Tree by real play: grinding, the log puzzles, the floodgate, Laurel and Tret, a summon
+
+### Done
+- **Real play, no probe** (story order from the vendor scene sources first; docs/G19.md 2), six new saves + regress cases:
+  - `kolima_grind.keys`: grindbot in the forest's entrance, 82 battles, Isaac Lv 6 -> 9 (Retreat), Garet 8, Ivan 8; save.
+    A first grind on the World Map and a later one without fleeing ended in a wipe: the party woke at Kolima's restart
+    point with the leader at 1 HP (the game's rule, G19.md 3); grindbot got GR_FLEE (Run while Cure's PP is short).
+  - `kolima_glade.keys`: the entrance's **river log** (walking west rolls it into the river; over it), the north log, through
+    the stumps to the glade; the glade's logs (one rolled west, one rolled south opens column 10); save at the cliff.
+  - `kolima_cliff.keys`: the cliff's three logs in order (the river log west, back east, the west-east log north, the other
+    log south to get out), the river log tips in, the west bank's slope onto the cliff top; save at the floodgate.
+  - `kolima_floodgate.keys`: the **Floodgate Switch** drains the river (spray, line shake), a log rolled on the riverbed, the
+    switch again, across the **floating logs** (jump cells) to the north bank; save where Tret stands.
+  - `tret_tree.keys`: **Laurel** ("Soon, Tret will die"), **Tret's wrathful side** (purple background tint), the vine into
+    the **Tret Tree**; save.
+  - `tret_battle.keys`: a Tret Tree battle by battlebot BB_SEQ: **Isaac unleashes Flint, then summons Mars**; save.
+    Furthest saved point: `port_work/g19/final/furthest_tret_battle_5800.png` (inside the Tret Tree); highlights in story
+    order `port_work/g19/final/sheet.png` (frames in final/frames.txt).
+- **Story order correction**: the curse lifts only with Hermes' Water from Mercury Lighthouse after the Tret Tree's battle
+  (kolima_forest_tree.c, tree_rooms.c); Kolima restored, Granite and McCoy's reward come after that.
+- **Tools**: grindbot GR_SCENE, GR_AXIS=z, GR_TH, GR_FLEE, GR_STOPDOWN; hpath HPATH_MAP=3 (4-px heights: stumps, slopes)
+  and HPATH_DIAG; autowalk 'd' (diagonal) waypoints.
+- **No port bug found**; 0 distinct stubs hit. Checked against vendor sources and reference images: the forest and Tret Tree
+  battle backgrounds (kolima_forest.png, tret_tree_interiors.png), the log rolls and river-log cell copies, the floodgate's
+  levels/spray/shake, Tret's PALETTES_BG tint, the cursed palettes, the wipe's restart. No asm/C change: no EQUIV spec or
+  audit row, the wasm was not rebuilt (web tests not rerun).
+- **Audio per second** on the six routes: sound in every window but power-on's three; DAC clamp up to 0.33 % (G19.md 5).
+
+### Next
+1. From the tret_battle save (party 43/49/22 HP: Cure first): the Tret Tree's rooms and cocoons (tree_rooms.c: cocoon 50
+   and the falls through entrances 50, 40, 30, 20 to 10 in front of Tret; tret_tree_branch.c outside), the battle with Tret
+   (grind in the tree first if needed), then north: Fuchin Temple, Mercury Lighthouse, Imil, Mia; back to Tret with Hermes'
+   Water (curse lifted), Kolima, Granite, McCoy's reward.
+2. hpath: HPATH_MAP=3 to see stumps; logs change cells: search again after each roll.
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 40/40 OK, `--quick` 9/9 OK in ~25 s, test_arm 79/79
+  EQUIV, leak check PASS; `--update` only for the six new cases. Do not edit tools/regress.sh while a run is going (bash
+  reads the script as it runs; a mid-run edit broke one run with "$4: unbound variable").
+- No downloads, installs, deploys or permission denials.
+
 ## GS18 — 2026-11-02: Goma Cave to Kolima Forest by real play: Forge, the way out, Bilibin (Mind Read, McCoy), the barricade, Kolima's curse
 
 ### Done
