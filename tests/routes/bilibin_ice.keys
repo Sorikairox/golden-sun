@@ -1,0 +1,5 @@
+# GS21: from the bilibin_cave save (continue with vale_day1_continue.keys + --flash-in): the Bilibin Cave Entrance's south mouth
+# (21,14) into Bilibin Cave (scene 48, 19,47), north to the cliff, west and up the corridor at column 10, east along row 21,
+# north up column 22 (random battles fled), to the hole at 24,11 (the leader centred at x 392, UP) into the ice room
+# (scene 47, 7,29, ~f4080). Walls here are 16-px outlines (mapdump MAP_MODE=height), hpath's model over-reaches.
+UP@2100-2118,LEFT@2120-2124,LEFT@2126-2130,UP@2131-2258,RIGHT@2260-2428,RIGHT@2430-2467,RIGHT@2469-2502,UP@2504-2520,RIGHT@2522-2531,RIGHT@2533-2537,UP@2538-2570,UP@2700-2849,LEFT@2851-2989,UP@2991-3243,RIGHT@3245-3429,UP@3431-3567,RIGHT@3608-3609,A@3618-3619,RIGHT@3648-3649,A@3658-3659,RIGHT@3688-3689,A@3698-3699,RIGHT@3728-3729,A@3738-3739,RIGHT@3768-3769,A@3778-3779,RIGHT@3808-3809,A@3818-3819,RIGHT@3848-3849,A@3858-3859,RIGHT@3888-3889,A@3898-3899,RIGHT@3928-3929,B@3967-3968,UP@3969-3977,RIGHT@3979-4017,LEFT@4030-4037,UP@4045-4140
