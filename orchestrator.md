@@ -97,10 +97,16 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   GS24's "Use it on whom?" at the waterfall was the leader 21 px from the statue (Ply reaches 16 px; trap 50), not a port bug;
   the gap statue, the waterfall's Ply, the rising, the aerie and its platforms; **Saturos lost at Lv 10** (his row and one
   Fireball's damage match the vendor exactly). One save, regress 56 cases. No port bug found.
+- GS26 (2026-11-02): **Saturos beaten by real play at Lv 15** (docs/G26.md): the lift is out of reach before the fight
+  (the confrontation cells span the way), so down by GS25's loss to Imil; Sanctum revives, inn; 121 World Map battles
+  (grindbot + Mia's field Ply, new GR_HEALER/GR_STOPLOW) to Lv 15; back up the lighthouse reusing GS23-25's key spans
+  shifted (CHANNELS_OPEN's entrance rows shorten the way); Saturos falls (summons turn 1, Forge unleashed, Mia's Ply);
+  Alex's scene. Six saves/regress cases (62 + link2). No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the ml_aerie save: levels for Saturos (the lift down to Imil and the World Map, or a tighter battle plan: G25.md,
-  HANDOFF GS25 Next), then Alex, Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the ml_saturos_win save (aerie, 20,12, Saturos beaten): the lift down, Hermes' Water (the Empty Bottle from
+  Imil's Sanctum), Imil's opened shops and Mia's farewell, then Kolima (G26.md 3); `tools/regress.sh --quick` between
+  builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -442,3 +448,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     `distance < range` (whole pixels): standing in the next cell is not enough for Ply (a cell is 16 px; GS24's leader was 21 px
     from the waterfall statue). Walk into the target until the leader stops, then cast. The menu asks "Use it on whom?" whenever
     the scene's PSYNERGY_ON_ACTOR row does not match the actor found. Battle: Saturos (Agi 51) acts before Mia (35).
+51. Re-climbing and rematches (GS26): Scene_Arrive clears FLAG_SCENE_TEMP on every entry and FLAG_AREA_TEMP (and the lit
+    lighthouse's PP bonus) on every area change, the World Map included; permanent story flags change entrance rows (Mercury
+    Lighthouse's CHANNELS_OPEN lands the party in the filled room). An old route's key span replays exactly when the arrival
+    cell and the frames since arrival match and no random battle falls inside it (port_work/g26/shift.sh): reuse puzzle spans,
+    autowalk the battle-prone legs. A lost boss fight leaves summoned Djinn on standby: the Djinn command then *sets* them (no
+    unleash); summon first. The aerie's lift is behind the confrontation cells (no way down before Saturos except a loss).

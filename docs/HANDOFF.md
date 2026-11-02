@@ -2,6 +2,43 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS26 — 2026-11-02: down to Imil, Lv 10 -> 15, back up Mercury Lighthouse, Saturos beaten by real play (no port bug)
+
+### Done
+- **Level target** (docs/G26.md 1): Fireball is Psynergy (element x fall-off), so levels add only HP, Attack and turn order; Wish
+  needs four Mercury Djinn (two exist). Target Lv 15 (party HP 433 -> 570), ~8000 exp each = ~120 World Map battles.
+- **The way down**: the aerie's lift (behavior 6 calls, 12 rides) lies past the confrontation cells (behavior 5 at 20-21,14,
+  the only way west), so before Saturos the way down is a loss (GS25's route): the party wakes in Imil's Sanctum. GS25's note
+  that the lift was usable before the fight is corrected. Sanctum Revive (200 coins each, back at full HP), the inn (32).
+- **Grind** (World Map south of Imil, row 18): grindbot + the scratch smartbot, Mia's field Ply after battles (new grindbot
+  GR_HEALER=3) and a stop for the inn (new GR_STOPLOW): cycle 1 37 battles to Lv 12, cycle 2 84 battles to Lv 15; coins 16944.
+- **Back up the lighthouse** (G26.md 3): FLAG_AREA_TEMP puzzles reset (Scene_Arrive), but CHANNELS_OPEN's entrance rows send the
+  party from the Lower's pipe room straight into the filled room; GS23/GS24/GS25 key spans replayed exactly after the same
+  arrival (scratch shift.sh), autowalk on the battle-prone legs: the pool room's ring hops, the filled room, the Upper, the
+  five statues, the fountain pipe, Sleet's room, the Exterior, the gap statue, the waterfall's Ply, the aerie.
+- **Saturos beaten** (G26.md 4): at Lv 15 the old plan still lost (543, 306 left); the Djinn were on standby from the lost fight
+  (the Djinn command set them). Summons on turn 1 (Venus, Mercury), Garet unleashes Forge on turn 4, Mia's Ply below 85 %, Ivan
+  Ray/Defend; one event B tap 16 frames later (battle RNG follows input timing): Saturos falls in 13 turns (Isaac and Ivan
+  down), 331 exp; **Alex's scene** (Saturos rises, the Mars Star question, they leave by the lift); save.
+- Six saves + regress cases: `imil_rest`, `imil_grind1` (~65 s), `imil_grind2` (~404k frames, ~140 s), `ml_upper_return`,
+  `ml_aerie_lv15`, `ml_saturos_win`; each regress save has the scratch run's SHA-1. Highlights in story order
+  `port_work/g26/final/sheet.png` (final/frames.txt, 30 frames). Furthest saved point: the aerie after Alex's scene (20,12).
+- **No port bug found**; 0 distinct stubs hit. No asm/C change, wasm unchanged (no EQUIV spec, no leak check). Trap 51.
+- **Audio per second**: imil_rest 538/545 s with sound, imil_grind1 (first 20k frames) 331/334, ml_upper_return 216/219,
+  ml_aerie_lv15 468/472, ml_saturos_win 965/972; silences only at power-on, the confrontation's fade (79-82 s) and the World
+  Map hand-over (1 s); clamp <= 0.35 %.
+
+### Next
+1. From `ml_saturos_win` (aerie, 20,12): ride the lift down (behavior 6 then 12: the lift effect), Hermes' Water (search Imil's
+   Sanctum for the Empty Bottle, then use it at the Exterior's fountain, behavior 5), Imil's opened weapon/armor shops, Mia's
+   farewell in the Sanctum (first entry after Saturos), then back to Kolima with Hermes' Water (check kolima_forest_tree.c first).
+2. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end: REGRESS_RESULT; test_arm 79/79 EQUIV; leak check not needed (wasm unchanged).
+- Scratch tools in port_work/g26 (smartbot SB_PLAN=3/SB_GRIND, grind.sh, cycle.sh, inn.sh, sv.sh, shift.sh, rtrace.sh).
+- No downloads, installs, deploys or permission denials.
+
 ## GS25 — 2026-11-02: the Exterior to the Lighthouse Aerie by real play; the waterfall statue was a position miss (no port bug); Saturos lost at Lv 10
 
 ### Done
