@@ -2,6 +2,44 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS25 — 2026-11-02: the Exterior to the Lighthouse Aerie by real play; the waterfall statue was a position miss (no port bug); Saturos lost at Lv 10
+
+### Done
+- **The waterfall statue (verdict (a), not a port bug)**, docs/G25.md 1: the menu's choice is Scene_HasFieldPsynergyTrigger ->
+  Scene_FindPsynergyTrigger, which takes the Exterior's `PSYNERGY_ON_ACTOR(ABILITY_PLY), ACTOR_WATERFALL_STATUE` row only when
+  Field_FindNearbyPsynergyTarget finds that actor; **Ply's range is 16 px** (gFieldEffect_TargetRangeByMode) and the test is
+  `distance < range`. GS24's leader stood at x 834.6, 21 px from the statue (856,216): no target, so the heal path. Walking
+  into the statue stops at 840.6 (15 px) and the same keys cast Ply on it. Ply is the right Psynergy; trap 50.
+- **Real play, no probe**, one save + two regress cases (docs/G25.md 3):
+  - `ml_aerie.keys`: Mia's Ply heals all four, back through the Upper and the Middle, the Exterior's west side (battles fled),
+    the waterfalls room, **Move on the gap statue**, the east path, **the waterfall's riddle**, **Ply on its statue**: the
+    waterfall stops, Mia rises, the party follows; the World Map's lit beam, the **Lighthouse Aerie** (beacon already lit), the
+    dipping platforms, Ply heals; save at 24,12. Furthest saved point `port_work/g25/final/furthest_ml_aerie.png`.
+  - `ml_saturos_loss.keys`: the confrontation (Jenna, Felix, Menardi leaves, Saturos), **Saturos's battle** with Flint and
+    Garet's first Djinni unleashed, a summon (Mars), Ivan's Ray, Mia's Tundra/Ply (endless PP): lost at Saturos 805/1200;
+    the party wakes in Imil. Highlights in story order `port_work/g25/final/sheet.png` (final/frames.txt, 30 frames).
+- **Saturos checked against the vendor** (G25.md 4): unit = enemy_table.c's row (L18, HP 1200, Atk 113, Def 35, Agi 51,
+  Mars 110/175, Mercury res 72); one Fireball's four hits (63/57/59/46) = power 65 x (200 + 110 - res)/200 x falloff
+  100/80/60 + random 0-3. He out-speeds Mia, so her heals come after his hits. Scratch plans (port_work/g25/smartbot.cjs, HP-aware: Cure Well,
+  Ply, Ray, Defend, Djinn) got him to 438 at best (644-804 over five timing retries). Game behaviour: the Lv 10 party needs levels.
+- Grinding on the Exterior's east path did not work at Lv 10 (members fall in 4-8 battles, no revive there; G25.md 5).
+- **No port bug found**; 0 distinct stubs hit. No asm/C change: no EQUIV spec, the wasm was not rebuilt.
+- **Audio per second**: ml_sleet (GS24 had skipped it) 161/164 s with sound, ml_aerie 436/440, ml_saturos_loss 336/343;
+  silences only at power-on, the World Map hand-over (1 s) and the confrontation's SOUND_FADE_OUT_BGM (3 s); clamp <= 0.16 %.
+- Trap 50 (field Psynergy reach per kind; walk into the target).
+
+### Next
+1. From `ml_aerie` (aerie, 24,12, full HP, Lv 10/10/10/10): Saturos needs levels. Options, read the vendor first: (a) the lift
+   down (behavior 6 calls it, 12 rides it, both usable before the fight) to the Exterior's ground by the fountain, Imil's inn
+   and sanctum, grind on the World Map near Imil (weaker battles, revive in reach), then climb back (the lighthouse's
+   FLAG_AREA_TEMP puzzle flags reset on leaving: expect to redo the pipes); (b) a tighter battle plan: Isaac's Cure Well,
+   Defend, the summons on Mercury-weak Saturos. Then the story events (Alex), the beacon scene, Hermes' Water, Imil's shops.
+2. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 56/56 OK (55 cases + link2, incl. ml_aerie and ml_saturos_loss); test_arm 79/79 EQUIV; leak check not needed (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS24 — 2026-11-02: Mercury Lighthouse's Upper and Middle to Sleet by real play; the interlaced wipe checked (no port bug)
 
 ### Done

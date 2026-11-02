@@ -93,10 +93,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   the stone doors' two pipes in the order the statue's slide table needs, **the statue falls**, onto the stair gate's
   switch, Move on the last crossing statue, **the fountain pipe**, **Sleet joins Ivan**. Two saves, regress 54 cases. No
   port bug found.
+- GS25 (2026-11-02): **the Exterior to the Lighthouse Aerie by real play** (ml_aerie, ml_saturos_loss.keys; docs/G25.md):
+  GS24's "Use it on whom?" at the waterfall was the leader 21 px from the statue (Ply reaches 16 px; trap 50), not a port bug;
+  the gap statue, the waterfall's Ply, the rising, the aerie and its platforms; **Saturos lost at Lv 10** (his row and one
+  Fireball's damage match the vendor exactly). One save, regress 56 cases. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the ml_sleet save: heal, the gap statue and the Exterior's east path (G24.md 3), the waterfall's Ply, the aerie and
-  Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the ml_aerie save: levels for Saturos (the lift down to Imil and the World Map, or a tighter battle plan: G25.md,
+  HANDOFF GS25 Next), then Alex, Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -433,3 +437,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     redrawn), so search again after every push; a pipe slides until a blocker (the other pipe), so the stone doors' stops at
     47/48/53/54 come from where the door room pipe is. Move across a gap: walk into the edge first (25 px, not 40). The
     Exterior's paths have many battles: heal first. After a field cast the menu ignores keys ~250 frames: B out and reopen.
+50. Field Psynergy reach (GS25): Field_FindNearbyPsynergyTarget searches gFieldEffect_TargetRangeByMode's range per kind, 16 px for
+    Ply, Frost, Lift, Carry and Growth, 32 for Move, Mind Read, Whirlwind, Douse and Halt, 48 for Force and Catch, and needs
+    `distance < range` (whole pixels): standing in the next cell is not enough for Ply (a cell is 16 px; GS24's leader was 21 px
+    from the waterfall statue). Walk into the target until the leader stops, then cast. The menu asks "Use it on whom?" whenever
+    the scene's PSYNERGY_ON_ACTOR row does not match the actor found. Battle: Saturos (Agi 51) acts before Mia (35).
