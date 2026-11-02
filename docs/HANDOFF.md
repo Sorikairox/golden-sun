@@ -2,6 +2,45 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS22 — 2026-11-02: across Bilibin Cave's ice room, Imil, Mercury Lighthouse to Mia joining, by real play (no port bug)
+
+### Done
+- **Real play, no probe**, five saves + regress cases (story order from the vendor scene sources first; docs/G22.md 2):
+  - `bilibin_exit.keys`: the ice room was never boxed in (autowalk's legs ran along the pillars' edge; ending a leg in row 20
+    clears them); the **torch puzzle** (bilibin_cave.c BilibinCave_PushTorch): the fourth torch pushed south, then east twice
+    to 35,23: the ice pillar melts, 36,22/36,24 become jump cells; south down column 34 to the World Map; save.
+  - `imil.keys`: the World Map to **Imil**; **Megan** (Sanctum); the old couple's house: **Mia heals the old man with Ply**,
+    the lighthouse flashes, she runs out; the **item shop** (3 Elixirs, 2 Antidotes: 4896 -> 4766 coins); the weapon and armor
+    house (sellers sick until Saturos is beaten: no gear on sale, by the story); save.
+  - `lizard_man.keys`: north to **Mercury Lighthouse**; Mia blocked by a statue, **Move** pushes it (from 54,37 facing west),
+    **Mia opens the door with Ply**; inside, the **Lizard Man** beaten with battlebot BB_SEQ: **Isaac unleashes Flint (31)**,
+    **summons Venus (33)**, Cure Well on Garet; Mia goes on; save.
+  - `ml_lower.keys`: the inner door, the goddess's room, the twin fountains, exit 61 into the **lower floor**; save.
+  - `mia_joins.keys`: the stepping stones and stairs to the statue part; Move from 47,39 facing east, LEFT pulls the statue
+    blocking Mia to column 48: **"Mia joined your party."** (with Fizz); her Psynergy (Ply, Cure Poison, Frost) and Djinn
+    menus; save. Furthest saved point: `port_work/g22/final/furthest_mia_joins.png`; highlights in story order
+    `port_work/g22/final/sheet.png` (final/frames.txt).
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: the closed weapon/armor shops, Megan's Yes reply,
+  Imil's lavender chimney smoke (dust puff + SPRITE_COLOR_BLUE_TINT), the Psynergy cast tints, Mercury Lighthouse's purple
+  margins (BG2 map layer, mode 0, black backdrop), the Venus summon's 33 on the Lizard Man (preset 33 in the ROM: Venus
+  resistance 100), Continue's restore spot (G22.md 3). No asm/C change: no EQUIV spec, the wasm was not rebuilt.
+- **Audio per second**: bilibin_exit 79/82 s with sound, imil 249/252, lizard_man 236/239, ml_lower 60/63; silent only at
+  power-on (mia_joins 100/103); DAC clamp up to 0.11 %.
+- Trap 47 (routing: autowalk leg edges, B for event text, case-insensitive scratch names).
+
+### Next
+1. From `mia_joins` (lower floor, 47,39, Mia in the party): the three pipe sections (FLAG_PIPE_1..3_JOINED) down to the
+   entrance, **Ply at the pool's inscription** from 12,32 (the pool's lights), up the floors to Saturos (heal first; Imil's
+   weapon/armor shops open only after Saturos).
+2. New effects to watch: the pool's lights and colour shimmer after Ply (MERCURY_LIGHTHOUSE_POOL_* cells), the pipes' water,
+   Mia in battle (Ply, Frost, Fizz).
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run full run 49/49 OK before mia_joins was added (incl. bilibin_exit, imil, lizard_man, ml_lower), then mia_joins + ml_lower OK, test_arm 79/79 EQUIV; leak check not needed
+  (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS21 — 2026-11-02: Tret beaten by real play (damage check: no port bug), north to Bilibin Cave's ice room
 
 ### Done

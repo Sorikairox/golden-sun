@@ -78,10 +78,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   unleashed, Venus summoned, Volcano, Cure Well: Tret falls at Lv 10; Retreat, the World Map, the barricade's crates (Move),
   north into Bilibin Cave to the ice room. New tests/probes/wmpath.cjs (World Map collision, trap 46). Three saves, regress
   45 cases. No port bug found.
+- GS22 (2026-11-02): **across Bilibin Cave's ice room, Imil, Mercury Lighthouse to Mia joining, by real play** (bilibin_exit,
+  imil, lizard_man, ml_lower, mia_joins.keys; docs/G22.md): the torch pushed beside the ice pillar (it melts), the World Map to Imil, Megan, **Mia
+  heals the old man with Ply**, the item shop (weapon/armor sellers sick by the story), Move on the lighthouse's door statue and
+  Mia's Ply, the **Lizard Man** beaten with **Flint unleashed and Venus summoned**, into the lower floor, **Mia joins** (Move on the statue blocking
+  her). Five saves, regress 50 cases. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the bilibin_ice save: cross the ice room (torch beside the pillar at 35,23), out to the World Map, Imil, Mercury
-  Lighthouse, Mia, back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the mia_joins save: Mercury Lighthouse's pipes, Ply at the pool, the floors to Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -403,3 +407,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     wide and bridges 12-16 px, so check a fine grid at the leader; autowalk's cell targets can miss a bridge (use keys).
     Area actors enter on touch (WM_BLOCK their cells). Bilibin Cave's walls are 16-px outlines over height 0: hpath
     over-reaches there; read MAP_MODE=height.
+47. Routing (GS22): autowalk ends a vertical leg as soon as the leader enters the cell, so the next leg runs along that cell's
+    edge, where an actor's collision (Bilibin Cave's ice pillars) can block a row that is open in its middle: end the leg one row
+    further and come back. Push puzzles (BilibinCave_PushTorch) take ~80 frames a push before the leader can move again. Tap B,
+    not A, through event text (A opens the command menu once the event ends; B answers No to a yes/no). macOS's file system is
+    case-insensitive: scratch key files named `I7.txt` and `i7.txt` are one file.
