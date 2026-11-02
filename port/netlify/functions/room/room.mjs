@@ -1,7 +1,7 @@
 // G7: the room-code signaling server (Netlify Function v2 at /api/room) on Netlify Blobs; the logic is core.mjs.
-// NOT deployed: a public site is gated on permission from alchemy's author (orchestrator D14). Needs @netlify/blobs
-// (port/netlify/package.json), installed by the deploy step, not in this repo. Tests run core.mjs locally
-// (tools/roomserver.mjs), never production.
+// Deployed by tools/deploy_web.sh (orchestrator D14, 2026-11-02). Needs @netlify/blobs (port/netlify/package.json),
+// installed by the deploy step in its staging dir, not in this repo. Tests run core.mjs locally
+// (tools/roomserver.mjs); tests/web_link_live.cjs uses the live server briefly.
 import { getStore } from '@netlify/blobs';
 import { httpHandle } from './core.mjs';
 

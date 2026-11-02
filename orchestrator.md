@@ -219,10 +219,12 @@ that edition's address map, not a port. Out of scope until asked.
   (user, via the coordinator, GS1 addendum), inside Docker only: (d) `github.com/pret/agbcc` at `da598c1d`
   (alchemy-gcc's nested submodule) and (e) `ftp.gnu.org/gnu/gcc/gcc-2.95.2.tar.gz`, SHA-256 verified against
   alchemy-gcc's `arm/Makefile` pin (`064e1cb0...7d72482`). Kept in `vendor/agbcc`, `vendor/downloads/`.
-- **D14 Licence (user, 2026-11-01):** none of the vendor projects has a licence. Build privately. Before the
-  first **public** deploy the user asks alchemy's author for permission or a licence, so G5 is gated on that.
-  Never copy vendor code into our tree: our tree holds our headers, shims and tools and builds from the pinned
-  vendor checkout. (Supersedes the open question in D2.)
+- **D14 Licence (user, 2026-11-01; replaced 2026-11-02):** none of the vendor projects has a licence. The first
+  rule was: build privately and ask alchemy's author before any public deploy. **On 2026-11-02 the user told us to
+  deploy** ("Deploy everything with Netlify so I can play. Also make all port work offline..."), which replaces the
+  wait for permission: the site is public at https://golden-sun-web-port.netlify.app (tools/deploy_web.sh). Still:
+  never copy vendor code into our tree (our tree holds our headers, shims and tools and builds from the pinned vendor
+  checkout; the compiled wasm is the deliverable), and never publish ROM bytes or anything ROM-derived.
 - **D15 Online without TURN (user, 2026-11-01):** STUN only, no TURN server, the same as GoldenEye.
 - **D16 Stand-ins (fallback only since the GS1 addendum):** while old_agbcc and GCC 2.95.2 are not built, `tools/build_ref.sh`
   compiles their ten objects with alchemy GCC and fits them to the original layout (`tools/ref/standin_fix.py`,
