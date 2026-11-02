@@ -1,0 +1,6 @@
+# GS22: from ml_lower (continue with vale_day1_continue.keys + --flash-in): north over the stepping stones (jump cells) to the
+# stairs (exit 53, 15,20) up to the statue part (48,29); down column 44 to row 39 beside Mia's blocking statue (49,39); Move
+# from 47,39 facing east (the hand misses past ~32 px), LEFT pulls the statue to column 48 (mercury_lighthouse.c
+# MercuryLighthouse_MiaJoinsAfterRescue): A taps through her lines: 'Mia joined your party.' (and Fizz); then a look at the
+# Psynergy menu (Mia: Ply, Cure Poison, Frost) and the Djinn menu (Flint, Forge, Fizz), closed with B.
+UP@2100-2255,DOWN@2300-2357,LEFT@2359-2416,LEFT@2418-2421,DOWN@2422-2517,RIGHT@2519-2559,RIGHT@2565-2580,A@2620-2622,A@2840-2842,A@2900-2902,DOWN@2960-2962,DOWN@2990-2992,A@3030-3032,LEFT@3150-3153,A@3400-3402,A@3450-3452,A@3500-3502,A@3550-3552,A@3600-3602,A@3650-3652,A@3700-3702,A@3750-3752,A@3800-3802,A@3850-3852,A@3900-3902,A@3950-3952,A@4000-4002,A@4050-4052,A@4100-4102,A@4150-4152,A@4200-4202,A@4250-4252,A@4300-4302,A@4350-4352,A@4500-4502,A@4720-4722,RIGHT@4780-4782,RIGHT@4810-4812,RIGHT@4840-4842,A@4880-4882,B@4980-4982,B@5030-5032,RIGHT@5080-5082,A@5120-5122,B@5260-5262,B@5310-5312,B@5360-5362
