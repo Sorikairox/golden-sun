@@ -33,6 +33,7 @@
 # tret_tree (GS19: from kolima_floodgate, Laurel, Tret's wrathful side, the vine into the Tret Tree; save),
 # tret_battle (GS19: from tret_tree, a battle with a Djinn unleashed and a summon (battlebot BB_SEQ); save),
 # tret_cocoon (GS20: from tret_battle, Cure, the Tret Tree's floors, webs, branches and vines, cocoon 50's falls to Tret; save),
+# tret_grind (GS20: from tret_battle, out to Tret's glade, 38 battles by grindbot, Lv 10/10/9, back into the tree; save),
 # battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
@@ -88,6 +89,7 @@ CASES=(
   "tret_tree|9950|2300,2700,3233,7871,8300,8900,9075,9800,9950||$R/vale_day1_continue.keys,$R/tret_tree.keys,$R/tret_tree_save.keys||--flash-in $W/kolima_floodgate.sav --flash-out $W/tret_tree.sav"
   "tret_battle|5800|3107,3400,3800,4200,4600,4862,5600,5800||$R/vale_day1_continue.keys,$R/tret_battle.keys,$R/tret_battle_save.keys||--flash-in $W/tret_tree.sav --flash-out $W/tret_battle.sav"
   "tret_cocoon|12500|4191,4440,4763,5263,5983,7238,8591,9110,10703,11140,11501,12200,12500||$R/vale_day1_continue.keys,$R/tret_cocoon.keys,$R/tret_cocoon_save.keys||--flash-in $W/tret_battle.sav --flash-out $W/tret_cocoon.sav"
+  "tret_grind|162300|4000,40000,100000,160523,160700,161300,161900,162300||$R/vale_day1_continue.keys,$R/tret_grind.keys,$R/tret_grind_save.keys||--flash-in $W/tret_battle.sav --flash-out $W/tret_grind.sav"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
 maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; $W/kolima_forest.sav) echo kolima_forest;; $W/kolima_grind.sav) echo kolima_grind;; $W/kolima_glade.sav) echo kolima_glade;; $W/kolima_cliff.sav) echo kolima_cliff;; $W/kolima_floodgate.sav) echo kolima_floodgate;; $W/tret_tree.sav) echo tret_tree;; $W/tret_battle.sav) echo tret_battle;; esac; } # bash 3.2: no associative arrays
