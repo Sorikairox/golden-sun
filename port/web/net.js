@@ -432,6 +432,14 @@
     $('net-m-join').onclick = async () => { busy(true); try { $('net-m-out').value = await N.manualJoin($('net-m-in').value); } catch (e) { err(e); } };
     $('net-m-accept').onclick = async () => { try { await N.manualAccept($('net-m-in').value); } catch (e) { err(e); } };
     $('net-m-copy').onclick = () => { $('net-m-out').select(); try { navigator.clipboard.writeText($('net-m-out').value); } catch (e) { /* select is enough */ } };
+    // GS-deploy offline play: with no network the room server cannot be reached; say so plainly and disable
+    // Host/Join (the game and the manual codes, which need no server, still work)
+    const net = () => {
+      const off = navigator.onLine === false;
+      $('net-offline').hidden = !off;
+      if (!N.active()) for (const id of ['net-host', 'net-join']) $(id).disabled = off;
+    };
+    addEventListener('online', net); addEventListener('offline', net); net();
     box.hidden = false;
   }
   N.enable = function (romSha1) { N.romSha1 = romSha1; panel(); };

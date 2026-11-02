@@ -165,6 +165,10 @@
   $('tk-menu').addEventListener('pointerup', (e) => { e.preventDefault(); t.menu = true; apply(); scrollTo(0, 0); });
   const back = (e) => { e.preventDefault(); if (!t.menu) return; t.menu = false; apply(); };
   for (const ev of ['pointerup', 'click']) $('tk-back').addEventListener(ev, back);
+  // GS-deploy: the menu opens on pointerup, so the tap's compatibility click landed on whatever option was now under
+  // the finger (a taller menu put "GBA screen colours" there); cancelling touchend suppresses that click
+  const noGhost = (e) => { if (e.cancelable) e.preventDefault(); };
+  for (const id of ['tk-menu', 'tk-back']) $(id).addEventListener('touchend', noGhost, { passive: false });
 
   // ---- no zoom / scroll / callouts while playing ---------------------------------------------------
   const block = (e) => { if (tplay()) e.preventDefault(); };

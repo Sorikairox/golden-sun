@@ -236,18 +236,90 @@ const lcd = {
 }
 window.GSLcd = lcd;
 
+// ---- offline play (GS-deploy, docs/OFFLINE.md; asked for by the user, so on by default): the service worker sw.js
+// keeps every site file in a cache named by the build, so once loaded the page, scripts, wasm and touch files work
+// with no network; the ROM and the saves are in IndexedDB (navigator.storage.persist() asks the browser to keep
+// them). A new deploy installs in the background and takes over the cache; the running page keeps what it loaded
+// and shows "Update ready, Reload"; the next load runs the new version. Option "Offline play" (stored as
+// gs-offline=0 only when switched off; the default stores nothing): off unregisters the worker and deletes its
+// caches. Test override ?offline=0/1 (not stored).
+const offline = {
+  on: true,
+  state: 'off',            // 'off' | 'unsupported' | 'installing' | 'ready' | 'error'
+  reg: null,
+  supported: () => 'serviceWorker' in navigator && (isSecureContext || location.hostname === '127.0.0.1'),
+  show(s) {
+    this.state = s;
+    const el = $('opt-offline-state');
+    if (el) el.textContent = { off: '', unsupported: '(not available in this browser)', installing: '(saving for offline...)', ready: '(ready offline)', error: '(could not save for offline)' }[s] || '';
+  },
+  boot() {
+    if (!this.on || !this.supported()) { this.show(this.on ? 'unsupported' : 'off'); return; }
+    // a page that started under one version and is now controlled by a newer one: offer the reload
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && this.on) $('update').hidden = false;
+      this.show('ready');
+    });
+    this.register();
+  },
+  async register() {
+    try {
+      const reg = this.reg = await navigator.serviceWorker.register('sw.js');
+      const track = (w) => {
+        if (!w) return;
+        const st = () => {
+          if (w.state === 'activated') this.show('ready');
+          if (w.state === 'redundant' && !reg.active) this.show('error');
+        };
+        w.addEventListener('statechange', st); st();
+      };
+      reg.addEventListener('updatefound', () => { if (!reg.active) this.show('installing'); track(reg.installing); });
+      if (reg.active) this.show('ready'); else { this.show('installing'); track(reg.installing || reg.waiting); }
+    } catch (e) { console.warn('offline: service worker not registered: ' + (e.message || e)); this.show('error'); }
+  },
+  async disable() {
+    try { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) { /* none */ }
+    try { for (const k of await caches.keys()) if (k.startsWith('golden-sun-')) await caches.delete(k); } catch (e) { /* none */ }
+    this.reg = null; $('update').hidden = true; this.show('off');
+  },
+  set(on) {
+    this.on = !!on;
+    try { if (on) localStorage.removeItem('gs-offline'); else localStorage.setItem('gs-offline', '0'); } catch (e) { /* storage blocked */ }
+    if (!this.supported()) { this.show(on ? 'unsupported' : 'off'); return; }
+    if (on) this.register(); else this.disable();
+  },
+  // ask the browser not to evict the ROM and saves (IndexedDB) under storage pressure
+  async persist() {
+    try { if (navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted())) console.log('offline: persistent storage ' + (await navigator.storage.persist() ? 'granted' : 'not granted')); } catch (e) { /* not supported */ }
+  },
+};
+{
+  let on = true;
+  try { on = localStorage.getItem('gs-offline') !== '0'; } catch (e) { /* storage blocked: default on */ }
+  if (params.get('offline') !== null) on = params.get('offline') !== '0';
+  offline.on = on;
+  const box = $('opt-offline');
+  if (box) { box.checked = on; box.addEventListener('change', () => offline.set(box.checked)); }
+  const rb = $('update-reload');
+  if (rb) rb.onclick = () => location.reload();   // saves are already in IndexedDB (written as the game saves)
+}
+window.GSOffline = offline;
+
 async function useFile(file) {
   status('Checking the ROM...');
   const bytes = new Uint8Array(await file.arrayBuffer());
   const err = await checkRom(bytes);
   if (err) { status(err); return; }
   await dbPut('rom', bytes);
+  offline.persist();
   start(bytes);
 }
 
 $('file').addEventListener('change', (e) => { if (e.target.files[0]) useFile(e.target.files[0]); });
 
 (async () => {
+  offline.boot();
   const script = document.createElement('script');
   script.src = 'game.js';
   await new Promise((resolve, reject) => { script.onload = resolve; script.onerror = reject; document.head.appendChild(script); });
@@ -263,6 +335,6 @@ $('file').addEventListener('change', (e) => { if (e.target.files[0]) useFile(e.t
     return;
   }
   const cached = await dbGet('rom');
-  if (cached && !(await checkRom(cached))) { start(cached); return; }
+  if (cached && !(await checkRom(cached))) { offline.persist(); start(cached); return; }
   status('');
 })();

@@ -1,0 +1,15 @@
+{
+  "name": "Golden Sun (web port)",
+  "short_name": "Golden Sun",
+  "description": "A source port of the Game Boy Advance game for the browser. Bring your own ROM; it stays on this device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#101014",
+  "theme_color": "#101014",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

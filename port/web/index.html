@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="stylesheet" href="touch.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#101014">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Golden Sun (web port)</title>
 <style>
   :root { --bg: #101014; --fg: #e8e6df; --dim: #8a8780; --accent: #d9a62b; }
@@ -42,6 +47,13 @@
   #net-warn { color: #e8c46b; } #net small { color: var(--dim); }
   #opt-title { min-height: 44px; padding: 0 1.1em; border-radius: 8px; border: 0; font: inherit; background: #2c2b30;
     color: var(--fg); cursor: pointer; } #opt-title.armed { background: #8a3a2c; }
+  #update { position: fixed; top: 8px; right: 8px; z-index: 50; display: flex; gap: .5em; align-items: center;
+    background: #1b1a1f; border: 1px solid #3a3940; border-radius: 8px; padding: .3em .4em .3em .8em; font-size: .85em; }
+  #update[hidden] { display: none; }
+  #update button { min-height: 36px; padding: 0 .9em; border-radius: 6px; border: 0; font: inherit; font-weight: 600;
+    background: var(--accent); color: #1a1406; cursor: pointer; }
+  #opt-offline-state, #net-offline { color: var(--dim); font-size: .85em; }
+  #opt-offline-state { flex-basis: 100%; min-height: 1.3em; text-align: center; }   /* own line: its text never moves the options */
   #status[data-net="1"] { color: #e8806b; cursor: pointer; }
 </style>
 </head>
@@ -61,12 +73,14 @@
   </select></label> <span id="opt-touch-state"></span></div>
   <div id="opts-sound"><label class="opt-big"><input id="opt-mute" type="checkbox"> Mute</label>
     <label class="opt-big">Volume <input id="opt-volume" type="range" min="0" max="100" step="5" value="80"></label>
-    <label class="opt-big" title="Darker, less saturated colours like the original unlit Game Boy Advance screen"><input id="opt-lcd" type="checkbox"> GBA screen colours</label></div>
+    <label class="opt-big" title="Darker, less saturated colours like the original unlit Game Boy Advance screen"><input id="opt-lcd" type="checkbox"> GBA screen colours</label>
+    <label class="opt-big" title="Keep the page on this device so the game starts with no network (your ROM and saves are always kept)"><input id="opt-offline" type="checkbox" checked> Offline play</label> <span id="opt-offline-state"></span></div>
   <div id="opts-game" hidden><button id="opt-title" title="Restart the game (like switching it off and on); the save is kept">Return to title</button></div>
   <details id="net" hidden><summary>Link battle online</summary>
     <small>Two players, each with their own cartridge and a save with a Djinn found, meet in the Battle Arena
       (File Screen &gt; Battle). One hosts, the other joins with the room code. Direct connection only (no relay server):
       some networks cannot connect.</small>
+    <div class="row" id="net-offline" hidden>You are offline: online play needs an internet connection. The game itself works offline.</div>
     <div class="row"><button id="net-host">Host</button><span id="net-code-show" hidden></span></div>
     <div class="row"><input id="net-code" type="text" maxlength="7" placeholder="CODE" autocomplete="off" autocapitalize="characters" aria-label="Room code"><button id="net-join">Join</button>
       <button id="net-leave" class="alt" hidden>Leave</button></div>
@@ -89,6 +103,7 @@
 </div>
 <button id="tk-back" hidden>Back to the game &#9654;</button>
 <div id="tk-safe"></div>
+<div id="update" hidden>Update ready <button id="update-reload">Reload</button></div>
 <script src="touch.js"></script>
 <script src="audio.js"></script>
 <script src="build_id.js"></script>
