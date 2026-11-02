@@ -55,7 +55,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 ## G5 — First public build
 
 - Deploy to Netlify (private site name until the user decides); fan-project framing, bring-your-own-ROM.
-- **Gated (D14):** the user asks alchemy's author for permission or a licence before the first public deploy.
+- **D14 (2026-11-02):** the user told us to deploy: live at https://golden-sun-web-port.netlify.app, offline after one visit (GS-deploy).
 - **Exit:** the deployed site plays on desktop Chrome and on a phone (touch controls), from ROM pick to battle.
 
 ## G6 — Local link battle (two instances)
@@ -82,7 +82,7 @@ One phase step per session; HANDOFF.md + `docs/progress/sessions.tsv` row at the
 - GS8: first part of the exit met locally (tests/web_link.cjs, docs/LINK.md section 8): two pages, real WebRTC on
   127.0.0.1, local room server, full link battle with 20/20 turn hashes equal and the same result, clean and under
   netsim lat:80,jit:20,loss:2 (the profile above), 100 ms + 0-20 ms jitter + 10 % frame loss (each way) and 250 ms + 0-30 ms + 10 %. Left: a real session across
-  two networks (needs a deployed site: gated on D14).
+  two networks (on the live site since GS-deploy).
 
 ## G8 — Polish and optional features
 

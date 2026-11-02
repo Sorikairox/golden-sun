@@ -2,6 +2,45 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS-deploy — 2026-11-02: public Netlify site + offline play
+
+The user: "Deploy everything with Netlify so I can play. Also make all port work offline so anyone can play as long
+as they loaded the website." This replaces D14's wait for alchemy's author (orchestrator D14 updated).
+
+### Done
+- **Live: https://golden-sun-web-port.netlify.app** (new Netlify project `golden-sun-web-port`, id
+  `acaba387-f379-4861-96a9-00d158b65a6e`, team `sorikairox`): build/site + the room function `/api/room` (Blobs store
+  `golden-sun-rooms`). `tools/deploy_web.sh` does it all: refuses uncommitted changes, leak check on game.wasm and
+  game.js, tools/site.sh, a site file allowlist, staging in `~/golden-sun-site/{publish,fn}` (`@netlify/blobs` npm
+  installed there only), `deploy --prod` with the netlify CLI (PATH or npx's cached copy), live checks. Build current:
+  `tools/web_build.sh` 0 linker warnings, leak check 0 of 1903772 windows (game.wasm and game.js).
+- **Offline play** (docs/OFFLINE.md): `port/web/sw.js` (template; site.sh fills build id, site hash, precache list):
+  cache `golden-sun-<build>-<site>`, precache all 13 site files, cache-first, never `/api/*` or other URLs (no ROM
+  ever cached), skipWaiting on install + old caches deleted on activate; page shows "Update ready [Reload]"; option
+  "Offline play" (default on, off = unregister + clear, `gs-offline=0`); `navigator.storage.persist()`; manifest +
+  our own drawn sun icon (`tools/web_icon.py`); link panel: "You are offline: online play needs an internet
+  connection", Host/Join disabled offline (the game and manual codes still work).
+- **Fix found by web_phone.cjs**: opening the page menu by touch let the tap's compatibility click toggle the option
+  now under the finger ("GBA screen colours" at 412x915 and landscape once the menu grew); touch.js cancels touchend
+  on the menu/back buttons.
+- **Tests** (muted headless Chrome, one at a time): `tests/web_offline.cjs` ALL PASS locally (first visit, update A ->
+  B with the old cache gone, CDP offline reload with ROM picker + boot, saved-ROM boot + touch offline, option off)
+  and `--live` ALL PASS; `tests/web_link_live.cjs` PASS (two pages, live /api/room, real STUN, hello in ~6 s);
+  web_touch, web_phone, web_link (20/20 hashes) ALL PASS. `curl`: game.wasm `application/wasm`, manifest
+  `application/manifest+json`, /rom.gba 404.
+
+### Notes / traps
+- First update design (waiting worker activated by a page message on the next load) failed in headless Chrome once
+  the page had run the game: the waiting worker never handled the message. Replaced by skipWaiting on install
+  (OFFLINE.md "Updates").
+- Fixed test ports collided with another port's test server on 127.0.0.1 (a GoldenEye cache appeared in our
+  profile): web_offline.cjs and web_link_live.cjs use system-chosen ports (`listen(0)`, `--remote-debugging-port=0`).
+- `Network.emulateNetworkConditions` offline does not stop the browser's own sw.js update check (the test allows it).
+
+### Next
+- User: play on the live site; one real online session across two networks (LINK.md 8, D15 STUN only).
+- Redeploy after any web change: `tools/web_build.sh`, commit, `tools/deploy_web.sh`.
+
 ## GS26 — 2026-11-02: down to Imil, Lv 10 -> 15, back up Mercury Lighthouse, Saturos beaten by real play (no port bug)
 
 ### Done

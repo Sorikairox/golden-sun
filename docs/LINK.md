@@ -424,13 +424,22 @@ Not tested: a real session across two networks (NAT traversal with STUN only; so
 partner leaving mid-battle (the game should show its link-lost message after the 5 s fresh window); a really hidden
 tab in a desktop browser (headless "hidden" was tested); mobile Safari.
 
-### Going live (gated on D14: permission from alchemy's author; nothing was deployed)
-1. Site: `tools/site.sh` -> publish `build/site` (it holds no ROM bytes; leak check per build).
-2. Function: `port/netlify/functions/room/` (Netlify Functions v2, path `/api/room`, Blobs store `golden-sun-rooms`);
-   its one dependency `@netlify/blobs` is declared in `port/netlify/package.json` and must be installed by the deploy
-   step (e.g. copy it next to the functions dir and `npm install`, as GoldenEye's deploy_web.sh does), not committed.
-   Deploy e.g. `netlify deploy --dir build/site --functions port/netlify/functions` on a new site (user's account).
-3. Then the PLAN G7 exit's second half: one real session across two machines/networks, reported by the user.
+### Going live (done 2026-11-02, GS-deploy; D14: the user told us to deploy)
+- **Live: https://golden-sun-web-port.netlify.app** (Netlify project `golden-sun-web-port`, id
+  `acaba387-f379-4861-96a9-00d158b65a6e`, the user's team `sorikairox`). The page, the wasm and the room function
+  `/api/room` (Netlify Functions v2, Blobs store `golden-sun-rooms`). Works offline after one visit (docs/OFFLINE.md).
+- **Redeploy**: `tools/web_build.sh && git commit ... && tools/deploy_web.sh`. The script refuses uncommitted changes,
+  runs the leak check on game.wasm and game.js, rebuilds `build/site` (tools/site.sh), refuses any file outside the
+  site allowlist, stages in `~/golden-sun-site/publish` (+ `BUILD.txt` = the commit, `_headers`) and
+  `~/golden-sun-site/fn` (the function, `@netlify/blobs` installed there by npm from `port/netlify/package.json`;
+  node_modules is never committed or published), deploys `--prod` with the netlify CLI (on PATH, or the copy npx
+  cached), then prints the live BUILD.txt, the wasm and manifest content types and a room-server answer.
+- Checked live: `game.wasm` is `application/wasm`; `/rom.gba` 404; `node tests/web_offline.cjs --live URL` ALL PASS
+  (worker installs, offline reload, picker, saved ROM boot, touch); `node tests/web_link_live.cjs` PASS: two pages in
+  one headless Chrome (two contexts) create and join a room through the live `/api/room` with real STUN and reach the
+  hello ("linked as player 1 (host)" / "player 2 (guest)") in ~6 s, round trip 1-3 ms (same machine).
+- Still open: the PLAN G7 exit's second half: one real session across two machines/networks, reported by the user
+  (STUN only, D15: some network pairs will not connect).
 
 ## 9. Link robustness, return to title (GS10)
 

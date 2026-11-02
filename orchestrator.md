@@ -14,13 +14,20 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS-deploy (2026-11-02): **public at https://golden-sun-web-port.netlify.app** (user's request; D14 replaced) with
+  the room function at /api/room; `tools/deploy_web.sh` redeploys (leak check, site allowlist, staging outside the
+  repo). **Offline play** (docs/OFFLINE.md, option on by default): service worker precaches every site file in a cache
+  named by build id + site hash, cache-first, never /api/*; update notice; manifest + our own icon; offline sentence
+  in the link panel. tests/web_offline.cjs ALL PASS locally and live; tests/web_link_live.cjs: two pages linked
+  through the live room server; web_touch, web_phone (after a touch.js ghost-click fix), web_link ALL PASS.
+
 - GS8 (2026-11-01): **online link battle works between two pages** (G7, local): port/web/net.js puts link.c's
   transport on WebRTC data channels (frame unreliable/unordered, bulk reliable; control JSON as text on bulk), room
   codes (port/netlify/functions/room, local tools/roomserver.mjs) + manual codes, hello check (build id, ROM SHA-1,
   English), fresh window 300 online, worker ticks while hidden, per-turn hash guard, page panel "Link battle online",
   ?netsim. tests/web_link.cjs: two pages in one headless Chrome reach the end of a link battle with 20/20 turn hashes
   equal and the same winner, clean and at ~210 ms / ~510 ms round trips with 10 % frame loss; no WaitSync override
-  needed. Nothing deployed (D14). Details: docs/LINK.md section 8.
+  needed. (Deployed since GS-deploy.) Details: docs/LINK.md section 8.
 - GS10 (2026-11-01): link robustness: a lost link never freezes the game (both sides: "The link was disconnected.",
   Arena lobby); online fresh window 900 (a ~10 s drop resumes the battle); link.c forgets the peer between sessions
   (re-join after a partner restart works); page: partner-left notice, silence watchdog, clear Host/Join errors,
@@ -102,8 +109,7 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   (grindbot + Mia's field Ply, new GR_HEALER/GR_STOPLOW) to Lv 15; back up the lighthouse reusing GS23-25's key spans
   shifted (CHANNELS_OPEN's entrance rows shorten the way); Saturos falls (summons turn 1, Forge unleashed, Mia's Ply);
   Alex's scene. Six saves/regress cases (62 + link2). No port bug found.
-- Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
-  across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
+- Next: user: one real online session across two networks on the live site (LINK.md 8); tests for partner-leaves mid-battle and failed exchange + retry;
   from the ml_saturos_win save (aerie, 20,12, Saturos beaten): the lift down, Hermes' Water (the Empty Bottle from
   Imil's Sanctum), Imil's opened shops and Mia's farewell, then Kolima (G26.md 3); `tools/regress.sh --quick` between
   builds, the full run at the end.
