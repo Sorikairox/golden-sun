@@ -1,0 +1,5 @@
+# GS22: from lizard_man (continue with vale_day1_continue.keys + --flash-in; the party wakes at 8,10 below the inner door): north
+# through the inner door (exit 52, same scene) into the goddess's room (12,40), round the pool to exit 54 (17,31) into the twin
+# fountains (38,11), north-west to exit 61 (33,4) into Mercury Lighthouse's lower floor (scene 54, 15,27). Of the twin fountains'
+# exits only 61 and the way back are reachable before Ply works the pool (mercury_lighthouse_entrance.c).
+UP@2100-2175,UP@2300-2309,RIGHT@2311-2320,RIGHT@2322-2326,UP@2327-2342,RIGHT@2344-2419,RIGHT@2421-2424,UP@2425-2521,LEFT@2523-2531,LEFT@2533-2537,UP@2538-2566,UP@2600-2625,RIGHT@2627-2636,RIGHT@2638-2642,UP@2643-2679,LEFT@2681-2717,UP@2719-2751,LEFT@2753-2808,LEFT@2810-2814,UP@2815-2848
