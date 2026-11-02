@@ -88,10 +88,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   with the golden rings Ply unlocks); the Middle's stair pipe, water jets and passages under the pipes, the gate statue on its
   floor switch, the Lower's hole into the pool's heart, **Mia's Ply** (the pool's lights and shimmer); the rings' hops, the
   **three pipe sections** joined, the water ride. Two saves, regress 52 cases. No port bug found.
+- GS24 (2026-11-02): **Mercury Lighthouse's Upper and Middle to Sleet, by real play** (ml_upper, ml_sleet.keys;
+  docs/G24.md): the interlaced wipe GS23 saw is the overlay's own transition (measured: as screen_transition.c writes it);
+  the stone doors' two pipes in the order the statue's slide table needs, **the statue falls**, onto the stair gate's
+  switch, Move on the last crossing statue, **the fountain pipe**, **Sleet joins Ivan**. Two saves, regress 54 cases. No
+  port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the ml_pipes save: Mercury Lighthouse's Middle (Sleet, the fountain pipe, the exits up), the Upper's stone doors and
-  statues, the waterfall's Ply, the aerie and Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the ml_sleet save: heal, the gap statue and the Exterior's east path (G24.md 3), the waterfall's Ply, the aerie and
+  Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -424,3 +429,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     a leg ending on the stairs cannot turn. Pushed statues/pipes move only onto cells whose ground takes them; Move needs the
     target in line within 32 px (from 11 px offset the hand misses). Golden-ring pools: hold ~22 frames a hop, wait ~120 after
     a heart, plan the hops (a rim takes every ring). Menus open faster after the first cast in a run: one cast per check.
+49. Mercury Lighthouse's Upper (GS24): passages under movable pipes open and close with the pipe (its column's cells are
+    redrawn), so search again after every push; a pipe slides until a blocker (the other pipe), so the stone doors' stops at
+    47/48/53/54 come from where the door room pipe is. Move across a gap: walk into the edge first (25 px, not 40). The
+    Exterior's paths have many battles: heal first. After a field cast the menu ignores keys ~250 frames: B out and reopen.

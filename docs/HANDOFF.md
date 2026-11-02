@@ -2,6 +2,46 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS24 — 2026-11-02: Mercury Lighthouse's Upper and Middle to Sleet by real play; the interlaced wipe checked (no port bug)
+
+### Done
+- **Transition check** (GS23's open item, docs/G24.md 1): the Lower's exit 1 into the Entrance uses
+  WINDOW_TRANSITION_INTERLACED_WIPE, which MercuryLighthouse_Initialize sets for every scene of that overlay; measured on our
+  frames, even lines' window ends at v and odd lines' starts at 240 - v with v = 240 * (value & 31) / 32 (f7208 v 135, f7212
+  v 195), outside BG0 only, exactly as screen_transition.c writes it. Game behaviour; the PPU's per-line windows are right.
+- **Real play, no probe**, two saves + regress cases (puzzles read from the vendor first; docs/G24.md 3):
+  - `ml_upper.keys`: the filled room's ring hops to the stairs (36,34), the Lower's SW room up to the **Upper**; the stone
+    doors room: the door switch pipe and the door room pipe pushed in the order StartStatueSlide's table needs (47, 54, door
+    pipe south, 53, 54, door pipe north, 47, door pipe south, 48): **the statue slides off its ledge and falls** into the gate
+    room; pushed onto **the switch at 10,23**: the stair gate opens for good; the five statues: **Move on the last statue**
+    from 58,7 (57: the crossing jump cell), exit 58,4 to the Middle's fountain room; **the fountain pipe to row 40** (the
+    fountain sprays); up to the Upper, the sparkling passage to **Sleet's room**; Mia's Ply heals; save.
+  - `ml_sleet.keys`: **Sleet** beaten (battlebot BB_SEQ ';;LEFT A;LEFT A': Ivan and Mia defend): "The Mercury Djinni Sleet
+    joined Ivan."; save. Furthest saved point `port_work/g24/final/furthest_ml_sleet.png`; highlights in story order
+    `port_work/g24/final/sheet.png` (final/frames.txt).
+  - Scratch only (not committed): the Exterior's west side, the Upper's waterfalls room, **Move on the gap statue** (31,20
+    crossing), the Exterior's east path to **the waterfall's riddle**; six battles left Isaac and Ivan down, and field Ply at
+    52,13 asked for a member (target missed). Not committed for that reason.
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: the wipe, the pipes' slides and the statue's
+  scripts, the statue falling via another room, Sleet's numbers (L10, HP 290, Mercury power 125; Tundra power 45 range 2
+  gives 54 centre / 43 beside: seen 55 / 42; "runs!" ends the battle twice), the join tint. No asm/C change: no EQUIV spec,
+  the wasm was not rebuilt.
+- **Audio per second**: ml_upper 405/408 s with sound (silent only at power-on), DAC clamp up to 0.10 %.
+- Trap 49 (passages under moved pipes change; Move from a cell's edge; heal before the Exterior).
+
+### Next
+1. From `ml_sleet` (Sleet's room, party hurt: heal with Ply/Cure Well first; Isaac 38, Garet 81, Ivan 6, Mia 28): the way
+   GS24 walked in scratch (G24.md 3: Upper 16,7 passage back, 5,12, the Middle's NE room 45,12, the Exterior's west side to
+   14,31, the waterfalls room 28,37, the gap statue by Move from 31,20 to 28, 29,19, the Exterior's east path 25,20) to the
+   waterfall; find Ply's target reach on ACTOR_WATERFALL_STATUE (53,13; Field_FindNearbyPsynergyTarget, trap 42), then
+   MercuryLighthouse_PlyOpensWaterfallPassage, the aerie and **Saturos** (BB_SEQ with a Djinn unleash, a summon, Mia's
+   Ply/Frost; Sleet is Ivan's now). Then Hermes' Water, Imil's shops, Kolima, Tret.
+2. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 53/53 OK after ml_upper was added (52 cases + link2), then the final full run 54/54 OK (53 cases + link2, incl. ml_upper and ml_sleet), test_arm 79/79 EQUIV; leak check not needed (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS23 — 2026-11-02: Mercury Lighthouse by real play to Ply at the pool and the three pipe sections (no port bug)
 
 ### Done
