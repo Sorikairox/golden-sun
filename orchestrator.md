@@ -83,9 +83,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   heals the old man with Ply**, the item shop (weapon/armor sellers sick by the story), Move on the lighthouse's door statue and
   Mia's Ply, the **Lizard Man** beaten with **Flint unleashed and Venus summoned**, into the lower floor, **Mia joins** (Move on the statue blocking
   her). Five saves, regress 50 cases. No port bug found.
+- GS23 (2026-11-02): **Mercury Lighthouse to Ply at the pool and the three pipes, by real play** (ml_ply, ml_pipes.keys;
+  docs/G23.md): the vendor's tables put Ply first (the pipe room is reached only through the Entrance's eastern pools, crossed
+  with the golden rings Ply unlocks); the Middle's stair pipe, water jets and passages under the pipes, the gate statue on its
+  floor switch, the Lower's hole into the pool's heart, **Mia's Ply** (the pool's lights and shimmer); the rings' hops, the
+  **three pipe sections** joined, the water ride. Two saves, regress 52 cases. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the mia_joins save: Mercury Lighthouse's pipes, Ply at the pool, the floors to Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
+  from the ml_pipes save: Mercury Lighthouse's Middle (Sleet, the fountain pipe, the exits up), the Upper's stone doors and
+  statues, the waterfall's Ply, the aerie and Saturos; back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -412,3 +418,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     further and come back. Push puzzles (BilibinCave_PushTorch) take ~80 frames a push before the leader can move again. Tap B,
     not A, through event text (A opens the command menu once the event ends; B answers No to a yes/no). macOS's file system is
     case-insensitive: scratch key files named `I7.txt` and `i7.txt` are one file.
+48. Mercury Lighthouse routing (GS23): read the scene's trigger table first (TRIGGER_EXIT rows name the behavior of each exit
+    cell; cells.cjs CL_B finds them) and the entrance rows (an exit sits by the entrance that leads back): the story order is
+    in those tables (Ply before the pipes). Grates beside pipes are passages under them (stairs to y -32): walk the whole row,
+    a leg ending on the stairs cannot turn. Pushed statues/pipes move only onto cells whose ground takes them; Move needs the
+    target in line within 32 px (from 11 px offset the hand misses). Golden-ring pools: hold ~22 frames a hop, wait ~120 after
+    a heart, plan the hops (a rim takes every ring). Menus open faster after the first cast in a run: one cast per check.

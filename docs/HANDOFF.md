@@ -2,6 +2,48 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS23 — 2026-11-02: Mercury Lighthouse by real play to Ply at the pool and the three pipe sections (no port bug)
+
+### Done
+- **Full regress at the start** (GS22 had added mia_joins without a full run): 50/50 OK (49 cases + link2).
+- **Story order from the vendor first** (mercury_lighthouse.c, mercury_lighthouse_entrance.c's trigger table, scene_exits.h,
+  entrance/exit rows read at run time from the overlay data): the plan's order was pipes then Ply; the tables put **Ply first**:
+  the Lower's pipe room is entered only from the Entrance's exit TO_LOWER_EAST_NORTHEAST (behavior 63), in rooms reached over
+  pools crossed with the golden rings that Ply unlocks, and the Ply cell (12,32) is reached only by the Lower's hole (docs/G23.md 2).
+- **Real play, no probe**, two saves + regress cases (docs/G23.md 3):
+  - `ml_ply.keys`: the waterfalls room, the Middle's pipe maze (the stair pipe to column 11 raises the stairs: water jets carry
+    the leader; passages under the pipes; the pipe pushed back; a chest at 24,34), the gate room (two battles fled), the gate
+    statue moved by Move and walk-pushed along row 16 and up column 5 onto the floor switch: the gate opens; the ladder, exit 1
+    to the Lower's hole room, south into the hole: the leader **drops into the pool's heart**, the inscription; **Mia's Ply
+    from 12,32**: the room dims, sparks, a flash, the heart and goddess glow, the colours shimmer; save.
+  - `ml_pipes.keys`: the **golden rings** (three from a heart, one spent per water landing, a rim takes all): the goddess's pool,
+    the twin fountains, exit 61, the Lower's pool room (path from a hop search, port_work/g23/hop.py) to exit 1, the west twin
+    fountains, the west waterfalls room, the sparkling passage to the dry fountain room, up into the **pipe room**: **the three
+    pipe sections pushed into place** (rows 8 and 12, column 40): the floor shakes, the water fills the room below and carries
+    the party back up (FLAG_MERCURY_LIGHTHOUSE_CHANNELS_OPEN); save.
+  - Furthest saved point: `port_work/g23/final/furthest_ml_pipes.png`; highlights in story order `port_work/g23/final/sheet.png`
+    (final/frames.txt).
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: the jets (MercuryLighthouse_WalkLeaderIn's fixed
+  landings), the passages under the pipes, the gate statue's refused pushes (PushedActor_AdvancePair), Move's misses (trap 42),
+  Ply's winged figures (ply.c SPRITE_WINGED_FIGURE), the dim/pale/shimmer sequence (ActivateWithPly, CyclePalette), the rings and
+  hops, the water ride down and back. Not yet checked: the centre-window transition into the Entrance from the Lower's exit 1
+  (G23.md 4). No asm/C change: no EQUIV spec, the wasm was not rebuilt.
+- **Audio per second**: ml_ply 345/348 s with sound, ml_pipes 191/194; silent only at power-on; DAC clamp up to 0.05 %.
+- Trap 48 (Mercury Lighthouse routing: trigger tables first, passages under pipes, push/Move rules, ring pools, menu timing).
+
+### Next
+1. From `ml_pipes` (the Lower's pipe room, 44,16, channels open): the Middle's remaining parts (the fountain pipe at 44,42 to
+   row 40, Sleet the Mercury Djinni at 55,24, exits up: Middle exits 3/5/8/9/10 to the Upper), the Upper's stone doors (the
+   door switch pipe, the falling statue onto the stair gate's switch at 10,23), the five statues and the gap statue, the
+   Exterior's waterfall riddle (Ply on its statue), the aerie and **Saturos** (battlebot BB_SEQ with a Djinn unleash, a summon,
+   Mia's Ply/Frost; heal first; check his numbers against the vendor if he wins). Then Hermes' Water, Imil's shops, Kolima, Tret.
+2. Look at the centre-window transition (G23.md 4) against the vendor's transition code.
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 52/52 OK at the end (51 cases + link2, incl. ml_ply and ml_pipes; 50/50 at the start, 51/51 after ml_ply), test_arm 79/79 EQUIV; leak check not needed (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS22 — 2026-11-02: across Bilibin Cave's ice room, Imil, Mercury Lighthouse to Mia joining, by real play (no port bug)
 
 ### Done
