@@ -2,6 +2,45 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS21 — 2026-11-02: Tret beaten by real play (damage check: no port bug), north to Bilibin Cave's ice room
+
+### Done
+- **Tret damage check first** (docs/G21.md 1): Tret's unit in RAM = the vendor row and ROM tables (L14, HP 710, Atk 89,
+  Def 27; elements preset 8: Mars resistance 25); every hit seen (ours and his: attacks, criticals, Quake, Thorn, Ray,
+  Volcano, Spire, the Venus summon) falls in the range the vendor formulas give. The battle code has no override. Not a
+  port bug: GS20 lost by attacking (16-21) instead of using Volcano on the Mars weakness (~64).
+- **Real play, no probe**, three saves + regress cases (story order from the vendor scene sources first; G21.md 3):
+  - `tret_win.keys`: battlebot BB_SEQ: Flint set, **Flint unleashed**, **Venus summoned**, Garet's Volcano each turn, Ray,
+    Cure Well on Ivan and Isaac, Spire: **Tret beaten at Lv 10/10/9, all standing**; Tret's thanks, the party resolves to
+    heal him; save.
+  - `bilibin_cave.keys`: Retreat twice, the World Map round the river, the bridge, the **Bilibin Barricade** from the east
+    (**Move** on the crates), west past Bilibin, north, two narrow bridges, the **Bilibin Cave Entrance**; save.
+  - `bilibin_ice.keys`: the south mouth into **Bilibin Cave**, its corridors, the hole into the **ice room**; save.
+    Furthest saved point: `port_work/g21/final/furthest_bilibin_ice.png`; highlights in story order
+    `port_work/g21/final/sheet.png` (final/frames.txt).
+- Grinding was not needed (the plan's Lv 12-13 grind and Breeze skipped once the damage check showed the weakness).
+- **Tools**: `tests/probes/wmpath.cjs`, a World Map path search over the collision pixels (hpath reads map cells, which the
+  World Map does not use for walls; trap 46).
+- **No port bug found**; 0 distinct stubs hit. Checked against the vendor: Tret's numbers, the post-battle silence
+  (SOUND_FADE_OUT_BGM), Flint's set raising Isaac's HP, the forest's cursed palette, the World Map collision (our reading
+  equals WorldMap_GetCollision at the leader), the forest's area actor re-entering on touch. No asm/C change: no EQUIV
+  spec, the wasm was not rebuilt (leak check not needed).
+- **Audio per second**: tret_win 379/385 s with sound (power-on and a 3-s post-battle fade-out, game), bilibin_cave 306/309,
+  bilibin_ice 82/85; DAC clamp up to 0.40 %.
+
+### Next
+1. From `bilibin_ice` (ice room, 7,26): reach the slope cells at x 30-33 (rows 19-24) past the ice pillars (the leader is
+   boxed at 25,18-19 on the direct way), move a torch beside the pillar at 35,23 (Move or push) so 36,22/36,24 become jump
+   cells, exit 3 (36-38,36) to the World Map, then **Imil** (370,16) and **Mercury Lighthouse** (376,10), Mia.
+   G21.md 4 has the cells and actors.
+2. Party: Lv 10/10/9, 4896 coins: equipment in Imil's shop if any; heal before the lighthouse.
+3. User items unchanged: permission from alchemy's author (D14), then deploy.
+
+### Notes
+- Tests at the end (build unchanged since GS14): regress full run 45/45 OK (incl. tret_win, bilibin_cave, bilibin_ice), test_arm 79/79 EQUIV; leak check not
+  needed (wasm unchanged).
+- No downloads, installs, deploys or permission denials.
+
 ## GS20 — 2026-11-02: through the Tret Tree to Tret by real play: the webs, branches and vines, cocoon 50's falls; Tret not beaten yet
 
 ### Done

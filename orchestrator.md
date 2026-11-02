@@ -73,11 +73,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   webs (torn cocoons are jumped from), the branches' vines, the floors in order, cocoon 50's falls to Tret's room; grinding
   in Tret's glade (Lv 10/10/9). **Tret fought twice and lost** (summon Venus seen). Two saves, regress 42 cases. No port bug
   found. New tool options: HPATH_JUMPB, WALK_FLEE, GR_CUREFIRST/GR_FLEEMID/GR_NOFIGHT, BB_LOOP/BB_BATTLEONLY.
+- GS21 (2026-11-02): **Tret beaten by real play** (tret_win, bilibin_cave, bilibin_ice.keys; docs/G21.md): the damage check
+  first (Tret's stats/elements = vendor + ROM, every hit within the formulas: no port bug; Mars resistance 25), then Flint
+  unleashed, Venus summoned, Volcano, Cure Well: Tret falls at Lv 10; Retreat, the World Map, the barricade's crates (Move),
+  north into Bilibin Cave to the ice room. New tests/probes/wmpath.cjs (World Map collision, trap 46). Three saves, regress
+  45 cases. No port bug found.
 - Next: user: permission from alchemy's author (D14), then deploy (LINK.md 8, "Going live") and one real session
   across two networks; tests for partner-leaves mid-battle and failed exchange + retry;
-  from the tret_grind save: grind more in Tret's glade, walk port_work/g20/legs2.txt to Tret, beat him, then
-  north (Fuchin Temple, Mercury Lighthouse, Imil, Mia) and back with Hermes' Water; `tools/regress.sh --quick` between
-  builds, the full run at the end.
+  from the bilibin_ice save: cross the ice room (torch beside the pillar at 35,23), out to the World Map, Imil, Mercury
+  Lighthouse, Mia, back with Hermes' Water; `tools/regress.sh --quick` between builds, the full run at the end.
 
 ## 2. Standing rules (from the user; apply to every session)
 
@@ -394,3 +398,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     next; torn ones are jumped from like jump cells (hpath HPATH_JUMPB, HPATH_BLOCK the four drawn torn: 22, 52, 54, 58).
     Branch vines are step triggers that move the leader 5-6 cells: give autowalk the destination cell. Climbs change height,
     not the cell (WALK_STUCK=500). The tree's battles (Troll pairs) wipe a Lv 9 party; grind in Tret's glade instead.
+46. World Map walls (GS21) are 4-bit collision pixels (WorldMap_GetCollision: two 64 x 64 tile maps in screen blocks 8 and
+    10, values 5-12 walkable), not map cells: hpath finds nothing there; use tests/probes/wmpath.cjs. Rivers can be 10 px
+    wide and bridges 12-16 px, so check a fine grid at the leader; autowalk's cell targets can miss a bridge (use keys).
+    Area actors enter on touch (WM_BLOCK their cells). Bilibin Cave's walls are 16-px outlines over height 0: hpath
+    over-reaches there; read MAP_MODE=height.
