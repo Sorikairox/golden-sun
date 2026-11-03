@@ -17,6 +17,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 - TLA3 (2026-11-03): **asm2c** (tools/wasm/asm2c.py, D23): 1,202/1,207 TLA listing routines translate to C; D20 proof
   30/30 EQUIV (ARM, overlays, jump tables, battle effect, 13 KB overlay routine), negative controls 4/4, vendor drafts
   6/22; GS1 tests/arm 79/79 (docs/TLA3.md). Build hooks for TLA5 in TLA3.md 6.
+- TLA2b (2026-11-03): TLA code-range audit 187/187 (3 fixed: task overlay test, flash driver -> port/pc/flash.c); 47/48
+  left-out objects compile (render.c's ARM asm left); scene import and far-call veneers resolved (6,003 veneers), stubs
+  2,545 -> 647 (638 asm, list port/tla/asm_stubs.tsv); full `web_build.sh --game tla` passes. GS1 still 687968a7/895d45cc.
 - TLA2 (2026-11-03): `build.py --game tla` (tools/wasm/game.py); TLA C 3,654/3,702 objects, link 0 warnings, 2,545 stubs,
   leak 0; TLA code-range audit 187 hits not yet audited (docs/TLA2.md). GS1 still 687968a7/895d45cc.
 
@@ -527,3 +530,16 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     (`mov lr, rX; .2byte 0xf800` = call via lr), use `1:` + `.reloc 1b, R_ARM_ABS32_NOI, sym` for a pool word, alias two
     global labels to one address, and let a routine fall through into the next. Check the D20 trace (TRACE=1) first when a
     translation fails.
+59. TLA's veneers are all one macro, `NAME:` then `overlay_veneer TARGET` (TLA2b). They live in each overlay's import .s,
+    and in gamepak/far_call/*.s, which also has two labels on one veneer and `ldr r4,[pc]; bx r4; .4byte T`.
+    The same NAME can lead to different targets in different overlays (611 names), so an overlay's call must be
+    renamed ovNNN_NAME (bind.py, tools/wasm/overlay_imports.py), never resolved globally. The same goes for an overlay's
+    own asm routine: link.py's "only one overlay defines it" fallback would otherwise call another overlay's C copy.
+60. One TLA C object can be linked into many overlays (field/object/set_sprite_priority: 49). Bound modules were named
+    by object path, so the last overlay's binding overwrote the others. They are now `path@NNN` (game.bound_names),
+    and link.py links only this build's vendor objects (a stale `.o` duplicates every symbol). In bind.py the name
+    `bname` was already in use (the relocated buffer name) inside the module loop: reusing it silently dropped 13 modules.
+61. GCC 2.9x took redeclarations clang rejects. A file's `extern u8 gMainRoutineWork[]` meets the struct the TLA prelude
+    brings in; a `static` definition of a header's extern function (spawn.c Effect_Create); `s32` vs `void` and
+    volatile redeclarations; and an implicit declaration before the real one. TLA c_rules fix each per file text;
+    a TLA replacement may contain `\n` to put a `#define` on its own line.

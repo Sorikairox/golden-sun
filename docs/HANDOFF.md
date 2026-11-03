@@ -2,6 +2,27 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA2b — 2026-11-03: TLA audit 187/187, 47 of 48 left-out objects fixed, overlay veneers resolved (stubs 2,545 -> 647)
+
+- Read docs/TLA2.md, section "TLA2b". A full `tools/web_build.sh --game tla` passes every stage (about 40 s):
+  0 linker warnings, audit 187/187, leak 0.
+- Audit (port/tla/tools/code_range_audit.tsv): 170 data, 6 safe, 3 fixed, 8 replaced.
+  - task.c and resume_and_run.c get Port_CodeIsOverlay through c_rules.
+  - TLA's flash driver is replaced by port/pc/flash.c (pc.tsv, fn_overrides).
+- Left out: only src/system/render.c (real ARM stmia: TLA4/TLA5).
+- Veneers:
+  - `tools/wasm/overlay_imports.py` reads every overlay's import .s and the far_call files.
+  - bind names each overlay's import and asm calls `ovNNN_NAME`.
+  - Shared overlay C objects are bound once per overlay (`path@NNN`).
+- Stubs: 647. Of these, 638 are asm (main 273 listing + 36 hand; overlay 328 listing + 1); 7 are render.c C and
+  2 are unmapped. The list for TLA4/TLA5 is `port/tla/asm_stubs.tsv` (names only) and
+  `build/wasm-tla/asm_stubs.tsv`.
+- GS1 unchanged: game.wasm 687968a7, game.js 895d45cc, regress --quick 9/9 OK.
+- Next:
+  - (1) TLA5: wire asm2c's output in place of the 601 listing stubs (TLA3.md 6);
+  - (2) TLA4: the 36 hand .s plus render.c's matrix block;
+  - (3) camera_flag.c's Transform_*LookAt return value (0 now) if a caller reads it.
+
 ## TLA3 — 2026-11-03: asm2c translates TLA's listing asm; D20 proof 30/30 EQUIV; D23
 
 - Read docs/TLA3.md. `tools/wasm/asm2c.py -o build/a2c/x.c --report build/a2c/report.tsv` translates every listing
