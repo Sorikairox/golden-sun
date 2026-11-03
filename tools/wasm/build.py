@@ -10,7 +10,8 @@
          an ovNNN_ prefix (D7), far-call/import veneers are generated
   obj/   wasm objects; game.wasm/game.js linked with port/pc and generated logged stubs for what is missing
 
-Usage (inside the container): python3 tools/wasm/build.py [--jobs N] [--only STAGE]
+Usage (inside the container): python3 tools/wasm/build.py [--game tbs|tla] [--jobs N] [--only STAGE]
+--game (TLA2) picks the game (tools/wasm/game.py); tbs, the default, is GS1 with its paths unchanged.
 """
 import argparse
 import concurrent.futures as cf
@@ -21,17 +22,28 @@ import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+# the game is chosen before anything reads game.py (it is read at import, also by the port_src.py subprocesses)
+for _i, _a in enumerate(sys.argv):
+    if _a == '--game' and _i + 1 < len(sys.argv):
+        os.environ['PORT_GAME'] = sys.argv[_i + 1]
+    elif _a.startswith('--game='):
+        os.environ['PORT_GAME'] = _a.split('=', 1)[1]
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import game  # noqa: E402
 V = os.path.join(ROOT, 'vendor/alchemy')
-TBS = os.path.join(V, 'games/tbs')
-OUT = os.path.join(ROOT, 'build/wasm')
+TBS = game.C.vendor
+OUT = game.C.out
+# where the game tree is mirrored (port_src.py). TLA (TLA2): under alchemy/games/tla so the vendor's root-relative
+# includes (../../../../../games/tla/src/...) land in the mirror, and include/ is mirrored (and transformed) too
+MIRROR = os.path.join(OUT, 'tbs') if game.C.game == 'tbs' else os.path.join(OUT, 'alchemy', game.C.vendor_game)
+INCROOT = TBS if game.C.game == 'tbs' else MIRROR
 CLANG = os.environ.get('WASM_CLANG', '/emsdk/upstream/bin/clang')
 INC = ['include'] + ['include/' + d for d in 'battle field game gamepak graphics menu shop sound system window'.split()]
 CFLAGS = ['--target=wasm32-unknown-emscripten', '-std=gnu89', '-ffreestanding', '-nostdinc', '-fno-builtin',
-          '-fblocks', '-DMODERN=1', '-DTBS_EDITION_EN=1', '-DPORT_WASM=1', '-O2', '-w',
+          '-fblocks', '-DMODERN=1', f'-D{game.C.define}=1', '-DPORT_WASM=1', '-O2', '-w',
           '-fno-strict-aliasing', '-fwrapv', '-fsigned-char',
-          '-include', os.path.join(ROOT, 'port/shim/prelude.h'), '-I' + os.path.join(ROOT, 'port/shim')] + \
-         ['-I' + os.path.join(TBS, d) for d in INC] + ['-I' + os.path.join(ROOT, 'port_work/g1/gen')]
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+          '-include', game.C.prelude, '-I' + game.C.shim] + \
+         ['-I' + os.path.join(INCROOT, d) for d in INC] + ['-I' + game.C.gen] + game.C.extra_cflags
 
 
 def read_tsv(path):
@@ -53,11 +65,11 @@ def code_objects():
     extension), then the PC layer's ('port/pc/NAME'), which goes through the same binding so it can name game
     data (gIrqHandlers, Trig_SineTable...) and get their GBA addresses."""
     out = []
-    for r in read_tsv(os.path.join(ROOT, 'port/symbols/objects.tsv')):
+    for r in read_tsv(game.sym('objects.tsv')):
         if r['class'] in ('code', 'mixed') and os.path.exists(os.path.join(TBS, r['object'] + '.c')):
             out.append((r['image'], r['object']))
-    for p in sorted(glob.glob(os.path.join(ROOT, 'port/pc/*.c'))):
-        out.append(('main', 'port/pc/' + os.path.basename(p)[:-2]))
+    for n in game.pc_files():
+        out.append(('main', 'port/pc/' + n))
     return out
 
 
@@ -69,12 +81,20 @@ def run(cmd, **kw):
 def stage_src_ll(objs, jobs):
     # build/wasm/tbs mirrors games/tbs: src/ as symlinks plus the transformed files, include/ as one symlink,
     # so relative includes like ../../../include/gamepak/flash.h resolve
-    base = os.path.join(OUT, 'tbs')
+    base = MIRROR
     tree = os.path.join(base, 'src')
-    if os.path.isdir(base):
-        subprocess.run(['rm', '-rf', base], check=True)
+    top = base if game.C.game == 'tbs' else os.path.join(OUT, 'alchemy')
+    if os.path.isdir(top):
+        subprocess.run(['rm', '-rf', top], check=True)
     os.makedirs(base)
-    os.symlink(os.path.join(TBS, 'include'), os.path.join(base, 'include'))
+    if game.C.game == 'tbs':
+        os.symlink(os.path.join(TBS, 'include'), os.path.join(base, 'include'))
+    else:
+        rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/port_src.py'), '--tree',
+                          os.path.join(TBS, 'include'), os.path.join(base, 'include')])
+        if rc:
+            print(se[-3000:])
+            return False
     rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/port_src.py'), '--tree',
                       os.path.join(TBS, 'src'), tree])
     if rc:
@@ -121,6 +141,14 @@ def stage_src_ll(objs, jobs):
         print(f'  FAIL {obj}: {first}')
     with open(os.path.join(OUT, 'transform_notes.txt'), 'w') as f:
         f.write('\n'.join(notes) + '\n')
+    if game.C.game != 'tbs':
+        # TLA2: an object clang cannot take yet is left out (its functions become logged stubs) and listed
+        with open(os.path.join(OUT, 'll_failed.tsv'), 'w') as f:
+            f.write('object\terror\n')
+            for obj, err in fails:
+                first = next((l for l in err.splitlines() if 'error' in l), err.strip()[:300])
+                f.write(f'{obj}\t{first.strip()}\n')
+        return True
     return not fails
 
 
@@ -128,6 +156,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--jobs', type=int, default=os.cpu_count())
     ap.add_argument('--only')
+    ap.add_argument('--game', default='tbs', choices=('tbs', 'tla'))
     a = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     objs = code_objects()
@@ -140,6 +169,11 @@ def main():
             sys.exit(1)
     if 'll' in stages and not stage_src_ll(objs, a.jobs):
         sys.exit(1)
+    failed = os.path.join(OUT, 'll_failed.tsv')
+    if game.C.game != 'tbs' and os.path.exists(failed):
+        skip = {r['object'] for r in read_tsv(failed)}
+        objs = [(i, o) for i, o in objs if o not in skip]
+        print(f'{len(skip)} objects left out (build/wasm-{game.C.game}/ll_failed.tsv): their functions are stubs')
     if 'bind' in stages:
         import bind
         if not bind.run(objs, OUT, ROOT):

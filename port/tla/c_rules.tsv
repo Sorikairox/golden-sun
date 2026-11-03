@@ -1,0 +1,6 @@
+# TLA: text rules for vendor C (tools/wasm/port_src.py, same format as port/c_rules.tsv).
+text	replacement	why
+extern const struct SceneCueRule gScene_CueRuleTable[];	/* port: gScene_CueRuleTable is declared after struct SceneCueRule (data_lookup_routines.c) */	battle.h declares an array of the incomplete struct SceneCueRule (GCC takes it, clang does not); its only C user defines the struct
+void Scene_ResolveInteractionResult(void) {	extern const struct SceneCueRule gScene_CueRuleTable[]; void Scene_ResolveInteractionResult(void) {	the declaration battle.h loses, after the struct (data_lookup_routines.c)
+struct SpriteEntry {	struct __attribute__((aligned(4))) SpriteEntry {	ARM GCC rounds every struct to 4 bytes (STRUCTURE_SIZE_BOUNDARY 32); clang wasm does not: 7 -> 8 as motobj.h asserts
+struct ScreenTransitionDissolveState {	struct __attribute__((aligned(4))) ScreenTransitionDissolveState {	the same ARM struct rounding: 0x53c -> 0x540 as display_transition.h asserts

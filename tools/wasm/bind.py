@@ -19,6 +19,8 @@ import os
 import re
 from collections import defaultdict
 
+import game
+
 TOKEN = re.compile(r'@(?:"([^"]+)"|([-\w$.]+))')
 DEF_GLOBAL = re.compile(r'^@(?:"([^"]+)"|([-\w$.]+)) = (.*)$')
 DEF_FUNC = re.compile(r'^define\b[^@]*@(?:"([^"]+)"|([-\w$.]+))\(')
@@ -49,15 +51,14 @@ def read_tsv(path):
 
 class Tables:
     def __init__(self, root):
-        sym = os.path.join(root, 'port/symbols')
         self.main = {}            # name -> row (globals and unique locals)
         self.main_local = {}      # (object, name) -> row
-        for r in read_tsv(os.path.join(sym, 'tbs-en.tsv')):
+        for r in read_tsv(game.sym('MAP.tsv')):
             self.main_local[(r['object'], r['name'])] = r
             self.main.setdefault(r['name'], r)
         self.ovl = {}             # (overlay, name) -> row
         self.ovl_local = {}       # (overlay, object, name) -> row
-        for r in read_tsv(os.path.join(sym, 'tbs-en-overlays.tsv')):
+        for r in read_tsv(game.sym('MAP-overlays.tsv')):
             self.ovl.setdefault((r['overlay'], r['name']), r)
             self.ovl_local[(r['overlay'], r['object'], r['name'])] = r
         self.main_by_obj = defaultdict(dict)
@@ -66,10 +67,11 @@ class Tables:
         self.ovl_by_obj = defaultdict(dict)
         for (o, ob, n), r in self.ovl_local.items():
             self.ovl_by_obj[(o, ob)][n] = r
-        self.absolute = {r['name']: int(r['value'], 16) for r in read_tsv(os.path.join(sym, 'absolute.tsv'))}
-        self.relocs = read_tsv(os.path.join(sym, 'relocs.tsv'))
+        self.absolute = {r['name']: int(r['value'], 16) for r in read_tsv(game.sym('absolute.tsv'))}
+        self.relocs = read_tsv(game.sym('relocs.tsv'))
         # symbols the game reads past their size into unnamed pieces after them (reloc_extents.tsv, GS11)
-        for e in read_tsv(os.path.join(sym, 'reloc_extents.tsv')):
+        ext = game.sym('reloc_extents.tsv')
+        for e in (read_tsv(ext) if os.path.exists(ext) else []):
             self.main[e['symbol']]['size'] = e['size']
             for r in self.relocs:
                 if not r['overlay'] and r['symbol'] == e['piece']:
@@ -133,7 +135,7 @@ def fmt(name):
 def fn_overrides(root):
     """Vendor functions replaced by port/pc (port/fn_overrides.tsv): their definitions are dropped."""
     names = set()
-    for r in read_tsv(os.path.join(root, 'port/fn_overrides.tsv')):
+    for r in read_tsv(game.table('fn_overrides.tsv')):
         names.add(r['function'])
     return names
 
@@ -223,6 +225,13 @@ def run(objs, out, root):
                 if not external:
                     drop.add(name)
                     stats['C definitions dropped'] += 1
+                continue
+            m_ad = re.fullmatch(r'gData_(0[23][0-9a-f]{6})', name) if game.C.game != 'tbs' else None
+            if m_ad and external:
+                # TLA: RAM words the vendor names by address (gData_020007e4: defined by one overlay's listing,
+                # read by other scenes; RAM, so no ROM bytes): bound to the address in their name
+                repl[name] = f'inttoptr (i32 {int(m_ad.group(1), 16)} to ptr)'
+                stats['RAM named by address'] += 1
                 continue
             if external:
                 if image != 'main' and name in overlay_defs[image]:

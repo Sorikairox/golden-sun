@@ -10,6 +10,9 @@ import os
 import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import game  # noqa: E402  (PORT_GAME: tbs or tla tables, TLA2)
+
 ROM_BASE = 0x08000000
 W = 16
 # Not game data: the hex digits (libc's printf has them too) and byte runs counting up or down by a constant.
@@ -36,7 +39,7 @@ def run(wasm_path, root, rom_path='/rom/baserom.gba'):
     windows = {wasm[i:i + W] for i in range(len(wasm) - W + 1)}
     checked, hits, by_section, ovl_cache = 0, 0, Counter(), {}
     header = None
-    for line in open(os.path.join(root, 'port/symbols/sections.tsv'), encoding='utf-8'):
+    for line in open(game.sym('sections.tsv'), encoding='utf-8'):
         if line.startswith('#'):
             continue
         f = line.rstrip('\n').split('\t')
@@ -47,7 +50,7 @@ def run(wasm_path, root, rom_path='/rom/baserom.gba'):
         if r['kind'] in ('code', 'ram'):
             continue
         if r['overlay']:
-            binp = os.path.join(root, 'port_work/g1/alchemy/overlays', f"resource_{r['overlay']}.bin")
+            binp = os.path.join(game.C.overlay_bins, f"resource_{r['overlay']}.bin")
             if not os.path.exists(binp):
                 continue
             image, start = ovl_cache.setdefault(binp, open(binp, 'rb').read()), int(r['address'], 16) - 0x02008000

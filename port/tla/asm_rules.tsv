@@ -1,0 +1,6 @@
+# TLA: non-empty inline asm statements in vendor C and the C that replaces each (tools/wasm/port_src.py, same
+# format as port/asm_rules.tsv).
+template	replacement	why
+swi 2	Port_BiosHalt();	BIOS Halt until an interrupt: the frame driver's yield to the browser (D8), as GS1
+swi 3	Port_BiosStop();	BIOS Stop (sleep mode), as GS1
+bx %0	((void (*)(void))({0}))();	System_Reset jumps to Cart_Restart: an indirect call, which bind.py routes through Port_ResolveCode (GS11's Cart_Start path, trap 36)

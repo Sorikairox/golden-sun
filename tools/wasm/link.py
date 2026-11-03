@@ -17,6 +17,8 @@ import re
 import subprocess
 from collections import defaultdict
 
+import game
+
 NM = '/emsdk/upstream/bin/llvm-nm'
 TYPES = ('void', 'i1', 'i8', 'i16', 'i32', 'i64', 'float', 'double', 'ptr')
 # 230400 KB = 0x0E100000: linear memory up to the end of the 64 KB flash at 0x0E000000 (D5)
@@ -52,7 +54,7 @@ def sh(cmd):
 
 def veneer_map(root):
     """NAME -> TARGET from the far-call tables and the overlay import list."""
-    tbs = os.path.join(root, 'vendor/alchemy/games/tbs/src')
+    tbs = os.path.join(game.C.vendor, 'src')
     out = {}
     files = glob.glob(os.path.join(tbs, 'gamepak/far_call/*.[sS]')) + [os.path.join(tbs, 'system/overlay/imports.inc')]
     for p in files:
@@ -156,6 +158,8 @@ def adapter(ret, params, tret, tparams, target):
 
 
 CALL_RX = re.compile(r'\bcall (\S+) @(?:"([^"]+)"|([-\w$.]+))\(')
+# the same with return attributes (`call zeroext i8 @f(`), for adapt_mismatched_calls (TLA)
+CALL_RX_ATTRS = re.compile(r'\bcall (?:(?:zeroext|signext|noundef|noalias|nonnull|inreg)\s+)*(\S+) @(?:"([^"]+)"|([-\w$.]+))\(')
 
 
 def split_args(text, start):
@@ -218,6 +222,76 @@ def adapt_unprototyped_calls(files):
     return adapters
 
 
+def adapt_mismatched_calls(files):
+    """TLA (TLA2): the same function declared with other prototypes in other translation units (a scene's
+    `void Func_020007bc(s32)` against another's `s32 Func_020007bc(void)`, a RAM routine named by its address) is
+    one wasm import with several types, and wasm-ld warns and traps the calls. On the ARM all of them pass words in
+    r0-r3. The canonical type is the definition's, else the most common declaration's; every call that declares
+    another type goes to `NAME$c<signature>`, the same per-signature adapter as adapt_unprototyped_calls (link
+    generates it). Rewrites the bound IR in place (idempotent)."""
+    from collections import Counter
+    rx_decl = re.compile(r'^declare (?:[^@]*?\s)?(\S+) @(?:"([^"]+)"|([-\w$.]+))\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)', re.M)
+    rx_def = re.compile(r'^define (?:[^@]*?\s)?(\S+) @(?:"([^"]+)"|([-\w$.]+))\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)', re.M)
+
+    def ptypes(p):
+        for _ in range(3):  # attribute arguments: captures(none), dereferenceable(86), initializes((8, 12))
+            p = re.sub(r'\([^()]*\)', '', p)
+        return tuple(x.strip().split()[0] for x in p.split(',') if x.strip())
+
+    def ok(ret, types):  # plain word types only (a byval or dereferenceable(..) list is left as it is)
+        return ret in TYPES and all(t in TYPES for t in types)
+    defs, decls, per_file = {}, Counter(), {}
+    for path in files:
+        text = open(path, encoding='utf-8').read()
+        for m in rx_def.finditer(text):
+            if ok(m.group(1), ptypes(m.group(4))):
+                defs[m.group(2) or m.group(3)] = (m.group(1), ptypes(m.group(4)))
+        mine = {}
+        for m in rx_decl.finditer(text):
+            if '...' in m.group(4) or '$c' in (m.group(2) or m.group(3)) or \
+                    not ok(m.group(1), ptypes(m.group(4))):
+                continue
+            n, sg = m.group(2) or m.group(3), (m.group(1), ptypes(m.group(4)))
+            mine[n] = sg
+            decls[(n, sg)] += 1
+        per_file[path] = mine
+    best = {}
+    for (n, sg), c in decls.items():
+        if n not in best or c > decls[(n, best[n])]:
+            best[n] = sg
+    canon = dict(best)
+    canon.update(defs)
+    adapt_mismatched_calls.canon = canon
+    adapters = {}
+    for path, mine in per_file.items():
+        bad = {n: sg for n, sg in mine.items() if canon.get(n, sg) != sg}
+        if not bad:
+            continue
+        text = open(path, encoding='utf-8').read()
+        out, pos, new = [], 0, {}
+        for m in CALL_RX_ATTRS.finditer(text):
+            name = m.group(2) or m.group(3)
+            if name not in bad or m.start() < pos:
+                continue
+            types, _ = split_args(text, m.end())  # the call site's own type (it may differ from the declaration)
+            ret = m.group(1)
+            if ret == '(...)' or ret.endswith(')'):
+                continue
+            a = f'{name}$c{ret}_' + '_'.join(types)
+            adapters[a] = (ret, list(types), name)
+            new[a] = (ret, types)
+            out.append(text[pos:m.start()] + f'call {ret} @"{a}"(')
+            pos = m.end()
+        if not new:
+            continue
+        out.append(text[pos:])
+        text = ''.join(out)
+        have = set(re.findall(r'^declare \S+ @"([^"]+\$c[^"]*)"', text, re.M))
+        text += ''.join(f'\ndeclare {r} @"{a}"({", ".join(t)})' for a, (r, t) in sorted(new.items()) if a not in have)
+        open(path, 'w', encoding='utf-8').write(text + '\n')
+    return adapters
+
+
 def zero(ret):
     return {'void': None, 'ptr': 'null', 'float': '0.0', 'double': '0.0'}.get(ret, '0')
 
@@ -238,6 +312,8 @@ def run(objs, out, root, clang, jobs, stages):
             cmd = [clang] + flags
         rc, _, err = sh(cmd)
         return o, (err[-1500:] if rc else None)
+    if game.C.game != 'tbs' and ('obj' in stages or 'link' in stages):
+        adapt_mismatched_calls(bound)
     adapters = adapt_unprototyped_calls(bound) if 'obj' in stages or 'link' in stages else {}
     if 'obj' in stages:
         fails = []
@@ -271,6 +347,9 @@ def run(objs, out, root, clang, jobs, stages):
         if name not in defined and name not in libc:
             missing.setdefault(name, set()).add('(K&R calls)')
     sig = signatures(bound + [os.path.join(out, 'll', o + '.ll') for _, o in objs])
+    if game.C.game != 'tbs':  # a stub takes the canonical type (adapt_mismatched_calls), not the first one seen
+        for n, (r, p) in getattr(adapt_mismatched_calls, 'canon', {}).items():
+            sig[n] = (r, list(p), False)
     vmap = veneer_map(root)
     overlay_def = defaultdict(list)
     for d in defined:
@@ -407,8 +486,8 @@ def is_asm(name, root):
     global _asm_names
     if _asm_names is None:
         _asm_names = set()
-        rows = [l.split('\t') for l in open(os.path.join(root, 'port/symbols/tbs-en.tsv')) if not l.startswith('#')]
-        tbs = os.path.join(root, 'vendor/alchemy/games/tbs')
+        rows = [l.split('\t') for l in open(game.sym('MAP.tsv')) if not l.startswith('#')]
+        tbs = game.C.vendor
         for r in rows[1:]:
             if len(r) > 6 and r[4] == 'code' and os.path.exists(os.path.join(tbs, r[6] + '.s')):
                 _asm_names.add(r[0])

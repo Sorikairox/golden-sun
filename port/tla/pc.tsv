@@ -1,0 +1,30 @@
+# The PC layer (port/pc) files the TLA build links (tools/wasm/game.py pc_files). yes = shared with GS1 as is
+# (hardware, memory, renderer, sound output, BIOS, code map, relocation, blocks runtime); no = GS1's hand ports
+# of tbs asm routines (D6) and GS1's driver replacements: TLA's own asm is TLA3's (asm2c), so they stay out
+# until a TLA routine is proven to be the same (D20) and turned on here.
+file	use	why
+apu	yes	DirectSound FIFOs and PSG: hardware
+asm_small	no	tbs trig/heap/... hand ports
+battle_asm	no	tbs battle ARM routines
+bios	yes	BIOS calls from GBATEK: hardware
+blitter	no	tbs battle effect blitters (code generation, trap 29)
+blocks	yes	clang blocks runtime for nested functions
+call_via	yes	libgcc _call_via_rX
+codemap	yes	GBA code address -> wasm function
+decompress	no	tbs decompress_tagged_lz.s ports
+field_asm	no	tbs field ARM routines
+flash	no	tbs flash driver replacement (fn_overrides)
+hw	yes	DMA, timers, IRQs, keypad, frame driver
+iwram	no	tbs resident IWRAM routines (libgcc division ports included: TLA's own come with TLA3)
+link	no	tbs serial driver replacement (D21)
+m4a	no	tbs m4a sequencer asm
+main	yes	module entry
+memory	yes	identity memory map (D5)
+mixer	no	tbs PCM mixer asm
+oam_kernel	no	tbs OAM/palette kernels
+ppu	yes	scanline renderer
+relocate	yes	relocated data at run time (D19)
+sound_asm	no	tbs m4a driver asm
+stubs	yes	logged stubs runtime
+text_asm	no	tbs message decoder ARM routines
+window_asm	no	tbs window/icon ARM routines

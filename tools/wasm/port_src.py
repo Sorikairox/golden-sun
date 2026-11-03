@@ -21,6 +21,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import game  # noqa: E402  (PORT_GAME: per-game rule tables, TLA2)
+
 
 def blank(src):
     """src with comments, string and char literals replaced by spaces (same offsets), for brace matching."""
@@ -147,22 +150,31 @@ def to_blocks(src, log):
 
 EMPTY_ASM = re.compile(r'__asm__\s*(?:volatile\s*|__volatile__\s*)?\(\s*""(?P<rest>[^;]*?)\)\s*;')
 REG = re.compile(r'\s*"(?:r\d+|ip|lr|sp|fp|sl)"\s*,?')
+# TLA (TLA2) also writes `asm("" ...)` (not only __asm__) and clobbers "sfp"
+EMPTY_ASM_TLA = re.compile(r'\b(?:__asm__|asm)\s*(?:volatile\s*|__volatile__\s*)?\(\s*""(?P<rest>[^;]*?)\)\s*;')
+REG_TLA = re.compile(r'\s*"(?:r\d+|ip|lr|sp|fp|sl|sfp)"\s*,?')
 
 
 def strip_clobbers(src, log):
+    tla = game.C.game == 'tla'
+    reg = REG_TLA if tla else REG
+
     def fix(m):
         rest = m.group('rest')
         thumb = re.sub(r'"([=+&]*)[lh]"\s*\(', r'"\1r"(', rest)  # Thumb low/high register classes
         if thumb != rest:
             log.append('empty asm: Thumb register class -> r')
-            return m.group(0).replace(rest, thumb)
+            if not tla:
+                return m.group(0).replace(rest, thumb)
+        whole, orig = m.group(0), rest
+        rest = thumb
         parts = rest.split(':')
-        if len(parts) >= 4 and REG.search(parts[3]):
-            parts[3] = REG.sub('', parts[3]).rstrip().rstrip(',') + ' '
+        if len(parts) >= 4 and reg.search(parts[3]):
+            parts[3] = reg.sub('', parts[3]).rstrip().rstrip(',') + ' '
             log.append('empty asm: ARM register clobbers dropped')
-            return m.group(0).replace(rest, ':'.join(parts))
-        return m.group(0)
-    return EMPTY_ASM.sub(fix, src)
+            return whole.replace(orig, ':'.join(parts))
+        return whole.replace(orig, rest)
+    return (EMPTY_ASM_TLA if tla else EMPTY_ASM).sub(fix, src)
 
 
 ASM_STMT = re.compile(r'__asm__\s*(?:volatile\s*|__volatile__\s*)?\(\s*"(?P<tmpl>(?:[^"\\]|\\.)+)"(?P<rest>[^;]*?)\)\s*;')
@@ -179,7 +191,7 @@ def load_rules(path):
 
 
 def load_overrides():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/fn_overrides.tsv')
+    path = game.table('fn_overrides.tsv')
     names = []
     for line in open(path, encoding='utf-8'):
         if line.startswith('#') or line.startswith('function\t') or not line.strip():
@@ -303,13 +315,27 @@ def mark_block_captures(top, clang_cmd, log):
         open(f, 'w').write(src)
 
 
+REG_PIN = re.compile(r'(\bregister\b[^;=(){}]*?)\s*(?:__asm__|asm)\s*\(\s*"(?:r\d+|ip|lr|sp|fp|sl)"\s*\)')
+
+
+def strip_register_pins(src, log):
+    """TLA (TLA2): `register T x __asm__("r3")` pins a local to an ARM register (FAKEMATCH devices, Dma_Set's
+    stmia operands); wasm has no such registers and clang rejects the name: the pin is dropped, the local stays."""
+    out, n = REG_PIN.subn(r'\1', src)
+    if n:
+        log.append(f'register pins dropped: {n}')
+    return out
+
+
 def transform_text(path, log):
     """The text rules on one file; returns (new text, had nested functions)."""
     src = open(path, encoding='utf-8').read()
     out = strip_clobbers(src, log)
-    rules = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/asm_rules.tsv')
+    if game.C.game == 'tla':
+        out = strip_register_pins(out, log)
+    rules = game.table('asm_rules.tsv')
     out = replace_asm(out, load_rules(rules), log)
-    for text, repl in load_rules(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/c_rules.tsv')).items():
+    for text, repl in load_rules(game.table('c_rules.tsv')).items():
         if text in out:
             log.append(f'text "{text}" -> {repl}')
             out = out.replace(text, repl)
@@ -337,7 +363,7 @@ def mirror(vendor_src, out_src):
         for name in files:
             src, dst = os.path.join(d, name), os.path.join(od, name)
             log = []
-            if name.endswith('.c'):
+            if name.endswith('.c') or (name.endswith('.h') and game.C.game == 'tla'):  # TLA: headers too
                 text, changed, nested = transform_text(src, log)
             else:
                 changed, nested = False, False

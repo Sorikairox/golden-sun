@@ -1,12 +1,15 @@
 #!/bin/bash
 # wasm build (G2+) in the local emscripten/emsdk image: tools/wasm/build.py with the repo at /gs, vendor/ read
-# only and the ROM read only (only the leak check reads it). Usage: tools/web_build.sh [build.py args]
+# only and the ROM read only (only the leak check reads it). Usage: tools/web_build.sh [--game tbs|tla] [build.py args]
 # ALCHEMY=<checkout> builds against another alchemy checkout (e.g. a git worktree at an older pin), mounted at the
 # same path /gs/vendor/alchemy so the build is otherwise unchanged (TLA1 identity check).
 set -euo pipefail
 export PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH
 cd "$(dirname "$0")/.."
-ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
+# --game tla (TLA2) builds The Lost Age into build/wasm-tla; its default ROM is the TLA cartridge (the leak check).
+case " $* " in *" --game tla "*|*" --game=tla "*) DEFROM=$HOME/roms/Golden_Sun_The_Lost_Age_USA_Europe.gba ;;
+  *) DEFROM=$HOME/roms/Golden_Sun_USA_Europe.gba ;; esac
+ROM=${ROM:-$DEFROM}
 ALT=()
 [ -n "${ALCHEMY:-}" ] && ALT=(-v "$(cd "$ALCHEMY" && pwd)":/gs/vendor/alchemy:ro)
 docker run --rm -u "$(id -u):$(id -g)" -e EM_CACHE=/gs/build/emcache -e HOME=/tmp \

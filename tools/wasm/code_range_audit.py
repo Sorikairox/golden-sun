@@ -4,14 +4,16 @@ so vendor C that tells code from data by the numeric range or the high bits of a
 subtracting addresses, behaves differently in the port. This scans the pinned vendor tree for such tests and
 checks every hit against port/tools/code_range_audit.tsv (file, line, pattern id, verdict, fix: no code text).
 A hit with no row fails the build (a re-pin or a new pattern needs a fresh look); a row with no hit is reported
-as stale. Usage: code_range_audit.py [--list]  (--list prints every hit with its row, or NEW)."""
+as stale. Usage: [PORT_GAME=tla] code_range_audit.py [--list]  (--list prints every hit with its row, or NEW)."""
 import os
 import re
 import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..'))
-TBS = os.path.join(ROOT, 'vendor/alchemy/games/tbs')
-TABLE = os.path.join(ROOT, 'port/tools/code_range_audit.tsv')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import game  # noqa: E402  (PORT_GAME or --game: tbs = port/tools/code_range_audit.tsv, tla = port/tla/tools/...)
+TBS = game.C.vendor
+TABLE = game.C.audit
 
 # pattern id -> regex over a line with its comments removed
 PATTERNS = [

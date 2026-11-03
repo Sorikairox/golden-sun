@@ -1,0 +1,3 @@
+# TLA: vendor C functions whose definitions the wasm build drops because port/pc defines a replacement
+# (same format as port/fn_overrides.tsv). None yet (TLA2).
+function	ours	why
