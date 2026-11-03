@@ -14,6 +14,11 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA4d (2026-11-03): **new game to "Transfer data from Golden Sun?"** (empty save: logos, logo, Felix naming, the
+  question, No -> Isaac naming: the original's order; the pulsing windows were a task never removed, trap 73);
+  **sound**: TLA mixer + render in C (pc_tla_mixer.c, GS1's channel mixers shared), D20-style 300/300 vs the ROM's
+  self-patching code in the interpreter; music audible in node and Chrome. diff_hw negative controls 4/4 (docs/TLA4.md 9).
+
 - TLA4c (2026-11-03): **TLA boots to the logos, the title and the new-game naming screen** in node (1,500 frames, no
   stop) and in headless Chrome (59.7 fps, 0 errors); naming is interactive; audio silent (resident mixer self-patches,
   bound to a callbacks-only port). asm2c: table calls, polling loops, adr+bx, A2C_THUMB (traps 69-72, docs/TLA4.md 8).
@@ -608,5 +613,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 72. TLA's resident sound mixer and its render patch their own instructions (TLA4c): resident_mixer_lanes.s copies mla
     kernels over `.4byte 0xfedcba98` placeholders, the render rewrites its branch words. asm2c cannot translate them
     (once `adr; bx` is followed, the flow reaches the placeholders: "ARM NV"). SoundDriver_EnterVBlankUpdate is bound
-    to Port_TlaSoundEnterVBlank (callbacks only, silent) until the mixer is ported to C like GS1's port/pc/mixer.c.
+    to Port_TlaSoundEnterVBlank which since TLA4d mixes and renders in C (port/tla/hw/pc_tla_mixer.c, checked by tests/arm/tla/diff_mixer.cjs:
+    the interpreter runs the self-patching original from memory).
+73. A code pointer stored as data has two spellings in TLA (TLA4d): translated asm writes a C routine's GBA address
+    (`ldr r0, =Func+1; bl Task_Add`), C writes its wasm table index. Any vendor C that compares such words (the task
+    list: Task_Remove/Find/Add/SetFlags/SuspendAll/ResumeAll) must compare one key: Port_TlaTaskKey (pc_tla.c). Symptom:
+    the clear scene's blend task never ended, BLDALPHA kept counting, windows pulsed over the logo. Look for the same
+    pattern wherever C stores or compares callbacks that asm also passes (event/script handlers, IRQ slots).
 

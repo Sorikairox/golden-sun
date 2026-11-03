@@ -2,6 +2,26 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA4d — 2026-11-03: new game to the transfer question; TLA sound in C
+
+- Read docs/TLA4.md section 9 and trap 73.
+- Title flow: with an empty save the original skips the intro and the "Press START" screen (Title entrance 1 runs them
+  only when the file count is > 0) and starts a new game in the clear overlay (0x64a): Felix naming, then
+  **"Transfer data from Golden Sun?"** (Yes: "Transfer Method", password or cable; No: Isaac naming). The port now shows exactly
+  that (node keys: START@450, A@480, RIGHT@620, A@650). The "naming over the title" look was a blend task never
+  removed (asm adds it by GBA address, C removes it by wasm pointer): Port_TlaTaskKey in the task routines (trap 73).
+  Contact sheet port_work/tla4d/contact.png (local).
+- Sound: port/tla/hw/pc_tla_mixer.c (mixer + IwramSoundRenderVBlank; GS1's channel mixers shared from port/pc/mixer.c
+  under MIXER_KERNELS_ONLY, GS1 identical). tests/arm/tla/diff_mixer.cjs: the ROM's self-patching code in the
+  interpreter vs the C, 300/300 EQUIV (negative 89/90). Music in node (tools/audio_check: 11/15 windows non-silent,
+  from the title logo on) and in headless Chrome (worklet running, non-zero frames, 0 errors).
+- diff_hw negative controls: 4/4 again (memory restored after a failing case; NOINPUT pair = miss).
+- Checks: full TLA build PASS (leak 0, calls PASS); D20 batch 251/0/951; diff_tla 30/30; diff_hw 131/0/57, negative
+  4/4; diff_mixer 300/300; test_arm 79/79; GS1 687968a7 / 895d45cc; regress --quick 9/9 OK; Chrome 59.7 fps, 0 errors.
+- **Next:** say Yes to the transfer question and take the password route with a GS1 password (or the cable route
+  with two pages: GS1 sends, TLA receives) — the user's end goal; check the 0x64a password grid and its CRC
+  (scene/clear/s217c.c) against a GS1-generated password. Nothing deployed (TLA is not on the site).
+
 ## TLA4c — 2026-11-03: TLA boots to the logos, the title and the new-game naming screen (node and Chrome)
 
 - Read docs/TLA4.md section 8 and traps 69-72.

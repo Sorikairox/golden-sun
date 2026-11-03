@@ -300,3 +300,86 @@ pc_tla.c) still need the full build.
   is unused now).
 - The colour kernel loaders in the game: a2c_call now runs the DMA source's translation; check a screen fade.
 - Func_080cf78c, Func_08173aac, Func_02002f64@681 did not block the boot (not reached).
+
+## 9. TLA4d (2026-11-03): the new-game flow to the transfer question; sound
+
+### Title flow
+With an empty save the real game does not show the "Press START" title: the Title overlay's entrance 1
+(scene/title/prepare.c Func_0200005c) runs the splash and the logo, then runs the intro pictures and the prompt
+screen (Func_081a71c8, Func_081a729c(1)) only `if (Func_020005d4() > 0)`, the file count (Func_080432a4,
+window/scan_part_flags.c: summaries with data, -9 on a flash error). With no file it goes to SceneId_Ov64a ("clear",
+the file screen's overlay) at entrance 1, whose main routine (Func_02000328, listing only) takes the file menu
+(Menu_SelectSaveSlotAction) only when the count is > 0, else starts a new game: name Felix (Func_080382f8(4..)),
+then the question **"Transfer data from Golden Sun?"** (FieldMessage_Show + Menu_RunConfirmSelection), Yes leading to
+the method choice (Func_080381f8: cable / password), No to naming Isaac (and the rest of GS1's party). So naming
+before the question with no key pressed is the original's order, not a skipped wait (hypotheses 1 and 2 of the brief
+were not the cause; the KEYINPUT polarity is right: nothing advances without a key).
+
+What was wrong was the picture (hypothesis 3): the clear scene loads the logo as its background (as GS1's file
+screen does) and fades the windows in with a blend task, Func_0200015c, that removes itself once its weight passes
+15. Translated asm adds the task by the C routine's GBA address (`ldr r0, =0x0200815d; bl Task_Add`), the C routine
+removes itself by its own pointer, a wasm table index (`Task_RemoveFar(Func_0200015c)`): the words never matched,
+the task ran for ever and BLDALPHA kept counting (EVA = frame/2 mod 32), so the naming and question windows pulsed
+from invisible to solid over the logo. Fix (trap 73): Task_Add/Find/Remove/SetFlags/SuspendAll/ResumeAll compare
+`Port_TlaTaskKey(func)` (port/tla/c_rules.tsv, pc_tla.c): a code address the code map knows becomes its wasm function
+pointer (Port_TryResolveCode, codemap.c, TLA only: C functions only, never the shared a2c trampoline, no abort).
+Now BLDALPHA settles at 0x0010 (windows opaque), and after the naming the logo is gone (black, copyright line).
+
+Screens (node, `node tests/boot.cjs --game tla 1800 --keys START@450-452,A@480-482,RIGHT@620-622,A@650-652`):
+Nintendo (0-120), Camelot (120-260), logo + copyright (~300-390), Felix naming (~400, START jumps to END, A
+confirms), "Transfer data from Golden Sun?" with the Yes/No icons (~560), No -> Isaac naming on black (~700); Yes -> "Transfer Method" with the two icons (password / link cable), "Use a password to
+transfer Clear Data." (`--keys START@450-452,A@480-482,A@650-652`).
+Contact sheet: port_work/tla4d/contact.png (local). The GS1 -> TLA transfer itself (Yes: cable or password) is the
+next step.
+
+### Sound
+`port/tla/hw/pc_tla_mixer.c`: SoundDriver_EnterVBlankUpdate's mixer (resident_mixer*.s) and IwramSoundRenderVBlank in
+C. The channel mixers are shared with GS1: port/pc/mixer.c now takes WORKSPACE / SAMPLES / MIXER_MUL_GROUP from its
+includer and hides its GS1 envelope, render and entry points under MIXER_KERNELS_ONLY (GS1 preprocesses to the same
+code: game.wasm 687968a7, game.js 895d45cc). TLA-only: the envelope (a release subtracts 256 - rate; the level is
+raised by an eighth before the volumes), the skip of a channel whose volumes are both 0 and the channel count at
+0x03000d1c, 528 samples into 0x03006fc0 with the resampler kernels unrolled by 8, and the render: two dithered 8-bit
+samples per workspace word (63,072 Hz: timer 0 reload 0xfef6) to the two DirectSound buffers (gData_02003a90 and
++0xc60), a packed two-coefficient filter of the old buffer bytes plus a tap of the left buffer 0xb0 words back as the
+next VBlank's seed, the clip flag at 0x03000ee4, and the loop's patched branch (rounding or not, by bits 2-3 of the
+channel count). Port_TlaSoundEnterVBlank mixes and renders, then returns 1 so System_WaitForFrameInterrupt does not
+call the render's translation (nothing runs between the two in the original).
+
+How it was checked (D20 on self-patching code): `node tests/arm/tla/diff_mixer.cjs` runs the ROM's code in the
+test interpreter, which decodes every instruction from memory and so executes the patched kernels and branch as the
+GBA does: the original SoundDriver_EnterVBlankUpdate, then IwramSoundRenderVBlank when it returns 0, against
+Port_TlaSoundEnterVBlank in game.wasm, one VBlank per case with 1-12 random channels (all envelope phases, looped and
+one-shot waves, fixed rate, the three synth kinds, counts ending inside the VBlank, zero volumes), random workspace
+(random words that clip, small words, zeros), buffers, render state and period. Every RAM byte is compared except the
+mixer's own code words and the original's stack: **EQUIV 300/300** (all rendered, 206 with clipping). `--negative`
+(no port call / channel count changed / one workspace bit changed): 89/90 detected (the miss is a flipped workspace
+bit absorbed by saturation after the channels were added). Limits: the original runs with sp = 0x03007900 (the
+lowest it accepts), so its DMA-to-stack path is not exercised (it copies the same bytes); the callbacks are Task_Idle.
+Confidence: high for the mixed and rendered bytes; the hardware side (FIFO, timer) is port/pc/apu.c's, unchanged.
+
+In the game: `WAV=port_work/tla4d/boot.wav node tests/boot.cjs --game tla 900 --probe tests/probes/wav.cjs` then
+`node tools/audio_check.cjs port_work/tla4d/boot.wav`: silent through the logos, music from 5 s (the title logo)
+on, RMS ~4,500-5,000 per channel, peaks to 29,000, no clipping, 11/15 windows not silent. Headless Chrome (muted,
+after a key): worklet running, 466,643 of 505,600 frames non-zero, 59.7 frames/s, 0 console errors.
+
+### diff_hw negative controls
+They were 2/3, not 4/4: the pair IwramCopyWords vs the translation of IwramFillWords runs FillWords with CopyWords's
+arguments (count 0x2028088 words from EWRAM), which overwrote IWRAM's code; the loop broke on the FAIL before
+restoring memory, so the next pair's original (IwramSignedRemainder) ran garbage and was NOINPUT, and a NOINPUT pair
+was counted out of the total. diff_hw now restores memory after a failing case and counts a NOINPUT pair as a miss:
+4/4.
+
+### Results
+- Full `tools/web_build.sh --game tla`: PASS (0 linker warnings, leak 0, calls PASS: 29,585 sites, 20 unbound, all
+  allowed). `node tests/boot.cjs --game tla 1500`: no stop.
+- D20 batch 251 EQUIV / 0 FAIL / 951 NOINPUT; diff_tla 30/30; diff_hw 131 EQUIV / 0 FAIL / 57 NOINPUT of 188;
+  negative controls 4/4; diff_mixer 300/300 (negative 89/90); test_arm 79/79.
+- GS1 game.wasm 687968a7, game.js 895d45cc (identical after the codemap.c and mixer.c changes); regress --quick 9/9 OK.
+- Page (muted headless Chrome, `WASM=build/wasm-tla tools/site.sh`): 59.7 frames/s, 0 console errors, audio running;
+  page code unchanged (touch controls as before).
+
+### Next (TLA4e)
+- Yes -> Password: enter a GS1 password in the 0x64a grid (Func_02000a70's alphabet, CRC-16 per block in s217c.c);
+  a GS1-side password needs GS1's "send" screen (GS1 port: File Screen -> Battle/Transfer?), or the cable route with
+  two pages (GS1 sends over the port's link transport, TLA receives).
+- The callbacks pattern of trap 73 elsewhere (event handlers, IRQ slots) if a "never ends" symptom shows up.
