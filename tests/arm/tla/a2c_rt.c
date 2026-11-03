@@ -6,7 +6,17 @@ typedef struct { u32 r[16]; u32 n, z, c, v; } A2cRegs;
 A2cRegs a2c_r;
 static u32 cur_overlay;
 extern void a2c_js_call(u32 addr);
-void a2c_call(u32 addr) { a2c_js_call(addr); }
+/* TLA4c: code run from the stack (the colour kernel loaders DMA a kernel there and call it through lr): the port
+   side's stack (0x0d...) is outside the GBA regions the interpreter runs, so the copy's source runs instead, the
+   DMA3 source the loader just wrote (as the game's run time does: port/tla/a2c/a2c_rt.c a2c_call) */
+void a2c_call(u32 addr) {
+  if ((addr >> 24) == 0x0d) {
+    u32 src = *(volatile u32 *)(uintptr_t)0x040000D4u;
+    if ((src >> 24) == 8)
+      addr = (src & ~1u) | (addr & 1u);
+  }
+  a2c_js_call(addr);
+}
 u32 a2c_overlay_current(void) { return cur_overlay; }
 void a2c_set_overlay(u32 o) { cur_overlay = o; }
 u32 a2c_regs_addr(void) { return (u32)(uintptr_t)&a2c_r; }

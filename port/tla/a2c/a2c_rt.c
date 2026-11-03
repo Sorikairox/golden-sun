@@ -71,11 +71,18 @@ void (*a2c_lookup(u32 addr))(void) {
   return 0;
 }
 
+void *Port_CodeAliasAt(u32 gba);
 void a2c_call(u32 addr) {
   A2cRegs save;
   /* a translated routine (an overlap entry has no C name, so no wrapper): call it as a direct call would, on the
      register file as it is */
   void (*raw)(void) = a2c_lookup(addr);
+  if (!raw && (addr & ~1u) >= 0x03007000u && (addr & ~1u) < 0x03008000u && !Port_CodeAliasAt(addr)) {
+    /* TLA4c: a kernel the code DMA'd onto the stack (the colour kernel loaders' copy, called through lr): its
+       translation is at the DMA3 source, as _call_via_sp (port/tla/hw/pc_tla.c) finds it. Only the stack page:
+       other RAM calls (overlay functions) go to Port_ResolveCode */
+    raw = a2c_lookup(*(volatile u32 *)(uintptr_t)0x040000D4u);
+  }
   if (raw) {
     raw();
     return;

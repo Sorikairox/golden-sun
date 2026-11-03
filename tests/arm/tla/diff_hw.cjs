@@ -183,12 +183,21 @@ async function main() {
   const neg = argv.includes('--negative');
   const list = neg ? NEG.map(([o, p]) => ({ ...byName.get(o), portAs: byName.get(p), neg: true }))
     : rows.filter((r) => modes.get(r.name) === 'thumb' || modes.get(r.name) === 'arm');
+  const STACK_KERNEL = new Set(['ColorBuffer_ScaleThreeQuarters', 'ColorBuffer_Halve', 'ColorBuffer_Brighten',
+    'ColorBuffer_Darken', 'ColorBuffer_Scale']);
   const N = +(process.env.CASES || 60);
   let eq = 0, fail = 0, noin = 0;
   const out = [];
   for (const r of list) {
     if (filter && !r.name.includes(filter)) continue;
     if (r.missing) { console.log(`${r.name.padEnd(34)} FAIL not translated`); fail++; continue; }
+    // TLA4c: the colour kernel loaders DMA a kernel onto the stack and call it there (`mov lr, sp` + BL suffix).
+    // The interpreter does not run that DMA, so the original executes whatever the stack held (zeros slide down
+    // to the pushed return address and 'return': trap 64), while the translation runs the kernel itself (the run
+    // time takes the DMA3 source). No input can be compared: NOINPUT, not a case (4 false FAILs otherwise)
+    if (!neg && STACK_KERNEL.has(r.name)) {
+      console.log(`${r.name.padEnd(34)} NOINPUT (kernel DMA'd onto the stack: not modelled by the interpreter)`); noin++; continue;
+    }
     const pr = r.portAs || r;
     let port = m[`_a2cw${pr.ovl ? `_ov${pr.ovl}` : ''}_${pr.addr.toString(16).padStart(8, '0')}`];
     if (DRAFTS) {
