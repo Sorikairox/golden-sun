@@ -6,6 +6,7 @@
 // resident memory). Reports wasm / JS / renderer memory. 0 console errors. Screenshots: port_work/phone/*.png.
 // Usage: node tests/web_phone.cjs   (needs build/site). One headless Chrome at a time.
 'use strict';
+const LCDK = /tla/.test(process.env.SITE_DIR || '') ? 'tla-lcd' : 'gs-lcd'; // TLA6: per-game option keys
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -32,7 +33,8 @@ async function main() {
   const dir = path.join(ROOT, 'port_work/webphone');
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
-  for (const f of fs.readdirSync(path.join(ROOT, 'build/site'))) fs.symlinkSync(path.join(ROOT, 'build/site', f), path.join(dir, f));
+  const SRC = path.join(ROOT, process.env.SITE_DIR || 'build/site'); // TLA6: SITE_DIR=build/site/tla (ROM=its ROM)
+  for (const f of fs.readdirSync(SRC)) fs.symlinkSync(path.join(SRC, f), path.join(dir, f));
   fs.symlinkSync(ROM, path.join(dir, 'rom.gba'));
   const out = path.join(ROOT, 'port_work/phone');
   fs.mkdirSync(out, { recursive: true });
@@ -153,9 +155,9 @@ async function main() {
       }
       check(await ev('document.documentElement.scrollWidth <= innerWidth + 1'), `${label}: menu has no sideways scroll`);
       await tap('label:has(> #opt-lcd)');
-      const lcdOn = await ev('GSLcd.on && localStorage.getItem("gs-lcd") === "1"');
+      const lcdOn = await ev('GSLcd.on && localStorage.getItem("' + LCDK + '") === "1"');
       await tap('label:has(> #opt-lcd)');
-      check(lcdOn && await ev('!GSLcd.on && localStorage.getItem("gs-lcd") === null'), `${label}: GBA screen colours toggles on and off by touch (stored only while on)`);
+      check(lcdOn && await ev('!GSLcd.on && localStorage.getItem("' + LCDK + '") === null'), `${label}: GBA screen colours toggles on and off by touch (stored only while on)`);
       await tap('label:has(> #opt-mute)');
       const muted = await ev('document.getElementById("opt-mute").checked');
       await tap('label:has(> #opt-mute)');

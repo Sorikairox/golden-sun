@@ -42,9 +42,12 @@ async function main() {
   if (!LIVE) {
     // site A = build/site; site B = the same with another site id in sw.js and a changed main.js (a new deploy)
     for (const d of [dirA, dirB]) fs.mkdirSync(d, { recursive: true });
-    for (const f of fs.readdirSync(path.join(ROOT, 'build/site'))) {
-      fs.copyFileSync(path.join(ROOT, 'build/site', f), path.join(dirA, f));
-      fs.copyFileSync(path.join(ROOT, 'build/site', f), path.join(dirB, f));
+    // SITE_DIR (TLA6): another page folder, e.g. build/site/tla (The Lost Age's page; ROM=its ROM); folders skipped
+    const SRC = path.join(ROOT, process.env.SITE_DIR || 'build/site');
+    for (const f of fs.readdirSync(SRC)) {
+      if (!fs.statSync(path.join(SRC, f)).isFile()) continue;
+      fs.copyFileSync(path.join(SRC, f), path.join(dirA, f));
+      fs.copyFileSync(path.join(SRC, f), path.join(dirB, f));
     }
     const sw = fs.readFileSync(path.join(dirB, 'sw.js'), 'utf8').replace(/const SITE = '[0-9a-f]+'/, "const SITE = 'bbbbbbbbbbbb'");
     fs.writeFileSync(path.join(dirB, 'sw.js'), sw);
@@ -140,7 +143,7 @@ async function main() {
     await waitFor('navigator.serviceWorker.controller !== null && GSOffline.state === "ready"', 'service worker ready and controlling');
     check(await ev('GSOffline.state') === 'ready' && await ev('document.getElementById("opt-offline-state").textContent') === '(ready offline)', 'option shows "(ready offline)"');
     const names1 = await cacheNames();
-    check(names1.length === 1 && /^golden-sun-[0-9a-f]{16}-[0-9a-f]{12}$/.test(names1[0]), `one cache named by build and site: ${names1}`);
+    check(names1.length === 1 && /^golden-sun-(tla-)?[0-9a-f]{16}-[0-9a-f]{12}$/.test(names1[0]), `one cache named by build and site: ${names1}`);
     const want = await swFiles(), have = await cacheFiles();
     check(JSON.stringify(want) === JSON.stringify(have), `cache holds exactly the ${want.length} site files (${have.join(' ')})`);
     check(!have.some((f) => /\.(gba|bin|sav)$/i.test(f)), 'no ROM or save in the cache');
@@ -210,7 +213,8 @@ async function main() {
       await sleep(1000);
       check(await ev('navigator.serviceWorker.getRegistrations().then((r) => r.length)') === 0, 'worker unregistered');
       check((await cacheNames()).filter((k) => k.startsWith('golden-sun-')).length === 0, 'caches cleared');
-      check(await ev('localStorage.getItem("gs-offline")') === '0', 'choice stored as gs-offline=0');
+      const OK = /tla/.test(process.env.SITE_DIR || '') ? 'tla-offline' : 'gs-offline'; // TLA6: per-game option keys
+      check(await ev(`localStorage.getItem("${OK}")`) === '0', `choice stored as ${OK}=0`);
     }
 
     console.log(`${errors.length} console errors`);

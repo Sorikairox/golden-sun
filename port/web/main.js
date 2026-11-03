@@ -7,6 +7,14 @@
 const GAME_TLA = window.GS_GAME === 'tla';
 const ROM_SHA1 = GAME_TLA ? 'b500663220cb9bf56b9f8e8c0c544f1d6fa3a824' : '5c4695205413df7db52b9a184815a07783999971';
 const ROM_SIZE = GAME_TLA ? 16777216 : 8388608;
+const GAME_NAME = GAME_TLA ? 'Golden Sun: The Lost Age' : 'Golden Sun';
+// TLA6 (site /tla/): one origin, one IndexedDB ('golden-sun', store 'files') for both games, so The Lost Age can
+// read a GS1 save later (the party transfer); GS1's keys stay 'rom' and 'flash', TLA's are 'tla-rom' and
+// 'tla-flash'. Page options likewise: gs-* for GS1, tla-* for TLA
+const K_ROM = GAME_TLA ? 'tla-rom' : 'rom';
+const K_FLASH = GAME_TLA ? 'tla-flash' : 'flash';
+const K_OPT = GAME_TLA ? 'tla-' : 'gs-';
+const CACHE_PREFIX = GAME_TLA ? 'golden-sun-tla-' : 'golden-sun-';
 const FRAME_MS = 1000 / 59.7275;
 const KEY = { A: 1, B: 2, SELECT: 4, START: 8, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128, R: 256, L: 512 };
 const KEYMAP = {
@@ -17,6 +25,19 @@ const KEYMAP = {
 const $ = (id) => document.getElementById(id);
 const status = (s) => { $('status').textContent = s; };
 const params = new URLSearchParams(location.search);
+// TLA6: the site has both games (GS1 at /, The Lost Age at /tla/); window.GS_SITE_BOTH (build_id.js) adds the links
+if (GAME_TLA) {
+  document.title = GAME_NAME + ' (web port)';
+  const h = document.querySelector('#picker h1'), rn = $('rom-name');
+  if (h) h.textContent = GAME_NAME;
+  if (rn) rn.textContent = GAME_NAME;
+}
+if (window.GS_SITE_BOTH && $('other-game')) {
+  const o = $('other-game'), a = document.createElement('a');
+  a.href = GAME_TLA ? '../' : 'tla/';
+  a.textContent = GAME_TLA ? 'Play Golden Sun (the first game)' : 'Play Golden Sun: The Lost Age';
+  o.appendChild(a); o.hidden = false;
+}
 
 // ---- IndexedDB: the ROM (after its check) and the save ----
 function db() {
@@ -51,9 +72,9 @@ async function sha1(bytes) {
 }
 
 async function checkRom(bytes) {
-  if (bytes.length !== ROM_SIZE) return `This file is ${bytes.length} bytes; the Golden Sun ROM is ${ROM_SIZE}.`;
+  if (bytes.length !== ROM_SIZE) return `This file is ${bytes.length} bytes; the ${GAME_NAME} ROM is ${ROM_SIZE}.`;
   const h = await sha1(bytes);
-  if (h !== ROM_SHA1) return `This file's SHA-1 is ${h}: not Golden Sun (USA, Europe).`;
+  if (h !== ROM_SHA1) return `This file's SHA-1 is ${h}: not ${GAME_NAME} (USA, Europe).`;
   return null;
 }
 
@@ -87,7 +108,7 @@ async function start(rom) {
   let next = performance.now();
   let lastFlashGen = 0;
   let run = 0;   // GS10: each (re)start of the game module is a new run; a dropped run's frame wait never resolves
-  const savedFlash = await dbGet('flash');
+  const savedFlash = await dbGet(K_FLASH);
   console.log('page: save looked up');
   // each completed frame (line 160): draw it, latch the keys, and wait for the next display refresh at the GBA's
   // rate; the game is suspended there (ASYNCIFY) until the promise resolves
@@ -103,7 +124,7 @@ async function start(rom) {
     if (gen !== lastFlashGen) {
       lastFlashGen = gen;
       const f = m._Port_FlashMemory();
-      dbPut('flash', m.HEAPU8.slice(f, f + 65536));
+      dbPut(K_FLASH, m.HEAPU8.slice(f, f + 65536));
     }
     if (frames === 1) status('');
     window.__gsFrames = frames;
@@ -224,12 +245,12 @@ const lcd = {
   set(on) {
     this.on = !!on;
     if (this.on && !this.lut) this.build();
-    try { if (on) localStorage.setItem('gs-lcd', '1'); else localStorage.removeItem('gs-lcd'); } catch (e) { /* storage blocked */ }
+    try { if (on) localStorage.setItem(K_OPT + 'lcd', '1'); else localStorage.removeItem(K_OPT + 'lcd'); } catch (e) { /* storage blocked */ }
   },
 };
 {
   let saved = false;
-  try { saved = localStorage.getItem('gs-lcd') === '1'; } catch (e) { /* storage blocked: default off */ }
+  try { saved = localStorage.getItem(K_OPT + 'lcd') === '1'; } catch (e) { /* storage blocked: default off */ }
   if (params.get('lcd') !== null) saved = params.get('lcd') === '1';   // tests: ?lcd=1 / ?lcd=0 (not stored)
   lcd.on = saved;
   if (saved) lcd.build();
@@ -281,13 +302,13 @@ const offline = {
     } catch (e) { console.warn('offline: service worker not registered: ' + (e.message || e)); this.show('error'); }
   },
   async disable() {
-    try { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch (e) { /* none */ }
-    try { for (const k of await caches.keys()) if (k.startsWith('golden-sun-')) await caches.delete(k); } catch (e) { /* none */ }
+    try { const r = await navigator.serviceWorker.getRegistration('./'); if (r && new URL(r.scope).pathname === new URL('./', location.href).pathname) await r.unregister(); } catch (e) { /* none */ }
+    try { for (const k of await caches.keys()) if (k.startsWith(CACHE_PREFIX) && (GAME_TLA || !k.startsWith('golden-sun-tla-'))) await caches.delete(k); } catch (e) { /* none */ }
     this.reg = null; $('update').hidden = true; this.show('off');
   },
   set(on) {
     this.on = !!on;
-    try { if (on) localStorage.removeItem('gs-offline'); else localStorage.setItem('gs-offline', '0'); } catch (e) { /* storage blocked */ }
+    try { if (on) localStorage.removeItem(K_OPT + 'offline'); else localStorage.setItem(K_OPT + 'offline', '0'); } catch (e) { /* storage blocked */ }
     if (!this.supported()) { this.show(on ? 'unsupported' : 'off'); return; }
     if (on) this.register(); else this.disable();
   },
@@ -298,7 +319,7 @@ const offline = {
 };
 {
   let on = true;
-  try { on = localStorage.getItem('gs-offline') !== '0'; } catch (e) { /* storage blocked: default on */ }
+  try { on = localStorage.getItem(K_OPT + 'offline') !== '0'; } catch (e) { /* storage blocked: default on */ }
   if (params.get('offline') !== null) on = params.get('offline') !== '0';
   offline.on = on;
   const box = $('opt-offline');
@@ -313,7 +334,7 @@ async function useFile(file) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const err = await checkRom(bytes);
   if (err) { status(err); return; }
-  await dbPut('rom', bytes);
+  await dbPut(K_ROM, bytes);
   offline.persist();
   start(bytes);
 }
@@ -336,7 +357,7 @@ $('file').addEventListener('change', (e) => { if (e.target.files[0]) useFile(e.t
     start(bytes);
     return;
   }
-  const cached = await dbGet('rom');
+  const cached = await dbGet(K_ROM);
   if (cached && !(await checkRom(cached))) { offline.persist(); start(cached); return; }
   status('');
 })();

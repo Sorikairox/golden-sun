@@ -13,7 +13,7 @@
 const BUILD = '__GS_BUILD__';
 const SITE = '__GS_SITE__';
 const FILES = ['__GS_FILES__'];
-const PREFIX = 'golden-sun-';
+const PREFIX = '__GS_PREFIX__'; // golden-sun- (GS1 at /), golden-sun-tla- (TLA at /tla/)
 const CACHE = PREFIX + BUILD + '-' + SITE;
 
 self.addEventListener('install', (e) => {
@@ -23,7 +23,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k.startsWith(PREFIX) && k !== CACHE) await caches.delete(k);
+    for (const k of await caches.keys()) if (k.startsWith(PREFIX) && k !== CACHE && (PREFIX !== 'golden-sun-' || !k.startsWith('golden-sun-tla-'))) await caches.delete(k);
     await self.clients.claim();
   })());
 });
@@ -39,6 +39,7 @@ self.addEventListener('fetch', (e) => {
   if (!url.pathname.startsWith(base)) return;
   let rel = url.pathname.slice(base.length);
   if (rel.startsWith('api/')) return;              // the room server: always the network
+  if (rel.includes('/')) return;                   // TLA6: a page below this one (/tla/) has its own worker
   if (req.mode === 'navigate' || rel === '' || rel === 'index.html') rel = './';
   if (!FILES.includes(rel)) return;                // not a site file (e.g. a test ROM URL): network, not cached
   e.respondWith((async () => {
