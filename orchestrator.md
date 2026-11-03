@@ -14,6 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA1 (2026-11-03): **GS1 byte-identical at vendor f6c08e64** (wasm/js equal to a 24b72a32 worktree build and to the
+  live site, regress full 62/62 OK; D22, no alchemy-tbs pin). TLA reference build tools (tools/build_ref_tla.sh,
+  check_rom_tla.sh) in the existing image: **compare-tla-en FAILS until alchemy-gcc 641764a5 is fetched (approval
+  needed, trap 52)**; near-match build (old compiler + old options) has the cart's main layout. Provisional
+  port/symbols/tla-en*.tsv and the census: TLA code 1.96 MB, C 46.5 %, listing asm 48.9 % (959 KB, 1,203 fn), hand .s
+  4.6 % (docs/TLA1.md).
+
 - GS-deploy (2026-11-02): **public at https://golden-sun-web-port.netlify.app** (user's request; D14 replaced) with
   the room function at /api/room; `tools/deploy_web.sh` redeploys (leak check, site allowlist, staging outside the
   repo). **Offline play** (docs/OFFLINE.md, option on by default): service worker precaches every site file in a cache
@@ -260,6 +267,15 @@ that edition's address map, not a port. Out of scope until asked.
   unreliable newest-wins channel, bulk data whole on a reliable channel, SIOCNT id bits (4-5) kept plausible. The
   transport is a small interface (`port/pc/link_transport.h`: send/recv per channel, player id, connected) so G7 swaps
   in WebRTC data channels without touching link.c. Supersedes PLAN G6's register-level wording.
+- **D22 One vendor checkout for both games; GS1 proven identical at f6c08e64 (TLA1, 2026-11-03):** the TLA0 pull moved
+  `vendor/alchemy` 24b72a32 -> f6c08e64 (tbs: thor.c comments only). GS1 built against both (`ALCHEMY=<worktree at
+  24b72a32> tools/web_build.sh` mounts the other checkout at the same container path): game.wasm 687968a7... and game.js
+  895d45cc... byte-identical to each other and to the live site; regress full unchanged. **No `vendor/alchemy-tbs` pin
+  is needed**; GS1 builds from `vendor/alchemy` at f6c08e64 (D1's pin is now f6c08e64 for the wasm build). Every later
+  re-pin (TLA may re-pin, user 2026-11-03) repeats this check; the first time GS1's wasm differs, pin GS1 in a separate
+  checkout `vendor/alchemy-tbs` used by build.py for tbs. GS1's reference build (`/ref/alchemy` in the volume,
+  port/symbols/tbs-en*.tsv) stays at 24b72a32 with alchemy-gcc 9bc4e65a. TLA's reference needs alchemy-gcc 641764a5
+  (alchemy 34c36297 moved TLA's three options into the compiler): approval pending, docs/TLA1.md 2.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
@@ -462,3 +478,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     cell and the frames since arrival match and no random battle falls inside it (port_work/g26/shift.sh): reuse puzzle spans,
     autowalk the battle-prone legs. A lost boss fight leaves summoned Djinn on standby: the Djinn command then *sets* them (no
     unleash); summon first. The aerie's lift is behind the confrontation cells (no way down before Saturos except a loss).
+52. A vendor re-pin can move the **alchemy-gcc gitlink** too (TLA1): f6c08e64 pins alchemy-gcc 641764a5, not the 9bc4e65a
+    our volume's compilers come from. TLA's C then compiles with different instruction order (everything after shifts);
+    the build "works" and only `compare-tla-en` fails. Check `git ls-tree <pin> alchemy-gcc` on every re-pin. The old
+    compiler plus the three removed options (`NEARMATCH=1 tools/build_ref_tla.sh build`) gives the cart's main layout.
