@@ -1114,6 +1114,8 @@ def main():
             okset = {(L.ovl, a) for L, _, a, _ in ok}
             want = {}
             for b, (L, name, addr, mode) in zip(bodies, ok):
+                if L.ovl:  # main image only: the one overlay overlap entry (Func_0200039c+0x19c@6b5) failed D20
+                    continue
                 for t in re.findall(r'a2c_call\(0x([0-9a-f]+)u\)', '\n'.join(b)):
                     t = int(t, 16) & ~1
                     for ov in ([L.ovl, ''] if L.ovl else ['']):
