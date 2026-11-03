@@ -407,22 +407,43 @@ class Fn:
         return f'0x{val:08x}u'
 
     # ---- discovery + emission
+    class _DeadReturn(Exception):
+        pass
+
     def translate(self):
-        work = [(self.addr, self.mode)]
+        # TLA6: a local `bl` used as a long jump (Func_080cf78c's `bl .L_080d00e2` before its pool) gives a return
+        # point that never comes back; the chain after it can run into data a few instructions later. A failure on
+        # a chain reached only from such a return point marks that return point dead and starts again without it.
+        dead = set()
+        while True:
+            try:
+                return self._translate(dead)
+            except Fn._DeadReturn as e:
+                dead.add(e.args[0])
+                self.code, self.localrets, self.uses_dispatch = {}, set(), False
+
+    def _translate(self, dead):
+        work = [(self.addr, self.mode, None)]
         seen = set()
         while work:
-            a, mo = work.pop()
+            a, mo, root = work.pop()
             optional = mo.endswith('?')
             mo = mo.rstrip('?')
+            if optional and a in dead:
+                continue
             if (a, mo) in seen or (optional and a in self.code):
                 continue
             seen.add((a, mo))
+            if optional and root is None:
+                root = a
             if not self.inside(a):
                 if optional:
                     continue
                 if any(f[1] == a for f in self.L.funcs) or self.tr.known(self.L.ovl, a):  # falls through into the next routine: a tail call
                     self.code[a] = (mo, self.tail(a, mo == 'thumb'), [], a)
                     continue
+                if root is not None:
+                    raise Fn._DeadReturn(root)
                 raise Unsupported(f'flow leaves the routine at 0x{a:x}')
             try:
                 lines, succ = (self.thumb(a) if mo == 'thumb' else self.arm(a))
@@ -430,9 +451,12 @@ class Fn:
                 if optional:  # the return point of a far jump that never comes back (data follows)
                     self.localrets.discard(a)
                     continue
+                if root is not None:
+                    raise Fn._DeadReturn(root)
                 raise
             self.code[a] = (mo, lines, succ, a + (4 if mo == 'arm' else self.thumb_text(a)[1]))
-            work.extend(succ)
+            work.extend((t, m, root) for t, m in succ)
+        self.localrets -= dead
         self.mark_spins()
         return self.emit()
 
@@ -1241,24 +1265,35 @@ def main():
     tr.load()
     rs = tr.routines()
     only = set(args.only.split(',')) if args.only else None
-    sel, seen_at = [], set()
+    sel, seen_at, alt = [], set(), {}
     for r in rs:  # aliases (two global labels at one address) translate once, under the first name
         if (only is None or r[1] in only) and (r[0].ovl, r[2]) not in seen_at:
             seen_at.add((r[0].ovl, r[2]))
             sel.append(r)
+        elif (only is None or r[1] in only) and r[0] is not next(x for x in sel if (x[0].ovl, x[2]) == (r[0].ovl, r[2]))[0]:
+            # TLA6: the same routine in another listing (hw2c's byte listing first, then the vendor's listing):
+            # tried when the first fails
+            alt.setdefault((r[0].ovl, r[2]), []).append(r)
     for L, name, addr, mode, end in sel:
         tr.fnaddr[(L.ovl, addr)] = tr.cname(L.ovl, addr)
     bodies, report, ok = [], [], []
     # translate until stable: a routine that fails is dropped from the direct-call set
-    for L, name, addr, mode, end in sel:
-        f = Fn(tr, L, name, addr, mode, end)
-        try:
-            bodies.append(f.translate())
-            ok.append((L, name, addr, mode))
-            report.append((name, L.ovl, f'{addr:08x}', end - addr, 'ok', ''))
-        except Unsupported as e:
-            tr.fnaddr.pop((L.ovl, addr), None)
-            report.append((name, L.ovl, f'{addr:08x}', end - addr, 'hand', str(e)))
+    for i, r in enumerate(sel):
+        for L, name, addr, mode, end in [r] + alt.get((r[0].ovl, r[2]), []):
+            f = Fn(tr, L, name, addr, mode, end)
+            try:
+                bodies.append(f.translate())
+                ok.append((L, name, addr, mode))
+                report.append((name, L.ovl, f'{addr:08x}', end - addr, 'ok', ''))
+                sel[i] = (L, name, addr, mode, end)
+                tr.fnaddr[(L.ovl, addr)] = tr.cname(L.ovl, addr)
+                break
+            except Unsupported as e:
+                tr.fnaddr.pop((L.ovl, addr), None)
+                err = e
+        else:
+            L, name, addr, mode, end = r
+            report.append((name, L.ovl, f'{addr:08x}', end - addr, 'hand', str(err)))
     # overlap entries (TLA4b, trap 66): a constant call or branch into the middle of a translated routine (the m4a
     # driver's chk_adr_r2 / ld_r3_tp_adr_i spots, entered by `bl` from other routines) gets a second routine from
     # the target to the containing routine's end, named ROUTINE+0xOFF. The routine itself is not split (a split
