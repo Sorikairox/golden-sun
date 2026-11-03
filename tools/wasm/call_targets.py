@@ -28,7 +28,7 @@ def scan(cfile):
     calls, rows = [], set()
     fn = None
     rx_fn = re.compile(r'^void (a2c_(?:ov([0-9a-f]+)_)?[0-9a-f]{8})\(void\) \{$')
-    rx_call = re.compile(r'a2c_call\(0x([0-9a-f]+)u\)')
+    rx_call = re.compile(r'a2c_(?:call|table)\(0x([0-9a-f]+)u\)')  # table: a computed call's slots (TLA4c)
     rx_row = re.compile(r'^  \{0x([0-9a-f]+)u, 0x([0-9a-f]+), a2c_')
     for line in open(cfile, encoding='utf-8'):
         m = rx_fn.match(line)

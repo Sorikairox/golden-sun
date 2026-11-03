@@ -805,6 +805,17 @@ class Fn:
                     # pc, ip, lsr #3` into its unrolled stmia run): the same computed jump, at any instruction
                     self.localrets.update(t for t in range(a + 8, self.end, 4))
                     succ_extra = succ_extra + [(a + 8, 'arm?')]
+                elif opc == 4 and rn != 15 and bits == 0 and not op & 0x10 and not (op >> 5) & 3:
+                    # add pc, rB, rI, lsl #k after `add rB, pc, #imm` and `and rI, rX, #M` (TLA4c: decode_2's
+                    # `mov lr, pc; add pc, r9, r8, lsl #5` into a table of 0x20-byte helpers after
+                    # Resource_RefillType2Bits): every slot is an entry. Outside this routine each is listed as
+                    # `a2c_table(...)` (overlap entries, call_targets.py); inside it is a local target
+                    for t in self.table_targets(a, rn, op & 15, cj):
+                        if self.inside(t):
+                            self.localrets.add(t)
+                            succ_extra = succ_extra + [(t, 'arm?')]
+                        else:
+                            L.append(f'/* a2c_table(0x{t:x}u) */')
                 L.append('A2C_RETJUMP(pc);')
                 return L, succ_extra, True
             return L, succ_extra, False
@@ -856,6 +867,31 @@ class Fn:
                 return [f'goto L_{t:08x};'], [(t, 'arm')], True
             return self.tail(t, False), [], True
         raise Unsupported(f'ARM 0x{op:08x}')
+
+    def table_targets(self, a, rb, ri, k):
+        """the slots of a computed `add pc, rb, ri, lsl #k`: rb from `add rb, pc, #imm`, ri from `and ri, rx, #M`
+        in the 4 instructions before (none written in between); [] when either is not found"""
+        base = mask = None
+        for p in range(a - 4, a - 20, -4):
+            w = self.L.w(p)
+            if w is None or w >> 28 != 14:
+                break
+            rd = (w >> 12) & 15
+            if base is None and rd == rb:
+                if (w & 0x0fff0000) != 0x028f0000:
+                    return []
+                r, imm = (w >> 8) & 15, w & 0xff
+                base = (p + 8 + (((imm >> (2 * r)) | (imm << (32 - 2 * r))) & 0xffffffff if r else imm)) & 0xffffffff
+            elif mask is None and rd == ri:
+                if (w & 0x0ff00000) != 0x02000000:
+                    return []
+                r, imm = (w >> 8) & 15, w & 0xff
+                mask = ((imm >> (2 * r)) | (imm << (32 - 2 * r))) & 0xffffffff if r else imm
+        if base is None or mask is None or bin(mask).count('1') > 8:
+            return []
+        bits = [1 << i for i in range(32) if mask >> i & 1]
+        vals = {sum(b for j, b in enumerate(bits) if n >> j & 1) for n in range(1 << len(bits))}
+        return sorted((base + (v << k)) & 0xffffffff for v in vals if (base + (v << k)) % 4 == 0)
 
     def arm_xfer(self, a, P, U, W, Lb, rn, rd, off, kind):
         base = f'0x{a + 8:x}u' if rn == 15 else RNAMES[rn]
@@ -1116,7 +1152,7 @@ def main():
             for b, (L, name, addr, mode) in zip(bodies, ok):
                 if L.ovl:  # main image only: the one overlay overlap entry (Func_0200039c+0x19c@6b5) failed D20
                     continue
-                for t in re.findall(r'a2c_call\(0x([0-9a-f]+)u\)', '\n'.join(b)):
+                for t in re.findall(r'a2c_(?:call|table)\(0x([0-9a-f]+)u\)', '\n'.join(b)):
                     t = int(t, 16) & ~1
                     for ov in ([L.ovl, ''] if L.ovl else ['']):
                         if (ov, t) in starts:
