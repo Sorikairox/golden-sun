@@ -2,6 +2,23 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA4b — 2026-11-03: TLA wiring (H1-H5, trap 65), call-target check; node boot stops in Resource_Decode2
+
+- Read docs/TLA4.md section 7 and traps 66-68.
+- Wired: one asm2c pass over the listings and hw2c's byte listings (1,404/1,411); bindings.tsv binds/GS1 twins;
+  `twins` port/pc files; tla_asm.c split in 16 units (the monolith was OOM-killed); overlay loader hook; IRQ order
+  checked; Port_BiosNop/SoundGetJumpList; ROM-copy run addresses; `_call_via_sp` for the colour kernels; translated
+  I/O stores start DMAs; TLA entry Func_0801319c; VCOUNT busy-waits; mixer copy from its ROM address.
+- asm2c: main-image overlap entries for mid-routine call targets, `add pc, pc, rm, lsr #k`, returns past the
+  caller (a2c_ret_to).
+- Call-target check: 29,526 sites, 19 unbound, all allowed, PASS (stage `calls`).
+- Checks: full TLA build PASS (0 linker warnings, leak 0); batch D20 251/0/951; diff_tla 30/30; diff_hw 124/0/65;
+  test_arm 79/79; GS1 687968a7 / 895d45cc; regress --quick 9/9 OK.
+- **Stop:** `node tests/boot.cjs --game tla 600` passes sound init, then gets `asm2c: continuation at 0x08012e74`
+  in Resource_Decode2. Decode_2 jumps by register to a pool-loaded helper with no entry. Next: give pool-word code
+  targets in byte listings an entry, then continue to the logos and title.
+- Not done: Chrome page, title, audio check, Func_080cf78c / Func_08173aac / Func_02002f64@681, the rest of H5.
+
 ## TLA4a2 — 2026-11-03: TLA decompressors EQUIV (hw2c routine bounds, 3 asm2c ARM fixes); bindings 0 left
 
 - Read docs/TLA4.md section 5 and trap 66.

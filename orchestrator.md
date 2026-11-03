@@ -576,3 +576,17 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     hw2c now leaves those labels out, 42 remain, all sound-driver jumps into other routines). Splitting at the targets
     instead (a new routine start) turns loop back edges into nested tail calls (unbounded C recursion): do not.
     Check the generated C's constant a2c_call targets against the symbol table after any front-end change.
+    **TLA4b:** the build now checks this (tools/wasm/call_targets.py, stage `calls`, allow list
+    port/tla/call_targets_allow.tsv), and asm2c gives a constant mid-routine target of the main image an overlap entry
+    (a second routine from the target to the end), which needs no split.
+67. A routine can return past its caller (TLA4b). mplay_main's `pop {pc}` epilogue, reached by tail branches after
+    MPlayMain's own `bl`s changed lr, pops the return address MPlayMain pushed. asm2c's "callee returns to the lr it was
+    given" then dispatched the wrapper's sentinel as code. Callees now report where they returned (a2c_ret_to), and
+    frames unwind to the one that returns there. Register jumps to code with no entry still break this: decode_2 loads
+    helper addresses from a pool (`ldm ip, {sl, fp}`) and jumps to 0x08012e74, so the target must get an entry
+    (docs/TLA4.md 7, the TLA4b stop point).
+68. Translated code writes the hardware registers itself (TLA4b). The colour kernel loaders `stmia` the three DMA3
+    registers and call the copy at once. C goes through Dma_Set, but a2c stores did not, so the DMA ran only at the
+    next halt. asm2c's stores now call a2c_io_written. Also: one 43 MB translation unit was OOM-killed at -O2 (exit
+    137; the 8 GB Docker VM), and emcc still exited 0. link.py now splits it (16 units, 3 at a time) and fails on a
+    missing object.

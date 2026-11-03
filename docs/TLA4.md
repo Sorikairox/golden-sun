@@ -152,3 +152,80 @@ Still open:
 - ply_rept also FAILs as a translation (`ld_r3_tp_adr_i` call-out). It is provided by GS1's EQUIV port, as a byte twin.
   The translation failure is still an asm2c lead for TLA5: a `bl` into the middle of another routine.
 - Func_080cf78c, Func_08173aac, Func_02002f64 @681 (section 3).
+
+## 7. TLA4b (2026-11-03): wiring, the call-target check, boot to the first decompressor
+
+### Wiring
+- **H3.** The build's asm2c stage now runs `port/tla/hw/tools/hw2c.py --with-listings`: the vendor listings and the
+  hand-asm byte listings go through asm2c in one pass (1,404 of 1,411 routines; one `a2c_dispatch`, codemap and
+  names.tsv). Byte listings load first, so they win where they cover a listing routine asm2c could not take.
+  bindings.tsv `bind`/`gs1` rows are veneers to their port function (link.py veneer_map). The GS1 twins come from
+  port/pc files marked `twins` in port/tla/pc.tsv (asm_small, iwram, m4a, sound_asm, text_asm): build.py keep_twins
+  keeps the gs1 port functions and turns every other definition into a declaration (`Trig_SineTable` read as
+  `Math_SineTable`).
+- **tla_asm.c is split** into 16 units, compiled three at a time after the rest: the 43 MB unit was OOM-killed
+  (exit 137; the Docker VM has 8 GB), and emcc still reported success, so link.py now fails on a missing object.
+- **Trap 65.** A c_rules hook in Resource_LoadCode (TLA's overlay loader, vendor C) calls Port_TlaOverlayLoaded
+  (port/tla/hw/pc_tla.c): Port_CodeMapOverlay, Port_A2cOverlayLoaded, Port_RelocateOverlay.
+- **H1.** TLA's IwramIrqMain reads gIrqHandlers (0x030001e4) directly, in the order 1, 0, 2, 6, 7, 4, 5, 12, 13:
+  the same as hw.c's IRQ_ORDER. Differences that do not matter in the port: it sets IME and narrows IE to
+  VCount/Timer3/Serial/GamePak while a handler runs (nesting), and when no listed bit is pending it calls handler 13
+  (the ldr for GamePak is unconditional).
+- **H2.** Port_BiosNop and Port_BiosSoundGetJumpList (pc_tla.c). Nothing in TLA calls the wrappers.
+- **H4.** Port_TlaRunAddress maps the ROM load ranges of the IWRAM block (0x080006B8 -> 0x03000100, 0xFA0 bytes)
+  and the mixer (0x081C1310 -> 0x03006000) to the run address: Port_ResolveCode (TLA only) and a2c_call try it.
+  m4aSoundInit's mixer copy reads the ROM address (c_rules: `Sound_Mixer` was a function index, which Bios_CpuSet
+  skips). `Sound_Mixer` calls go to SoundDriver_Mixer.
+- **H5.** The colour kernel loaders DMA a kernel to the stack and `bl _call_via_sp`. Translated stores to I/O now
+  call a2c_io_written (a DMA started by register writes runs at once). `_call_via_sp` (pc_tla.c) runs the kernel's
+  translation, found by the DMA3 source, on the register file. The rest of H5 (BattleEffect_PatchTemplate, the
+  relocated battle kernels) is not needed for boot and not done.
+- Entry: main.c calls Func_0801319c (TLA's System_Initialize) and the IRQ vector word is 0x080006B8; soft reset
+  0x08000428. Both are under PORT_GAME_TLA, which only the TLA build defines.
+- VCOUNT busy-waits in driver.c and pcm_rate.c go through Port_ReadVCount (c_rules), as GS1.
+- The TLA build now exports its PC layer (Port_FrameBuffer, Port_SetKeys...). link.py looked for GS1's object
+  prefix only.
+- Veneers no C calls by name get code map rows (codemap_gen, TLA only): translated code calls them by address.
+
+### asm2c
+- **Overlap entries** (trap 66): a constant call into the middle of a translated main-image routine gets a second
+  routine from the target to the routine's end (`ROUTINE+0xOFF`; 22 in the build: chk_adr_r2, ld_r3_tp_adr_i,
+  the decode_2 epilogue...). An overlay overlap entry (Func_0200039c+0x19c@6b5) failed the batch, so overlays are
+  left out. a2c_call calls a translated routine raw (overlap entries have no C wrapper).
+- `add pc, pc, rm, lsr #k` is a local computed jump (IwramFillWords).
+- **Returns past the caller.** mplay_main's `pop {pc}` epilogue (reached by tail branches after MPlayMain's own
+  `bl`s changed lr) returns to MPlayMain's caller. Callees now report where they returned (`a2c_ret_to`). A frame
+  whose entry lr differs unwinds (one shared `unw:` block per routine), and a2c_enter_wrapped checks its sentinel.
+  A register jump to an address with no code (a2c_is_return) counts as such a return.
+- hw2c names unlabelled code at the start of a run (`HwCode_030004a8`, the shared signed-division body).
+
+### Call-target check (trap 66)
+`tools/wasm/call_targets.py`, build stage `calls` (TLA). Every constant `a2c_call` target in the generated C must
+be a bound entry point (asm2c codemap, the link's code map, ROM-copy run address, soft reset) or a row of
+`port/tla/call_targets_allow.tsv`. Result: 29,526 sites, 19 unbound, all allowed (render.c left out 10,
+sound-driver spots 7, Func_02002f64@681 2): PASS.
+
+### Results
+- Full `tools/web_build.sh --game tla`: PASS (0 linker warnings, audit, leak 0, calls PASS; game.wasm 21.5 MB,
+  about 6 min).
+- D20 batch 251 EQUIV / 0 FAIL / 951 NOINPUT. diff_tla 30/30. diff_hw 124 EQUIV / 0 FAIL / 65 NOINPUT of 189
+  (ply_rept no longer FAILs). test_arm 79/79.
+- GS1 game.wasm 687968a7, game.js 895d45cc (sha1, identical); regress --quick 9/9 OK.
+
+### Stop point (node, `node tests/boot.cjs --game tla 600`)
+Boot passes Heap/IRQ install, sound init (SampleFreqSet, MPlayMain, the mixer copy) and stops before the first
+frame is drawn:
+
+```
+asm2c: continuation at 0x08012e74, expected the return to 0x0d0ffff0
+  a2c_badreturn <- Resource_Decode2 (wrapper) <- Resource_DecodeType2 <- a2c_call <- a2c_0802a6b8
+```
+
+Resource_Decode2 (src/system/decode_2.s) does `add ip, pc, #36; ldm ip, {sl, fp}`: it loads code addresses from
+a pool and later jumps through them by register. 0x08012e74 is a helper inside the refill object
+(`and r8, ip, fp; bx lr`, after Resource_RefillType2Bits's epilogue), with no label. A register jump there
+finds no routine, so a2c_is_return takes it for a return past the caller and unwinds to the wrapper.
+Hypothesis and fix: give pool-word code targets inside a byte listing an entry (an overlap entry, or an
+`HwCode_` label when nothing branches across it), as was done for constant targets. The call-target check does not
+see these targets because they are loaded from a pool, not constants in a2c_call. Then continue the boot. Chrome,
+the title, the audio check and Func_080cf78c / Func_08173aac / Func_02002f64@681 were not reached.
