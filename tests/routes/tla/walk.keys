@@ -1,0 +1,2 @@
+# TLA6: after opening.keys: walking (diagonals off the door cell, down, left), UP back into the aerie and out again.
+DOWN+RIGHT@14500-14650,DOWN+LEFT@14660-14800,UP@14810-14900,DOWN@14910-15010

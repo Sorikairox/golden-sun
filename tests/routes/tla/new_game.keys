@@ -1,0 +1,5 @@
+# TLA6: empty save, logos, Felix naming (START = END, A), "Transfer data from Golden Sun?" -> No, Isaac naming
+# (START, A). Inputs only.
+START@450-452,A@480-482      # Felix: END, confirm
+RIGHT@620-622,A@650-652      # the transfer question: No
+START@760-762,A@790-792      # Isaac: END, confirm

@@ -1,0 +1,3 @@
+# TLA6: with the save.keys flash: the intro (a file exists), START, START (title), A: Continue, file 1, back at the
+# Venus Lighthouse; A opens the field menu.
+START@300-302,START@500-502,A@700-702,A@900-902,A@1100-1102,A@1300-1302

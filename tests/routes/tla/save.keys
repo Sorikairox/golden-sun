@@ -1,0 +1,2 @@
+# TLA6: after opening.keys: the pause menu, Save your quest, file 1 ("Your game was saved"), then the field menu.
+START@14700-14702,A@14790-14792,A@14890-14892,A@14990-14992,A@15090-15092
