@@ -183,6 +183,19 @@ void *Port_CodeAliasAt(u32 gba) {
 
 void Port_SystemEntry(void);
 
+#ifdef PORT_GAME_TLA
+static int resolveQuiet;
+void *Port_ResolveCode(void *p);
+/* TLA4d: the function at a code address, or 0 (no abort): Port_TlaTaskKey (port/tla/hw/pc_tla.c). */
+void *Port_TryResolveCode(void *p) {
+  void *fn;
+  resolveQuiet = 1;
+  fn = Port_ResolveCode(p);
+  resolveQuiet = 0;
+  return fn;
+}
+#endif
+
 void *Port_ResolveCode(void *p) {
   u32 a = (u32)(uintptr_t)p;
   void *fn;
@@ -214,6 +227,8 @@ void *Port_ResolveCode(void *p) {
     if (run != a)
       return Port_ResolveCode((void *)(uintptr_t)run);
   }
+  if (resolveQuiet) /* TLA4d: Port_TryResolveCode: C functions only (not the shared a2c trampoline), no abort */
+    return 0;
   { /* TLA4c: a translated routine with no C name (port/tla/a2c/a2c_rt.c) */
     void *Port_A2cPointer(u32 a);
     fn = Port_A2cPointer(a);

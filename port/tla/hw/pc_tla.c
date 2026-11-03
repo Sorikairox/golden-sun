@@ -107,3 +107,19 @@ u32 Port_TlaSoundEnterVBlank(void) {
     ((TlaSoundFn)Port_ResolveCode((void *)(uintptr_t)cgb))(si);
   return 1;
 }
+
+/* TLA4d (trap 73): a task's routine is compared as a word (src/system/task: Task_Add finds an existing entry,
+ * Task_Remove / Task_Find / Task_SetFlags / Task_SuspendAll / Task_ResumeAll pick one by it). Translated asm passes
+ * the GBA address of a C routine (`ldr r0, =Func_0200815c + 1; bl Task_Add` in the clear scene, Ov64a), the C
+ * routine passes its own pointer (a wasm table index: Task_RemoveFar(Func_0200015c)), so the blend task was never
+ * removed and BLDALPHA kept counting (the naming and transfer windows pulsed over the logo). port/tla/c_rules.tsv
+ * makes each of those routines compare this key instead: a code address the code map knows becomes its wasm
+ * function pointer; anything else (table indices, 0, unknown words) stays as it is. */
+void *Port_TryResolveCode(void *p);
+u32 Port_TlaTaskKey(u32 f) {
+  void *fn;
+  if (f < PORT_TABLE_END)
+    return f;
+  fn = Port_TryResolveCode((void *)(uintptr_t)f);
+  return fn ? (u32)(uintptr_t)fn : f;
+}
