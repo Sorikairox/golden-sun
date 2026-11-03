@@ -241,12 +241,16 @@ async function main() {
       n++;
     }
     if (bad && process.env.TRACE && lastCase) traceCase(r, thumb, lastCase);
+    // TLA4d: a failing case leaves the translation's stores in memory (the loop breaks before restore): a
+    // negative pair can write far (IwramFillWords run with IwramCopyWords's arguments fills 0x2028088 words from
+    // EWRAM over IWRAM's code), and the next routine's original then runs garbage (IwramSignedRemainder NOINPUT)
+    if (bad && lastCase) restore(lastCase.before);
     let res;
     if (bad) { fail++; res = `FAIL ${bad}`; } else if (n === 0) { noin++; res = `NOINPUT (0 of ${tried} random inputs ran in the original: ${firstErr})`; } else { eq++; res = `EQUIV ${n} cases${yielded ? ` (${yielded} up to yield ${YIELDS})` : ''}${tried > n ? ` (${tried - n} inputs the original cannot run, skipped)` : ''}`; }
     if (r.neg) {
       const ok = res.startsWith('FAIL');
       console.log(`${ok ? 'ok  ' : 'BAD '} original ${r.name} vs translation of ${pr.name}: ${res}`);
-      if (ok) { fail--; eq++; } else { eq--; fail++; }
+      if (ok) { fail--; eq++; } else if (res.startsWith('NOINPUT')) { noin--; fail++; } else { eq--; fail++; } // TLA4d: a NOINPUT pair is a missed control
       continue;
     }
     console.log(`${r.name.padEnd(34)} ${res}`);
