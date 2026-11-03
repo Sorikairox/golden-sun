@@ -14,6 +14,10 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA4c (2026-11-03): **TLA boots to the logos, the title and the new-game naming screen** in node (1,500 frames, no
+  stop) and in headless Chrome (59.7 fps, 0 errors); naming is interactive; audio silent (resident mixer self-patches,
+  bound to a callbacks-only port). asm2c: table calls, polling loops, adr+bx, A2C_THUMB (traps 69-72, docs/TLA4.md 8).
+
 - TLA3 (2026-11-03): **asm2c** (tools/wasm/asm2c.py, D23): 1,202/1,207 TLA listing routines translate to C; D20 proof
   30/30 EQUIV (ARM, overlays, jump tables, battle effect, 13 KB overlay routine), negative controls 4/4, vendor drafts
   6/22; GS1 tests/arm 79/79 (docs/TLA3.md). Build hooks for TLA5 in TLA3.md 6.
@@ -590,3 +594,19 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     next halt. asm2c's stores now call a2c_io_written. Also: one 43 MB translation unit was OOM-killed at -O2 (exit
     137; the 8 GB Docker VM), and emcc still exited 0. link.py now splits it (16 units, 3 at a time) and fails on a
     missing object.
+69. A computed call into a table of helpers (TLA4c). decode_2's `add r9, pc, #imm; mov lr, pc; add pc, r9, r8, lsl #5`
+    (r8 masked by `and r8, r2, #M`) calls one of 16 helpers 0x20 bytes apart that have no label. Constant-target checks
+    do not see them: asm2c lists the slots as `a2c_table(...)` and gives each an overlap entry; call_targets.py counts
+    them. Look for `add pc, rB, rI, lsl #k` whenever a register jump lands on "continuation at <code address>".
+70. In the port time passes only in the BIOS halt (port/pc/hw.c). A translated loop that polls memory or a DMA bit
+    (System_WaitForFrameInterrupt) spins for ever unless its back edge halts: asm2c `mark_spins` adds a2c_spin() to
+    short load-and-test loops (TLA4c). A loop that also stores, calls, or carries a register is no poll.
+71. Bit 0 means Thumb only on a GBA address (TLA4c). Game data can hold C function pointers (m4a SoundInfo.func,
+    CgbSound: wasm table indices); `index | 1` is the next function in the table. asm2c's `blh` uses A2C_THUMB; never
+    mask or set bit 0 of a value below 0x20000 (PORT_TABLE_END). Symptom here: the VBlank handler ran from the sound
+    callback, the frame flag was always set, wait() never halted, no frame ever completed.
+72. TLA's resident sound mixer and its render patch their own instructions (TLA4c): resident_mixer_lanes.s copies mla
+    kernels over `.4byte 0xfedcba98` placeholders, the render rewrites its branch words. asm2c cannot translate them
+    (once `adr; bx` is followed, the flow reaches the placeholders: "ARM NV"). SoundDriver_EnterVBlankUpdate is bound
+    to Port_TlaSoundEnterVBlank (callbacks only, silent) until the mixer is ported to C like GS1's port/pc/mixer.c.
+

@@ -2,6 +2,28 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA4c — 2026-11-03: TLA boots to the logos, the title and the new-game naming screen (node and Chrome)
+
+- Read docs/TLA4.md section 8 and traps 69-72.
+- `node tests/boot.cjs --game tla 1500`: no stop. Nintendo and Camelot logos, the title logo (~300-390), then the
+  naming screen for Felix at ~400 over the title picture, interactive (cursor, A, START -> END). Headless Chrome
+  (`WASM=build/wasm-tla tools/site.sh`; `ROM=<TLA ROM> node tests/web_shot.cjs ...`): same frames, 59.7 fps,
+  0 console errors. Contact sheet port_work/tla4/contact.png (local). **Audio silent** (no PCM mixed).
+- Fixed: decode_2's computed table call (16 helpers at 0x08012e74: `a2c_table` slots, overlap entries, counted by
+  call_targets.py); polling loops halt (asm2c mark_spins -> a2c_spin = Port_BiosHalt); the unlabelled `bx pc` stub
+  0x03000314 that C calls by address (hw2c entry + Port_A2cPointer trampoline in Port_ResolveCode); bit 0 forced on
+  wasm table indices in `blh` calls (A2C_THUMB: the sound callback ran the VBlank handler, no frame ever ended);
+  `add rd, pc; bx rd` local jumps; the self-patching resident mixer: SoundDriver_EnterVBlankUpdate bound to
+  Port_TlaSoundEnterVBlank (callbacks only); stack kernels run from the DMA3 source.
+- Tools: tools/tla_incr.sh (incremental TLA build, ~70 s); site.sh `WASM=build/wasm-tla`; the page takes the TLA
+  ROM when build_id.js says GS_GAME = 'tla'.
+- Checks: full TLA build PASS (0 linker warnings, leak 0, calls PASS 20 allowed); D20 batch 251/0/951; diff_tla
+  30/30; diff_hw 131/0/57 of 188 (5 stack-kernel loaders NOINPUT by rule); negative 2/3 (as with TLA4b's module);
+  test_arm 79/79; GS1 687968a7 / 895d45cc; regress --quick 9/9 OK.
+- **Next:** check the title -> naming step without a key against the real game; port TLA's resident mixer (and
+  IwramSoundRenderVBlank) to C for sound; Func_080cf78c / Func_08173aac / Func_02002f64@681 were not reached.
+  Nothing deployed (TLA is not on the site).
+
 ## TLA4b — 2026-11-03: TLA wiring (H1-H5, trap 65), call-target check; node boot stops in Resource_Decode2
 
 - Read docs/TLA4.md section 7 and traps 66-68.

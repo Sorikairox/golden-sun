@@ -229,3 +229,74 @@ Hypothesis and fix: give pool-word code targets inside a byte listing an entry (
 `HwCode_` label when nothing branches across it), as was done for constant targets. The call-target check does not
 see these targets because they are loaded from a pool, not constants in a2c_call. Then continue the boot. Chrome,
 the title, the audio check and Func_080cf78c / Func_08173aac / Func_02002f64@681 were not reached.
+
+## 8. TLA4c (2026-11-03): boot to the logos, the title and the new-game naming screen
+
+`node tests/boot.cjs --game tla 1500` now runs all 1,500 frames without a stop: Nintendo logo (frames ~0-120),
+Camelot logo (~120-260), the Golden Sun title logo with the copyright line (~300-390), then at ~400 the new-game
+naming screen for Felix ("Felix", portrait, the letter grid, DEL/END) drawn over the title picture. The screen is
+interactive (RIGHT/DOWN move the cursor, A types, START jumps to END). The same build in muted headless Chrome
+(`WASM=build/wasm-tla tools/site.sh`, then `ROM=<TLA ROM> node tests/web_shot.cjs`): the same frames at
+~59.7 frames/s, 0 console errors. Audio: silent (see "Sound" below; `--audio`: worklet off, 0 samples).
+Whether the real game goes from the title to naming with no key pressed is not checked (no emulator here): with no
+save it may, or the title's "press START" wait is skipped (lead for TLA4d; the overlay is 0x64a, scene/clear).
+There is no file screen with an empty save.
+
+### Fixes (each was the stop of the previous run)
+1. **Computed table calls** (the TLA4b stop). Decode_2 is not a pool-word jump: it does `add r9, pc, #0x2ac;
+   mov lr, pc; add pc, r9, r8, lsl #5` after `and r8, r2, #15` (also `#240 lsl 1`, `#7`/`#56`, `#3`/`#12`): a call
+   into a table of 16 helpers, 0x20 bytes apart, at 0x08012e74 (after Resource_RefillType2Bits). asm2c
+   (`Fn.table_targets`) reads the base from the `add rB, pc, #imm` and the slots from the `and rI, rX, #M` mask in the
+   4 instructions before, writes each slot outside the routine as `/* a2c_table(0x...u) */`, and the overlap pass
+   gives each an overlap entry (`Resource_RefillType2Bits+0x20`...: 16 + the epilogue). Inside the routine a slot
+   is a local return target. tools/wasm/call_targets.py counts `a2c_table` like `a2c_call` (trap 66 check).
+2. **Polling loops** (the next hang: System_WaitForFrameInterrupt spins on the flag its VBlank handler sets; in the
+   port time passes only in the BIOS halt). asm2c `mark_spins`: a backward conditional branch of at most 16 bytes
+   over straight-line code that loads, does not store or call, uses no symbol address, and carries no register from
+   one iteration to the next, gets `A2C_SPILL(); a2c_spin();` on its back edge. The game's a2c_spin is
+   Port_BiosHalt; the D20 runtime's does nothing. 11 loops (the two in System_WaitForFrameInterrupt, DMA busy-bit
+   waits in Func_0801596c and battle effects, Func_02002ca0@overlay). A search loop (pointer carried) is not one.
+3. **Unlabelled `bx pc` stub at 0x03000314** (Func_0803a8fc's Iwram_ExpandBitRuns, called by C as a constant):
+   hw2c gives an unlabelled Thumb `bx pc` stub at a `$t` mark a routine (`HwCode_03000314`, the only one).
+   C calls it by address: Port_ResolveCode (codemap.c, TLA only) now asks `Port_A2cPointer` (a2c_rt.c), which gives
+   a trampoline that runs the translation as a2c_enter_wrapped does (r0-r3, sentinel lr).
+4. **Thumb bit on a wasm table index**: the `mov lr, rX; bl` suffix call (`blh`) forced bit 0 on the target. m4a's
+   SoundInfo.func / CgbSound are C function pointers (table indices below 0x20000); index|1 is another function
+   (CgbSound's call ran the VBlank handler, so the frame flag was always set and the game never halted: no frames).
+   `A2C_THUMB(t)` sets bit 0 only on a GBA address.
+5. **`add rd, pc, #imm; bx rd`** inside one routine (resident_mixer.s's switch to its ARM half at 0x03000880; the
+   IWRAM mixer at 0x03006198 does the same): asm2c `adr_target` makes it a local goto (or a constant tail call).
+6. **Sound** (the next stop was 0x03000880): with (5) asm2c follows the resident mixer into resident_mixer_lanes.s
+   and finds it patches its own code (mla kernels copied over `.4byte 0xfedcba98` placeholders; the render rewrites
+   its branches). IwramSoundMixEntry is no longer translated (D20 had it NOINPUT). SoundDriver_EnterVBlankUpdate is
+   bound (bindings.tsv/make_bindings.py `bind`) to `Port_TlaSoundEnterVBlank` (port/tla/hw/pc_tla.c): it runs the two
+   VBlank callbacks (sequencer, CGB) and returns 1, the original's "not now", so no render follows and **no PCM is
+   mixed: silent**. Its object stays in the byte listing as data (hw2c `DATA_ONLY`, label `HwData_08000630`, which
+   asm2c takes as a routine end but not a routine): SoundDriver_VSyncRefresh reads 0x03007ff0 from its pool.
+   Allow-list row 030007b4 (IwramSoundMixNextChannel's branch back into the untranslated mixer).
+7. **Stack kernels**: a2c_call runs a call into RAM with no code entry (the colour kernel loaders' DMA to the stack,
+   called through lr) as the translation at the DMA3 source, as `_call_via_sp` does; the D20 runtime does the same for
+   its 0x0d... stack. diff_hw counts the 5 loaders (ColorBuffer_Halve/Brighten/Darken/ScaleThreeQuarters/Scale) as
+   NOINPUT: the interpreter does not run their DMA, so the original executes the old stack and "returns" (trap 64);
+   once the input order changed they showed as 4 false FAILs.
+
+Page: port/web/main.js takes the TLA ROM (SHA-1 b5006632..., 16 MB) when build_id.js sets `GS_GAME = 'tla'`, which
+`WASM=build/wasm-tla tools/site.sh` writes (local tests only; GS1's site is unchanged by default).
+`tools/tla_incr.sh [--no-asm2c] [file.c ...]`: incremental TLA build (asm2c stage, changed tla_asm units and the
+named C files, link, calls, leak) in about 70 s instead of 6 min. Files that go through the ll stage (port/pc,
+pc_tla.c) still need the full build.
+
+### Results
+- Full `tools/web_build.sh --game tla`: PASS (0 linker warnings, leak 0, calls PASS: 29,585 sites, 20 unbound, all
+  allowed); asm2c 1,420/1,428.
+- D20 batch 251 EQUIV / 0 FAIL / 951 NOINPUT; diff_tla 30/30; diff_hw 131 EQUIV / 0 FAIL / 57 NOINPUT of 188;
+  negative controls 2/3 (IwramSignedRemainder's original is NOINPUT; the same with the TLA4b module); test_arm 79/79.
+- GS1 game.wasm 687968a7, game.js 895d45cc (identical); regress --quick 9/9 OK.
+
+### Next (TLA4d)
+- Check the title -> naming step without input against the real game (attract mode? the "press START" wait).
+- Sound: port TLA's resident mixer (resident_mixer*.s, self-patching) to C, as GS1's port/pc/mixer.c did for GS1's,
+  then return 0 from Port_TlaSoundEnterVBlank and port IwramSoundRenderVBlank (also self-patching; its translation
+  is unused now).
+- The colour kernel loaders in the game: a2c_call now runs the DMA source's translation; check a screen fade.
+- Func_080cf78c, Func_08173aac, Func_02002f64@681 did not block the boot (not reached).
