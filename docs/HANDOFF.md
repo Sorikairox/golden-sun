@@ -2,6 +2,20 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA2 — 2026-11-03: build.py --game tla; TLA's C compiled and linked (0 warnings), leak check 0; audit not done
+
+- Read docs/TLA2.md. `tools/web_build.sh --game tla --only ll,bind,obj,link,leak` builds build/wasm-tla (about 40 s).
+  The `audit` stage fails for tla until port/tla/tools/code_range_audit.tsv has rows for the 187 hits.
+- GS1 unchanged: game.wasm 687968a7, game.js 895d45cc, regress --quick 9/9 OK.
+- TLA: 3,654/3,702 C objects compiled (48 left out, build/wasm-tla/ll_failed.tsv), 0 linker warnings, 2,545 stubs
+  (main 238 listing asm + 274 hand .s + 12 C; overlays ~1,900, mostly scene import veneers link.py does not read yet;
+  113 names not in the map). Leak check 0 windows.
+- Next: (1) audit the 187 TLA hits (task.c:199 and resume_and_run.c:39 first, trap 41's twins); (2) teach
+  link.py's veneer_map the scenes' import .s files; (3) the 48 objects (gMainRoutineWork as u8[], static
+  Effect_Create, 4 ARM asm); (4) TLA3's asm2c output replaces the listing stubs.
+- Untouched: asm2c.py, tests/arm (TLA3's uncommitted files are in the tree: tests/arm/harness.js, tests/arm/tla/,
+  tools/wasm/asm2c.py), port/web, the site.
+
 ## TLA1 — 2026-11-03: GS1 identical at vendor f6c08e64; compare-tla-en OK; exact TLA symbols and census
 
 Phase TLA1 of docs/TLA_PLAN.md. Details: docs/TLA1.md.

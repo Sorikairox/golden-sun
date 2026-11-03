@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA2 (2026-11-03): `build.py --game tla` (tools/wasm/game.py); TLA C 3,654/3,702 objects, link 0 warnings, 2,545 stubs,
+  leak 0; TLA code-range audit 187 hits not yet audited (docs/TLA2.md). GS1 still 687968a7/895d45cc.
+
 - TLA1 (2026-11-03): **GS1 byte-identical at vendor f6c08e64** (wasm/js equal to a 24b72a32 worktree build and to the
   live site, regress full 62/62 OK; D22, no alchemy-tbs pin). TLA reference build tools (tools/build_ref_tla.sh,
   check_rom_tla.sh) in the existing image with alchemy-gcc 641764a5 (D13 f, trap 52): **compare-tla-en OK**;
@@ -486,3 +489,14 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     the build "works" and only `compare-tla-en` fails. Check `git ls-tree <pin> alchemy-gcc` on every re-pin
     (`tools/build_ref_tla.sh fetch` refuses when `vendor/alchemy-gcc-tla` is not at the vendor's gitlink). TLA builds its
     own compilers in `/ref/alchemy-tla`; GS1's `/ref/alchemy` keeps 9bc4e65a's.
+53. TLA's headers are not tbs's: other include guards (GUARD_DMA_H), register-pinned locals (`register T x __asm__("r3")`) and
+    `asm("" : "+l"(x))` spelled `asm`, so TLA has its own shim (port/tla/shim) and port_src transforms TLA's headers too (the
+    mirror is build/wasm-tla/alchemy/games/tla, include/ mirrored; vendor files still never edited). GCC 2.9x also took
+    `extern struct X a[]` with X incomplete; clang does not (TLA prelude includes scene_tables.h first).
+54. ARM GCC rounds every struct's size to 4 (STRUCTURE_SIZE_BOUNDARY 32); clang's wasm does not. TLA's static asserts caught two
+    (SpriteEntry 7 -> 8, ScreenTransitionDissolveState 0x53c -> 0x540; c_rules aligned(4)); a struct with an odd size and no
+    assert is laid out differently in wasm than in ROM data: check sizes before trusting ROM-bound arrays of such structs.
+55. In TLA many routines are declared with other prototypes in other files (Func_020007bc taking (s32) in one scene and nothing in
+    another): one wasm import with several types, ~1,100 wasm-ld warnings. link.py adapt_mismatched_calls (TLA only) routes each
+    odd call through a NAME$c<sig> adapter; attribute lists (`captures(none)`, `initializes((8, 12))`) and return attributes
+    (`call zeroext i8`) must be parsed or the canonical type is wrong.
