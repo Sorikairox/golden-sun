@@ -520,6 +520,10 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     If the callee yields (`wait`, a fiber switch, D8) and another task's translated code runs, the reload picks up that
     task's registers. Save and restore `a2c_r` per fiber on every switch (docs/TLA3.md 6) before translated code runs under
     the scheduler.
+    **Answered (TLA5): not needed.** The port has no fibers: wait() is plain C, tasks are callbacks, the BIOS halt is
+    synchronous, and ASYNCIFY keeps the C stack. a2c_call and a2c_enter_wrapped copy the file onto the C stack and
+    restore it (port/tla/a2c/a2c_rt.c). If real fibers ever come, the file is still right, but the GBA stack would
+    need one region per fiber (docs/TLA5.md 5).
 57. D20 on coroutine routines (TLA3): under the interpreter `wait` switches task stacks, and a call out of a translation
     (a nested interpreter call) cannot follow, so the original and the translation diverge at the first yield (14 false
     FAILs in the first batch). tests/arm/tla/diff_tla.cjs makes `wait` return at once and stops both runs at the YIELDS-th
@@ -556,3 +560,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     and m4aSoundVSync are GS1 C without EQUIV, and clear_modM is static. Several TLA labels alias a GS1 port under
     another name (BattleEffect_DotProduct = RelocatedQ16DotProduct, SoundNote_Detach = RealClearChain): find twins by
     bytes, not by name.
+64. In D20 a random word used as a code pointer makes the original run garbage. The garbage can even "return" and
+    match (TLA5: 2 false FAILs and 35 false EQUIVs). tests/arm/tla/batch/batch.cjs counts execution outside these
+    places as no input: the ROM, the resident IWRAM block below 0x03001100, the loaded overlay window and the
+    interpreter scratch area.
+65. asm2c's dispatch picks an overlay routine by a2c_overlay_current() (TLA5). The overlay loader must call
+    Port_A2cOverlayLoaded(id) next to Port_CodeMapOverlay(id), or overlay code pointers taken in translated code go
+    to a2c_call and the codemap instead. In TLA nothing calls either yet: port/pc/decompress.c is GS1's, and
+    Resource_LoadCode is TLA4's.

@@ -2,6 +2,27 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA5 — 2026-11-03: asm2c wired into the TLA build (asm stubs 638 -> 38); D20 batch 251 EQUIV, 0 FAIL
+
+- Read docs/TLA5.md. A new build stage, asm2c (TLA only), translates the 1,202 listing routines into
+  build/wasm-tla/asm2c. link.py turns every logged stub of a translated routine into an IR wrapper (NAME or
+  ovNNN_NAME) into `a2cw_<addr>`. The 603 routines no C calls get a wrapper too, so the codemap covers all of them.
+  The run time is port/tla/a2c/a2c_rt.c.
+- Logged stubs went from 647 to 47. Asm stubs went from 638 to 38: 36 hand .s, plus Func_080cf78c and Func_08173aac.
+  0 linker warnings, leak 0, game.wasm 15.15 MB, full build 1 min 52 s.
+- port/tla/symbols/tla-en-extra.tsv (tools/wasm/a2c_extra_symbols.py) replaces port_work/tla1 as asm2c's source
+  for bss, absolute and Thumb-bit symbols. The output is byte-identical.
+- D20 batch (tests/arm/tla/batch/run.sh, 4 world profiles): 251 EQUIV, 0 FAIL, 951 NOINPUT. A jump into data is
+  no input (trap 64).
+- Fibers (trap 56): none in the port. wait() is synchronous C, and a2c_call / a2c_enter_wrapped keep the file on
+  the C stack.
+- Checks: diff_tla 30/30, test_arm 79/79, GS1 687968a7 / 895d45cc, regress --quick OK.
+- Next:
+  - (1) the overlay loader calls Port_A2cOverlayLoaded with Port_CodeMapOverlay (trap 65);
+  - (2) link TLA4a's bindings.tsv (hw2c output through the same stage);
+  - (3) captured states for the NOINPUT routines;
+  - (4) split tla_asm.c per overlay for build time.
+
 ## TLA4a — 2026-11-03: TLA's handwritten asm ported or bound (asm2c byte front end, GS1 twins, binds); bindings.tsv
 
 - Read docs/TLA4.md. The census (port/tla/hw/tools/hand_census.py) finds 4,445 veneer labels and 109 code objects
