@@ -596,10 +596,10 @@ class Fn:
                     L.append(f'a2c_st32(sp + {4 * i}, {r});')
             elif mn == 'stmia':
                 for i, r in enumerate(order):
-                    L.append(f'a2c_st32({base} + {4 * i}, {r});')
+                    L.append(f'a2c_st32(({base} & ~3u) + {4 * i}, {r});')
                 L.append(f'{base} += {4 * len(order)};')
             else:
-                L.append(f'{{ u32 b_ = {base};')
+                L.append(f'{{ u32 b_ = {base} & ~3u;')
                 pc_load = None
                 for i, r in enumerate(order):
                     if r == 'pc':
@@ -607,7 +607,7 @@ class Fn:
                     else:
                         L.append(f'  {r} = a2c_ld32(b_ + {4 * i});')
                 if wb and base not in order:
-                    L.append(f'  {base} = b_ + {4 * len(order)};')
+                    L.append(f'  {base} = {base} + {4 * len(order)};')
                 elif mn == 'pop':
                     L.append(f'  sp = b_ + {4 * len(order)};')
                 if pc_load:
@@ -750,7 +750,7 @@ class Fn:
             if rd == 14 and bits == 1 and opc in (4, 2, 13) and (rn == 15 or opc == 13):
                 pass
             if rd == 14 and ((opc == 13 and bits == 0 and (op & 0xfff) == 15) or (bits == 1 and rn == 15 and opc in (2, 4))):
-                k = (op & 0xff) if bits == 1 else 0
+                k = val if bits == 1 else 0  # the rotated immediate (sub lr, pc, #0x11c: TLA4a2)
                 ret = (a + 8 + (k if opc != 2 else -k)) & 0xffffffff
                 self.localrets.add(ret & ~1)
                 succ_extra = [(ret & ~1, 'thumb?' if ret & 1 else 'arm?')]
@@ -793,6 +793,13 @@ class Fn:
                 if S:
                     raise Unsupported('ARM movs pc')
                 self.uses_dispatch = True
+                cj = (op >> 7) & 31
+                if opc == 4 and rn == 15 and bits == 0 and not op & 0x10 and not (op >> 5) & 3 and cj >= 2:
+                    # add pc, pc, rm, lsl #k (k >= 2: whole instructions): a computed jump into this routine (an
+                    # unrolled loop entered part way, TLA4a2). Every pc+8 + i<<k inside it that is code becomes a
+                    # local target of A2C_LOCALRET (k = 0 is an offset table read before it: left to dispatch)
+                    self.localrets.update(t for t in range(a + 8, self.end, 1 << cj))
+                    succ_extra = succ_extra + [(a + 8, 'arm?')]
                 L.append('A2C_RETJUMP(pc);')
                 return L, succ_extra, True
             return L, succ_extra, False
@@ -814,7 +821,8 @@ class Fn:
             regs = [i for i in range(16) if op & (1 << i)]
             nb = 4 * len(regs)
             start = {(0, 1): '0', (1, 1): '4', (0, 0): f'{-nb + 4}', (1, 0): f'{-nb}'}[(P, U)]
-            L = [f'{{ u32 b_ = {RNAMES[rn]} + (u32)({start});']
+            # ldm/stm ignore the low two address bits (ARM7TDMI); the write-back is from the unmasked base (TLA4a2)
+            L = [f'{{ u32 b_ = ({RNAMES[rn]} + (u32)({start})) & ~3u;']
             pc = False
             for k, r in enumerate(regs):
                 if Lb:
