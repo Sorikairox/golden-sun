@@ -276,9 +276,18 @@ def adapt_mismatched_calls(files):
     adapters = {}
     for path, mine in per_file.items():
         bad = {n: sg for n, sg in mine.items() if canon.get(n, sg) != sg}
+        text = open(path, encoding='utf-8').read()
+        # TLA6: a call whose own type differs from the file's declaration (data_lookup_routines.c calls the s8
+        # BattleEffect_GetResourceGroup through a cast to s32 (*)(s32)): LLVM gives the call a trapping
+        # `_bitcast_invalid` stub (Scene_GetAreaNameIndex became `unreachable`). It takes the adapter too
+        for m in CALL_RX_ATTRS.finditer(text):
+            name = m.group(2) or m.group(3)
+            if name in mine and name not in bad and not m.group(1).endswith(')'):
+                types, _ = split_args(text, m.end())
+                if (m.group(1), tuple(t.strip().split()[0] for t in types if t.strip())) != mine[name]:
+                    bad[name] = mine[name]
         if not bad:
             continue
-        text = open(path, encoding='utf-8').read()
         out, pos, new = [], 0, {}
         for m in CALL_RX_ATTRS.finditer(text):
             name = m.group(2) or m.group(3)
