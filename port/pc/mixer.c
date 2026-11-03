@@ -24,11 +24,20 @@
 #define SOUND_INFO() (*(volatile u32 *)(uintptr_t)0x03007FF0u)
 #define ID_NUMBER 0x68736D53u
 
+/* TLA4d: port/tla/hw/pc_tla_mixer.c includes this file for the channel mixers (MIXER_KERNELS_ONLY) with its own
+ * workspace, sample count and kernel group; GS1 takes the defaults below and preprocesses to the same code. */
+#ifndef WORKSPACE
 #define WORKSPACE 0x03000DF8u   /* IwramSoundMixWorkspace (352 words used) */
+#endif
 #define CLIPPED 0x03000B5Cu     /* gSoundMixerClipped */
 #define REVERB_CODE 0x03000BD8u /* IwramSoundReverbCode: the loaded reverb code */
 #define REVERB_CODES 0x08000404u /* IwramSoundReverbCodes: the five codes in ROM, 152 bytes each */
+#ifndef SAMPLES
 #define SAMPLES 352
+#endif
+#ifndef MIXER_MUL_GROUP
+#define MIXER_MUL_GROUP 4 /* samples per unrolled kernel pass: the first one multiplies unconditionally */
+#endif
 
 typedef void (*Fn1)(u32);
 
@@ -155,7 +164,7 @@ static void mix_interp(struct Mix *m, u32 fp, u32 r2, u32 r3) {
     } else
       kernel = 0;
     for (i = 0; i < SAMPLES; i++) {
-      if ((i & 3) == 0 || !z) /* each group of four starts with mul, the rest with mulne */
+      if ((i & (MIXER_MUL_GROUP - 1)) == 0 || !z) /* each group of four starts with mul, the rest with mulne */
         r9 = r7 * ip;
       if (kernel == 0) {
         r9 = (u32)asr(r9, 22);
@@ -254,6 +263,7 @@ static void mix_interp(struct Mix *m, u32 fp, u32 r2, u32 r3) {
   }
 }
 
+#ifndef MIXER_KERNELS_ONLY
 /* IwramSoundMixEntry: one channel's envelope, then its mix */
 static void mix_channel(u32 ch) {
   u32 wav = U32(ch, 36);
@@ -341,6 +351,8 @@ volume:
   }
 }
 
+#endif /* MIXER_KERNELS_ONLY */
+
 /* ---------------- render and reverb ---------------- */
 
 static u32 normalize_sample(u32 r6) {
@@ -362,6 +374,7 @@ static u32 normalize_sample(u32 r6) {
   return r6;
 }
 
+#ifndef MIXER_KERNELS_ONLY
 static int reverb_index(void) {
   int i, k;
   for (i = 0; i < 5; i++) {
@@ -522,3 +535,4 @@ void SoundMain(void) {
 /* The library mixer's ROM copy (m4aSoundInit copies it to 0x03007000 with CpuSet): no code to copy in this port;
  * bios.c's CpuSet skips a source that is a wasm function. */
 void SoundMainRAM_Rom(void) {}
+#endif /* MIXER_KERNELS_ONLY */
