@@ -70,7 +70,25 @@ def code_objects():
             out.append((r['image'], r['object']))
     for n in game.pc_files():
         out.append(('main', 'port/pc/' + n))
+    if game.C.game == 'tla':  # TLA4's C ports of the hand-written .s (port/tla/hw/*.c), bound like port/pc (TLA5)
+        for p in sorted(glob.glob(os.path.join(ROOT, 'port/tla/hw/*.c'))):
+            out.append(('main', 'port/tla/hw/' + os.path.basename(p)[:-2]))
     return out
+
+
+def stage_asm2c():
+    """TLA5 (D23): tools/wasm/asm2c.py translates the listing asm (main and overlays) into build/<out>/asm2c:
+    tla_asm.c (compiled and linked by link.py), names.tsv (the routines' names, for the stub binding), report.tsv.
+    Never committed."""
+    d = os.path.join(OUT, 'asm2c')
+    os.makedirs(d, exist_ok=True)
+    rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/asm2c.py'), '--vendor', V,
+                      '--symbols', os.path.join(ROOT, 'port/symbols'),
+                      '--extra-symbols', os.path.join(ROOT, 'port/tla/symbols/tla-en-extra.tsv'),
+                      '-o', os.path.join(d, 'tla_asm.c'), '--report', os.path.join(d, 'report.tsv'),
+                      '--names', os.path.join(d, 'names.tsv'), '--export', '*'])
+    print(so.strip() or se[-3000:])
+    return rc == 0
 
 
 def run(cmd, **kw):
@@ -163,6 +181,8 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     objs = code_objects()
     stages = ['audit', 'll', 'bind', 'obj', 'link', 'leak']
+    if game.C.game == 'tla':
+        stages.insert(3, 'asm2c')
     if a.only:
         stages = a.only.split(',')
     if 'audit' in stages:  # vendor tests of code addresses by range/bits: every hit audited (GS14, trap 41)
@@ -180,6 +200,8 @@ def main():
         import bind
         if not bind.run(objs, OUT, ROOT):
             sys.exit(1)
+    if 'asm2c' in stages and not stage_asm2c():
+        sys.exit(1)
     if 'obj' in stages or 'link' in stages:
         import link
         if not link.run(objs, OUT, ROOT, CLANG, a.jobs, stages):

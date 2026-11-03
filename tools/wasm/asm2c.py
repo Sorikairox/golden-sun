@@ -1042,6 +1042,8 @@ def main():
     ap.add_argument('--only', help='comma-separated routine names (default: all)')
     ap.add_argument('--export', default='', help='routine names that get a wrapper u32 NAME(r0..r3, stack0..7)')
     ap.add_argument('--report')
+    ap.add_argument('--names', help='TSV of every global label of a translated routine (aliases too): name, overlay, '
+                                    'address, function (the build binds the logged stubs to these, TLA5)')
     ap.add_argument('--extra-symbols', default='port/tla/symbols/tla-en-extra.tsv')
     args = ap.parse_args()
     tr = Translator(args.vendor, args.symbols, args.extra_symbols)
@@ -1110,6 +1112,14 @@ def main():
             cn = tr.cname(L.ovl, addr)
             o.write(f'u32 a2cw{cn[3:]}(u32 ns, u32 a0, u32 a1, u32 a2, u32 a3, u32 s0, u32 s1, u32 s2, u32 s3, u32 s4, u32 s5, u32 s6, u32 s7) {{\n'
                     '  u32 a[12] = {a0, a1, a2, a3, s0, s1, s2, s3, s4, s5, s6, s7};\n' + f'  return a2c_enter_wrapped(ns, a, {cn});\n}}\n')
+    if args.names:
+        okat = {(L.ovl, addr): (tr.cname(L.ovl, addr), mode) for L, name, addr, mode in ok}
+        with open(args.names, 'w') as o:
+            o.write('name\toverlay\taddress\tfunction\n')
+            for L, name, addr, mode, end in rs:
+                if (L.ovl, addr) in okat and (only is None or name in only):
+                    cn, md = okat[(L.ovl, addr)]
+                    o.write(f'{name}\t{L.ovl}\t{addr | (1 if md == "thumb" else 0):08x}\t{cn}\n')
     if args.report:
         with open(args.report, 'w') as o:
             o.write('name\toverlay\taddr\tbytes\tresult\treason\n')
