@@ -116,6 +116,13 @@ void a2c_badreturn(u32 addr, u32 expected) {
 
 void a2c_trace(u32 addr) { (void)addr; }
 
+/* TLA4c: the back edge of a polling loop in translated code (asm2c mark_spins: a short straight-line loop that only
+   loads and tests, e.g. System_WaitForFrameInterrupt on the flag its VBlank handler sets, or a DMA busy bit). On the
+   GBA an interrupt or the hardware ends the wait; in the port time passes only in the BIOS halt (port/pc/hw.c), so
+   the loop halts until the next interrupt has been handled. asm2c spilled the registers first (sp). */
+void Port_BiosHalt(void);
+void a2c_spin(void) { Port_BiosHalt(); }
+
 /* TLA4b: what the hardware does on a store to an I/O register from translated code (asm2c's a2c_st32/16/8). C code
    starts a DMA through Dma_Set (port_dma.h -> Port_DmaWritten); the handwritten asm writes the three DMA registers
    itself (the colour kernel loaders' `stmia r4!, {r5, r6, r7}` to DMA3 copy a kernel to the stack and call it at

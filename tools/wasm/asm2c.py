@@ -433,7 +433,52 @@ class Fn:
                 raise
             self.code[a] = (mo, lines, succ, a + (4 if mo == 'arm' else self.thumb_text(a)[1]))
             work.extend(succ)
+        self.mark_spins()
         return self.emit()
+
+    SPINS = []  # (routine, loop head, branch) of every polling loop marked (TLA4c), for the report
+
+    def mark_spins(self):
+        """TLA4c: a short backward loop that only loads and tests (System_WaitForFrameInterrupt's `ldrh r2, [r0];
+        tst r2, #1; beq` on the flag the VBlank handler sets) waits for an interrupt. In the port time passes only
+        in the BIOS halt (port/pc/hw.c), so the back edge calls a2c_spin() (the game: Port_BiosHalt; D20: nothing)
+        after spilling the registers (sp: interrupt handlers run translated code on the GBA stack below it)."""
+        for a in sorted(self.code):
+            mo, lines, succ, nxt = self.code[a]
+            for i, ln in enumerate(lines):
+                m = re.search(r'goto L_([0-9a-f]{8});', ln)
+                cond = re.fullmatch(r'if \(.*\) goto L_[0-9a-f]{8};', ln.strip()) or \
+                    (lines[0].startswith('if (') and ln.strip().startswith('goto L_') and len(lines) == 3)
+                if not m or not cond:
+                    continue
+                t = int(m.group(1), 16)
+                if not (a - 16 <= t < a):
+                    continue
+                b, body = t, []
+                while b < a and b in self.code:
+                    body += self.code[b][1]
+                    b = self.code[b][3]
+                if b != a or 'goto' in '\n'.join(body):  # straight-line: no exit before the back edge
+                    continue
+                txt = '\n'.join(body + lines)
+                if 'a2c_ld' not in txt or re.search(r'a2c_st|a2c_call|A2C_CALLK|A2C_TAILK|a2c_dispatch|A2C_RETJUMP|\blr = |A2C_SYM\(', txt):
+                    continue
+                # a poll carries nothing from one iteration to the next: every register it reads is either not
+                # written in the loop or written before it is read (a search loop's pointer increment is carried)
+                wr_all = set(re.findall(r'\b(r\d+|sp) = ', txt))
+                done, carried = set(), False
+                for x in body + lines:
+                    w = set(re.findall(r'\b(r\d+|sp) = ', x))
+                    rd = set(re.findall(r'\b(r\d+|sp)\b(?! = )', x))
+                    if (rd & wr_all) - done:
+                        carried = True
+                        break
+                    done |= w
+                if carried:
+                    continue
+                lines[i] = ln.replace(m.group(0), f'{{ A2C_SPILL(); a2c_spin(); goto L_{t:08x}; }}')
+                Fn.SPINS.append((self.name, t, a)) if (self.name, t, a) not in Fn.SPINS else None
+                break
 
     def thumb_text(self, a):
         i = self.L.at.get(a)
@@ -1055,6 +1100,7 @@ static inline u32 a2c_enter_wrapped(u32 nstack, const u32 *a, void (*f)(void)) {
 #define A2C_RETJUMP(t) do { u32 tt_ = (t); if (((tt_ ^ lr0) & ~1u) == 0) { a2c_ret_to = tt_; goto ret; } A2C_LOCALRET(tt_); \
   if (a2c_is_return(tt_)) { a2c_ret_to = tt_; goto ret; } A2C_TAILK(a2c_dispatch(tt_)); } while (0)
 int a2c_is_return(u32 t); /* the run time: t is no code entry (a return address of an outer frame, the sentinel) */
+void a2c_spin(void); /* TLA4c: a polling loop's back edge: wait for an interrupt (the game: the BIOS halt) */
 '''
 
 
@@ -1243,6 +1289,7 @@ def main():
                 o.write('\t'.join(map(str, r)) + '\n')
             for k, v in tr.failed.items():
                 o.write(f'{k}\t\t\t0\tfile\t{v}\n')
+    print(f'asm2c: {len(Fn.SPINS)} polling loops call a2c_spin: ' + ', '.join(sorted({f'{n}@{t:x}' for n, t, _ in Fn.SPINS}))[:2000])
     nok = sum(1 for r in report if r[4] == 'ok')
     print(f'asm2c: {nok}/{len(report)} routines translated, {len(tr.failed)} listings unreadable -> {args.out}')
 
