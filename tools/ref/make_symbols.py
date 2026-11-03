@@ -12,7 +12,9 @@ Writes to OUT_DIR:
   sections.tsv        every input section: address rom size section object kind code_ptrs check
   code_pointer_tables.tsv  data symbols holding code addresses (relocations to functions): overlay name address size code_ptrs other_ptrs
 Prints the coverage summary (bytes of the ROM by kind).
-Usage: make_symbols.py BUILD_DIR ROM OUT_DIR [VENDOR_ALCHEMY]
+Usage: make_symbols.py BUILD_DIR ROM OUT_DIR [VENDOR_ALCHEMY [EDITION]]
+EDITION (default tbs-en) names the build's files (EDITION.map/.elf/.gba) and the two symbol tables; tla-en (TLA2)
+also takes the overlays' disassembled listings (overlays/resource_NNN_overlay.o) and a 16 MB Game Pak.
 """
 import bisect
 import struct
@@ -135,11 +137,15 @@ class ObjInfo:
 def main():
     bdir, rom_path, outdir = sys.argv[1:4]
     vendor = sys.argv[4] if len(sys.argv) > 4 else os.path.join(os.path.dirname(__file__), '../../vendor/alchemy')
-    built = open(os.path.join(bdir, 'tbs-en.gba'), 'rb').read()
+    ed = sys.argv[5] if len(sys.argv) > 5 else 'tbs-en'
+    global ROM_SIZE
+    if ed.startswith('tla'):
+        ROM_SIZE = 0x1000000
+    built = open(os.path.join(bdir, ed + '.gba'), 'rb').read()
     rom = open(rom_path, 'rb').read()
-    outs = mapparse.output_sections(os.path.join(bdir, 'tbs-en.map'))
-    secs, _ = mapparse.parse(os.path.join(bdir, 'tbs-en.map'))
-    final = elf32.Elf(os.path.join(bdir, 'tbs-en.elf'))
+    outs = mapparse.output_sections(os.path.join(bdir, ed + '.map'))
+    secs, _ = mapparse.parse(os.path.join(bdir, ed + '.map'))
+    final = elf32.Elf(os.path.join(bdir, ed + '.elf'))
     func_names = {s.name for s in final.symbols if s.type == 'FUNC'}
     func_addr = {s.value & ~1 for s in final.symbols if s.type == 'FUNC'}
     fit = {}
@@ -153,6 +159,9 @@ def main():
 
     def objpath(obj):
         m = re.search(r'obj/(.*)$', obj)
+        if not m and ed != 'tbs-en':
+            m = re.search(r'overlays/(resource_[0-9a-f]+_overlay\.o)$', obj)
+            return os.path.join(bdir, 'overlays', m.group(1)) if m else None
         return os.path.join(bdir, 'obj', m.group(1)) if m else None
 
     def source_of(obj):
@@ -215,7 +224,7 @@ def main():
     for mp in sorted(glob.glob(os.path.join(bdir, 'overlays', 'resource_*.map'))):
         ov = re.search(r'resource_([0-9a-f]+)\.map$', mp).group(1)
         osecs, _ = mapparse.parse(mp)
-        process([s for s in osecs if 'obj/' in s.obj], ov, False)
+        process([s for s in osecs if 'obj/' in s.obj or (ed != 'tbs-en' and '_overlay.o' in s.obj)], ov, False)
 
     # symbols: from the maps (global) and the objects' symbol tables (local), placed by section
     for s, kind, r, check, src, info, overlay in sec_index:
@@ -291,14 +300,17 @@ def main():
             f.write('\t'.join(str(x) for x in row) + '\n')
     hx = lambda v: f'0x{v:08x}' if v is not None else ''  # noqa: E731
     head = ('# Golden Sun (USA, Europe) tbs-en address map, from alchemy 24b72a32 built by tools/build_ref.sh.\n'
+            if ed == 'tbs-en' else
+            '# Golden Sun: The Lost Age (USA, Europe) tla-en address map, from alchemy f6c08e64 built by tools/build_ref_tla.sh.\n')
+    head += (
             '# Addresses and names only (no ROM bytes). check: rom = section byte-identical to the player\'s ROM;\n'
             '# standin-xref / standin-offset = object built by a stand-in compiler, address from cross-references\n'
             '# / from its offset (see docs/G1.md).\n')
-    with open(os.path.join(outdir, 'tbs-en.tsv'), 'w') as f:
+    with open(os.path.join(outdir, ed + '.tsv'), 'w') as f:
         f.write(head + 'name\taddress\trom\tsize\tkind\tsection\tobject\tcheck\n')
         for ov, n, a, ra, z, k, sec, obj, chk in sorted((r for r in sym_rows if r[0] is None), key=lambda r: (r[2], r[1])):
             f.write(f'{n}\t{hx(a)}\t{hx(ra)}\t{z}\t{k}\t{sec}\t{obj}\t{chk}\n')
-    with open(os.path.join(outdir, 'tbs-en-overlays.tsv'), 'w') as f:
+    with open(os.path.join(outdir, ed + '-overlays.tsv'), 'w') as f:
         f.write(head.replace('address map', 'overlay symbols') + 'overlay\tname\taddress\tsize\tkind\tsection\tobject\n')
         for ov, n, a, ra, z, k, sec, obj, chk in sorted((r for r in sym_rows if r[0] is not None), key=lambda r: (r[0], r[2], r[1])):
             f.write(f'{ov}\t{n}\t{hx(a)}\t{z}\t{k}\t{sec}\t{obj}\n')

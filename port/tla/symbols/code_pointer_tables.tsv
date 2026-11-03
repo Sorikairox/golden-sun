@@ -1,0 +1,31 @@
+# Golden Sun: The Lost Age (USA, Europe) tla-en address map, from alchemy f6c08e64 built by tools/build_ref_tla.sh.
+# Addresses and names only (no ROM bytes). check: rom = section byte-identical to the player's ROM;
+# standin-xref / standin-offset = object built by a stand-in compiler, address from cross-references
+# / from its offset (see docs/G1.md).
+# Data symbols holding code addresses (ABS32 relocations to functions): compiled from C, not read
+# from the ROM (orchestrator D4).
+overlay	name	address	size	code_ptrs	other_ptrs
+	gDefaultIrqHandlers	0x080178b4	56	14	0
+	gFlash_ChipDefault	0x08017e14	44	4	1
+	Flash_ChipSst	0x08017e40	44	4	1
+	Flash_ChipMacronix	0x08017ec4	44	4	1
+	Flash_ChipPanasonic	0x08017ef0	44	4	1
+	gFlash_ChipAtmel	0x08017f3c	44	4	1
+	gFlash_ChipAtmelLayout	0x08017f68	44	4	1
+	gMap_TerrainHeightHandlers	0x0802efc4	64	16	0
+	gData_0802f204	0x0802f204	216	54	0
+	gScript_OperandHandlerTable	0x0802f2dc	164	41	0
+	gDebugWarp_Presets	0x080aa128	72	9	9
+	Data_080f01b8	0x080f01b8	12	1	0
+	gData_080f0ef8	0x080f0ef8	52	1	0
+	gData_080f32e0	0x080f32e0	32	1	0
+	gActor_StepAngleScript	0x080f3300	12	1	0
+	gData_080f34e8	0x080f34e8	12	1	0
+	gData_080f34f4	0x080f34f4	12	1	0
+	gData_080f3500	0x080f3500	12	1	0
+	gData_080f373c	0x080f373c	20	1	0
+	gData_080f3750	0x080f3750	20	1	0
+	gData_080f3764	0x080f3764	28	1	0
+	gData_08197aa0	0x08197aa0	1884	324	0
+	gSound_CommandTableTemplate	0x081c343c	144	36	0
+	gSound_ExtendedCommandTable	0x081c36e4	48	12	0
