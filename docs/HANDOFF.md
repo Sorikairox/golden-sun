@@ -2,34 +2,32 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
-## TLA1 — 2026-11-03: GS1 identical at vendor f6c08e64; TLA reference build blocked on alchemy-gcc 641764a5; provisional symbols and the exact census
+## TLA1 — 2026-11-03: GS1 identical at vendor f6c08e64; compare-tla-en OK; exact TLA symbols and census
 
 Phase TLA1 of docs/TLA_PLAN.md. Details: docs/TLA1.md.
 
 ### Done
 - **GS1 byte-identical, no pin.** `tools/web_build.sh` takes `ALCHEMY=<checkout>` (mounted at the same container path).
   Built at f6c08e64 and against a temporary worktree at 24b72a32 (removed afterwards): game.wasm 687968a7 and game.js
-  895d45cc identical to each other and to the live site. `tools/regress.sh` full: 62/62 OK. Orchestrator D22: GS1
-  builds from vendor/alchemy at f6c08e64; every re-pin repeats this check. Nothing deployed.
-- **TLA reference build tools:** `tools/check_rom_tla.sh` (ROM OK), `tools/build_ref_tla.sh` (existing image and volume,
-  clone `/ref/alchemy-tla`, GS1's compilers copied, ROM read only at `roms/tla-en.gba` inside the volume clone).
-- **compare-tla-en FAILS** with our alchemy-gcc 9bc4e65a: alchemy 34c36297 moved TLA's three options into alchemy-gcc
-  641764a5 (new scheduler, 25 objects redone). `NEARMATCH=1 tools/build_ref_tla.sh build` (old options on the make
-  command line) gives the cart's main layout (2 functions differ by 18 bytes in place); 50 of 114 overlays identical.
-- **Symbols (provisional):** `port/symbols/tla-en.tsv` (29,350), `tla-en-overlays.tsv` (14,574), from
-  `tools/ref/make_symbols_tla.py` on the near-match build.
-- **Census** (`port/symbols/tla-en-census.tsv`, TLA_PLAN 1.2 replaced): code 1,962,634 B; C 913,084 (46.5 %); listing
+  895d45cc identical to each other and to the live site. `tools/regress.sh` full: 62/62 OK. Rebuilt again after the TLA
+  compiler bootstrap: still 687968a7 (GS1's wasm uses emsdk clang, no alchemy-gcc). Orchestrator D22. Nothing deployed.
+- **TLA reference build:** `tools/check_rom_tla.sh` (ROM OK), `tools/build_ref_tla.sh [fetch|bootstrap|build|all]`
+  (existing image and volume, clone `/ref/alchemy-tla`, ROM read only at `roms/tla-en.gba` inside the volume clone).
+  With GS1's alchemy-gcc 9bc4e65a it failed: alchemy 34c36297 moved TLA's three options into alchemy-gcc 641764a5
+  (trap 52). The user approved that commit (D13 f): fetched in Docker into `vendor/alchemy-gcc-tla`; nested pins
+  unchanged (agbcc da598c1d, gcc-2.95.2 SHA-256 064e1cb0...). **compare-tla-en: OK**, all 114 overlays identical.
+- **Symbols (exact):** `port/symbols/tla-en.tsv` (29,352), `tla-en-overlays.tsv` (14,576), `tools/ref/make_symbols_tla.py`.
+  The earlier provisional tables were off only in overlay 661 (4 bytes) and the overlay stream.
+- **Census** (`port/symbols/tla-en-census.tsv`, TLA_PLAN 1.2 replaced): code 1,962,630 B; C 913,080 (46.5 %); listing
   asm 959,152 (48.9 %: main 628,240 / 525 fn, overlays 330,912 / 678 fn); hand .s 90,338 (4.6 %). Battle effects
-  (rom_main_09) 347,520 B. TLA_PLAN 6 now holds the user's decisions of 2026-11-03.
+  (rom_main_09) 347,520 B. TLA_PLAN 6 holds the user's decisions of 2026-11-03.
 
 ### Notes / traps
-- Trap 52: a re-pin can move the alchemy-gcc gitlink; check `git ls-tree <pin> alchemy-gcc`.
+- Trap 52: a re-pin can move the alchemy-gcc gitlink; `build_ref_tla.sh fetch` refuses if vendor/alchemy-gcc-tla is not
+  at the vendor's gitlink (fetching a new commit needs approval).
 
 ### Next
-- **Approval needed:** fetch PascalPixel/alchemy-gcc at 641764a5 inside Docker (a newer commit of the D13 b repo; check its
-  agbcc gitlink and gcc-2.95.2 pin), bootstrap compilers into /ref/alchemy-tla, `tools/build_ref_tla.sh` → compare OK,
-  re-run make_symbols_tla.py (drop PROVISIONAL), re-check the census.
-- TLA2 can start on the provisional main map (addresses exact); overlay addresses get confirmed by the matching build.
+- TLA2: `build.py --game tla`, port/tla tables, compile TLA C, stubs, audit, leak check (GS1 still identical).
 
 ## GS-deploy — 2026-11-02: public Netlify site + offline play
 

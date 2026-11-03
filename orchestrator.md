@@ -16,9 +16,8 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 - TLA1 (2026-11-03): **GS1 byte-identical at vendor f6c08e64** (wasm/js equal to a 24b72a32 worktree build and to the
   live site, regress full 62/62 OK; D22, no alchemy-tbs pin). TLA reference build tools (tools/build_ref_tla.sh,
-  check_rom_tla.sh) in the existing image: **compare-tla-en FAILS until alchemy-gcc 641764a5 is fetched (approval
-  needed, trap 52)**; near-match build (old compiler + old options) has the cart's main layout. Provisional
-  port/symbols/tla-en*.tsv and the census: TLA code 1.96 MB, C 46.5 %, listing asm 48.9 % (959 KB, 1,203 fn), hand .s
+  check_rom_tla.sh) in the existing image with alchemy-gcc 641764a5 (D13 f, trap 52): **compare-tla-en OK**;
+  all 114 overlays identical. Exact port/symbols/tla-en*.tsv and the census: TLA code 1.96 MB, C 46.5 %, listing asm 48.9 % (959 KB, 1,203 fn), hand .s
   4.6 % (docs/TLA1.md).
 
 - GS-deploy (2026-11-02): **public at https://golden-sun-web-port.netlify.app** (user's request; D14 replaced) with
@@ -231,7 +230,10 @@ that edition's address map, not a port. Out of scope until asked.
   download needs approval (stop and report). `alchemy-devtools` is **not** approved. Approved later the same day
   (user, via the coordinator, GS1 addendum), inside Docker only: (d) `github.com/pret/agbcc` at `da598c1d`
   (alchemy-gcc's nested submodule) and (e) `ftp.gnu.org/gnu/gcc/gcc-2.95.2.tar.gz`, SHA-256 verified against
-  alchemy-gcc's `arm/Makefile` pin (`064e1cb0...7d72482`). Kept in `vendor/agbcc`, `vendor/downloads/`.
+  alchemy-gcc's `arm/Makefile` pin (`064e1cb0...7d72482`). Kept in `vendor/agbcc`, `vendor/downloads/`. Approved
+  2026-11-03 (user, via the coordinator, TLA1), inside Docker only: (f) `PascalPixel/alchemy-gcc` at `641764a5` (alchemy
+  f6c08e64's gitlink) in a second checkout `vendor/alchemy-gcc-tla`, for TLA's reference build; its nested pins are
+  (d) and (e) unchanged (agbcc da598c1d, gcc-2.95.2 064e1cb0...).
 - **D14 Licence (user, 2026-11-01; replaced 2026-11-02):** none of the vendor projects has a licence. The first
   rule was: build privately and ask alchemy's author before any public deploy. **On 2026-11-02 the user told us to
   deploy** ("Deploy everything with Netlify so I can play. Also make all port work offline..."), which replaces the
@@ -274,8 +276,9 @@ that edition's address map, not a port. Out of scope until asked.
   is needed**; GS1 builds from `vendor/alchemy` at f6c08e64 (D1's pin is now f6c08e64 for the wasm build). Every later
   re-pin (TLA may re-pin, user 2026-11-03) repeats this check; the first time GS1's wasm differs, pin GS1 in a separate
   checkout `vendor/alchemy-tbs` used by build.py for tbs. GS1's reference build (`/ref/alchemy` in the volume,
-  port/symbols/tbs-en*.tsv) stays at 24b72a32 with alchemy-gcc 9bc4e65a. TLA's reference needs alchemy-gcc 641764a5
-  (alchemy 34c36297 moved TLA's three options into the compiler): approval pending, docs/TLA1.md 2.
+  port/symbols/tbs-en*.tsv) stays at 24b72a32 with alchemy-gcc 9bc4e65a. TLA's reference (`/ref/alchemy-tla`) uses
+  alchemy-gcc 641764a5 (D13 f; alchemy 34c36297 moved TLA's three options into the compiler); GS1's wasm uses no
+  alchemy-gcc at all (emsdk clang), rebuilt after the TLA bootstrap: still 687968a7.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
@@ -480,5 +483,6 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     unleash); summon first. The aerie's lift is behind the confrontation cells (no way down before Saturos except a loss).
 52. A vendor re-pin can move the **alchemy-gcc gitlink** too (TLA1): f6c08e64 pins alchemy-gcc 641764a5, not the 9bc4e65a
     our volume's compilers come from. TLA's C then compiles with different instruction order (everything after shifts);
-    the build "works" and only `compare-tla-en` fails. Check `git ls-tree <pin> alchemy-gcc` on every re-pin. The old
-    compiler plus the three removed options (`NEARMATCH=1 tools/build_ref_tla.sh build`) gives the cart's main layout.
+    the build "works" and only `compare-tla-en` fails. Check `git ls-tree <pin> alchemy-gcc` on every re-pin
+    (`tools/build_ref_tla.sh fetch` refuses when `vendor/alchemy-gcc-tla` is not at the vendor's gitlink). TLA builds its
+    own compilers in `/ref/alchemy-tla`; GS1's `/ref/alchemy` keeps 9bc4e65a's.

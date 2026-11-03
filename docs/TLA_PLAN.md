@@ -55,15 +55,12 @@ included; hand = handwritten `.s` in games/tla/src (veneers, mixer, kernels):
 
 | | C | asm (listings) | hand .s | data |
 |---|---|---|---|---|
-| main image | 253,752 B (2,358 fn) | **628,240 B (525 fn)** | 34,346 B | 13,927,737 B + 745,180 overlay stream |
-| overlays (114) | 659,332 B (4,497 fn) | **330,912 B (678 fn)** | 55,992 B | 331,070 B |
-| **all code: 1,962,634 B** | **913,084 B, 46.5 %** | **959,152 B, 48.9 %** | 90,338 B, 4.6 % | |
+| main image | 253,752 B (2,358 fn) | **628,240 B (525 fn)** | 34,346 B | 13,927,737 B + 744,912 overlay stream |
+| overlays (114) | 659,328 B (4,497 fn) | **330,912 B (678 fn)** | 55,992 B | 331,070 B |
+| **all code: 1,962,630 B** | **913,080 B, 46.5 %** | **959,152 B, 48.9 %** | 90,338 B, 4.6 % | |
 
 So **49 % of TLA's code bytes are still asm** (69 % of the main image's), at the top of the old estimate. The battle
-effects in `rom_main_09` are 347,520 B of it. The census comes from a near-match build (GS1's alchemy-gcc plus the
-three options alchemy moved into its newer compiler: main layout identical to the cart, 2 functions differ in place;
-50 of 114 overlays identical), so it is exact for the main image and within a few bytes for the overlays until the
-matching build (needs alchemy-gcc 641764a5, docs/TLA1.md 2).
+effects in `rom_main_09` are 347,520 B of it. From the matching build (`compare-tla-en: OK`, alchemy-gcc 641764a5).
 
 The pull already moved a lot: 127 files changed in `recon/tla/raw` (−37,252 lines). Before the pull (24b72a32)
 there were 534 + 794 asm functions, about 1,050 KB. **Alchemy is converting TLA quickly**, and every re-pin

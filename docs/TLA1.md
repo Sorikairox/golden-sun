@@ -25,43 +25,39 @@ from 24b72a32).
   differs, pin GS1 then.
 - The worktree was removed afterwards (`git -C vendor/alchemy worktree remove ../alchemy-24b72a32`).
 
-## 2. Reference tla-en build: blocked on the compiler pin (approval needed)
+## 2. Reference tla-en build: compare-tla-en OK
 
 - `tools/check_rom_tla.sh`: the TLA ROM is OK (16,777,216 bytes, AGFE, SHA-1 b5006632…).
-- `tools/build_ref_tla.sh`: the golden-sun-tools image and golden-sun-ref volume (no new image). It clones the vendor
-  into the volume as `/ref/alchemy-tla` (GS1's `/ref/alchemy` untouched), copies the compilers GS1's bootstrap built
-  there, links the ROM (read only) at the vendor's path `roms/tla-en.gba` inside the volume clone, and runs
-  `make -j8 compare-tla-en`. A full build takes about 30 s.
-- **Result: `out/tla-en/tla-en.gba: FAILED`.** The cause is the compiler, not the ROM or the tree:
-  - alchemy commit 34c36297 ("The Lost Age leaves its three compiler options", 1 Nov) dropped
-    `-mthumb-split-constants -mthumb-call-via-lr -mthumb-slow-loads` from `CFLAGS_tla` and moved that behaviour into
-    alchemy-gcc, with "the scheduler back at the 2000-07-31 snapshot"; it redid 25 objects (29 functions) whose
-    instruction order only matches the new compiler.
-  - The gitlink moved from alchemy-gcc **9bc4e65a** (what we fetched in GS0/GS1, D13 b) to **641764a5**.
-  - With our 9bc4e65a compiler and f6c08e64's flags, everything shifts (2.1 MB differ).
-  - With our 9bc4e65a compiler and the three old options passed on the make command line (`CFLAGS_tla=...`, no
-    vendor file changed): **the main image matches the cart in size and addresses**; only two functions differ, by
-    18 bytes each, in place (`field/field_sequence/f0d0ca0`, `menu/title_intro/f1a78c0`), plus the overlay stream and
-    its resource directory. Of 114 overlays, 50 build byte-identical (their packed bytes are found in the ROM), 64 do
-    not (the order-only differences; not checked further).
-- **Needed to finish:** approval to fetch `PascalPixel/alchemy-gcc` at **641764a5** (a newer commit of the D13 b
-  repository, inside Docker into `vendor/alchemy-gcc` or a second checkout; check whether its nested `agbcc` gitlink
-  and gcc-2.95.2 pin changed), rebuild the compilers in the volume (`make bootstrap` steps of `tools/build_ref.sh`),
-  then `tools/build_ref_tla.sh` → `compare-tla-en: OK` and re-run `tools/ref/make_symbols_tla.py`. GS1's reference
-  in `/ref/alchemy` keeps its own 9bc4e65a compilers.
+- `tools/build_ref_tla.sh [fetch|bootstrap|build|all]`: the golden-sun-tools image and golden-sun-ref volume (no new
+  image). It clones the vendor into the volume as `/ref/alchemy-tla` (GS1's `/ref/alchemy` untouched), links the ROM
+  (read only) at the vendor's path `roms/tla-en.gba` inside the volume clone, builds TLA's own compilers and runs
+  `make -j8 compare-tla-en`. A full run (compilers + ROM) takes about 35 s.
+- **First attempt, with GS1's compilers: FAILED.** alchemy commit 34c36297 ("The Lost Age leaves its three compiler
+  options", 1 Nov) dropped `-mthumb-split-constants -mthumb-call-via-lr -mthumb-slow-loads` from `CFLAGS_tla` and
+  moved that behaviour into alchemy-gcc ("the scheduler back at the 2000-07-31 snapshot", 25 objects redone); the
+  gitlink moved from alchemy-gcc **9bc4e65a** (fetched in GS0/GS1, D13 b) to **641764a5**. With 9bc4e65a and the
+  three options put back on the make command line, the main image already had the cart's layout (two functions
+  differed by 18 bytes in place) and 50 of 114 overlays were identical (trap 52).
+- **Download approved (user, 2026-11-03, D13 f):** alchemy-gcc at 641764a5 into `vendor/alchemy-gcc-tla` (a second
+  checkout; `vendor/alchemy-gcc` stays at 9bc4e65a for GS1), fetched inside Docker. Its nested pins are the ones
+  already approved: `agbcc` -> https://github.com/pret/agbcc.git at **da598c1d** (D13 d), and `arm/Makefile`'s
+  gcc-2.95.2 SHA-256 **064e1cb0…7d72482** (D13 e). Nothing else was downloaded; GAS 2.10 is copied from
+  `/ref/alchemy` (same binutils tarball).
+- Bootstrap: generated tables match; xgcc, cpp0 and as equal GS1's, cc1, gcc2952_arm and old_agbcc differ.
+- **Result: `out/tla-en/tla-en.gba: OK`** (SHA-1 b500663220cb9bf56b9f8e8c0c544f1d6fa3a824). All 114 overlays'
+  packed bytes are found in the ROM.
 
-## 3. Symbols (provisional)
+## 3. Symbols (exact)
 
-`tools/ref/make_symbols_tla.py port_work/tla1/oldcc vendor/alchemy port/symbols` (names, addresses, sizes; no ROM
-bytes; the inputs are the near-match build above, in the gitignored port_work/tla1/oldcc):
+`tools/ref/make_symbols_tla.py port_work/tla1 vendor/alchemy port/symbols` (names, addresses, sizes; no ROM bytes):
 
-- `port/symbols/tla-en.tsv`: 29,350 main-image symbols (name, address, size, type, input section, object, lang).
-- `port/symbols/tla-en-overlays.tsv`: 14,574 symbols of the 114 scene overlays (linked at 0x02008000).
+- `port/symbols/tla-en.tsv`: 29,352 main-image symbols (name, address, size, type, input section, object, lang).
+- `port/symbols/tla-en-overlays.tsv`: 14,576 symbols of the 114 scene overlays (linked at 0x02008000).
 - `port/symbols/tla-en-census.tsv`: the census below.
 
-Each file's header says PROVISIONAL. Main addresses are exact (same layout as the cart). Overlay addresses are
-exact for the 50 identical overlays and expected exact for the rest (order-only differences keep sizes), but that is
-not proven until the matching build.
+Against the provisional near-match tables: in the main image only the packed overlay stream's symbols moved (111
+rows); in the overlays only overlay 661 (yampi_desert) moved, by 4 bytes from one C function on (217 rows). All
+other overlay addresses were already right.
 
 ## 4. Census (replaces TLA_PLAN 1.2's estimate)
 
@@ -72,11 +68,11 @@ bytes; the packed overlay stream is counted apart because each overlay is counte
 
 | place | C | asm (listings) | hand .s | data |
 |---|---|---|---|---|
-| main | 253,752 B (2,358 fn) | **628,240 B (525 fn)** | 34,346 B (1,022 symbols) | 13,927,737 B (+ 745,180 overlay stream) |
-| overlays (114) | 659,332 B (4,497 fn) | **330,912 B (678 fn)** | 55,992 B (6,999 symbols, mostly veneers) | 331,070 B |
-| **all** | **913,084 B (46.5 %)** | **959,152 B (48.9 %)** | 90,338 B (4.6 %) | |
+| main | 253,752 B (2,358 fn) | **628,240 B (525 fn)** | 34,346 B (1,022 symbols) | 13,927,737 B (+ 744,912 overlay stream) |
+| overlays (114) | 659,328 B (4,497 fn) | **330,912 B (678 fn)** | 55,992 B (6,999 symbols, mostly veneers) | 331,070 B |
+| **all** | **913,080 B (46.5 %)** | **959,152 B (48.9 %)** | 90,338 B (4.6 %) | |
 
-All code: 1,962,634 bytes (libgcc 60). So **about half of TLA's code bytes are still asm (48.9 %)**, at the top of the
+All code: 1,962,630 bytes (libgcc 60). So **about half of TLA's code bytes are still asm (48.9 %)**, at the top of the
 plan's 35–50 % estimate, and 68.6 % of the main image's code. By functions it is 1,203 asm routines of
 8,058 C + asm (15 %).
 
@@ -95,5 +91,5 @@ Biggest asm areas:
 
 - `tools/web_build.sh` `ALCHEMY=` (vendor override, same mount path).
 - `tools/check_rom_tla.sh` (SHA-1, size, AGFE).
-- `tools/build_ref_tla.sh [fetch|build|all]`.
+- `tools/build_ref_tla.sh [fetch|bootstrap|build|all]`.
 - `tools/ref/make_symbols_tla.py` (symbols + census).
