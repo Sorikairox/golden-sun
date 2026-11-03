@@ -1,2 +1,3 @@
 # What the TLA wasm build replaces in vendor/alchemy games/tla (f6c08e64) and why (orchestrator D3, D17, D18).
 kind	vendor	ours	why
+games/tla/src/gamepak/flash/*.c	function	port/pc/flash.c	done	flash driver replaced at its API (port/tla/fn_overrides.tsv, TLA2b): the same six entry points and SST chip as tbs

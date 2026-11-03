@@ -1,1 +1,193 @@
-file	line	pattern	verdict	fix
+# TLA code-range audit (TLA2b; traps 26, 40, 41): vendor C (vendor/alchemy/games/tla at the pinned commit) that
+# tells code from data by a value's numeric range or high bits, or measures code by address differences. In wasm
+# a code address is a function-table index (0x10000-0x1ffff). Same format and verdicts as GS1's
+# port/tools/code_range_audit.tsv (data, safe, fixed, replaced, unused); stage "audit" of
+# `tools/web_build.sh --game tla` fails on a hit with no row. Cites file:line + pattern id only.
+file	line	pattern	verdict	why
+src/field/f02254c.c	76	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/field/event/f0ce0ac.c	124	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/event/pending_event.c	12	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/event/push_keys.c	82	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/event/push_keys.c	90	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/event_commands/canvas_sprite.c	9	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/field/event_commands/f0e28d4.c	40	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/field/event_commands/world_map_row.c	12	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/field/field_sequence/f0d0b7c.c	25	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/field/field_sequence/f0d20fc.c	44	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/field/field_sequence/run_descriptor_handler.c	40	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/field_sequence/run_descriptor_handler.c	65	below64k	safe	message id below 65536 else routine; wasm table indices start at 65536 (link.py TABLE_BASE, trap 26)
+src/field/map/f02c4d8.c	28	shr24	data	map coordinate in 16.16 fixed point to a 512-px quarter
+src/field/map/f02c4d8.c	29	shr24	data	map coordinate in 16.16 fixed point to a 512-px quarter
+src/field/map/terrain.c	43	shr24	data	kind bits of a map tile word
+src/field/object/f024738.c	30	below64k	data	a distance in 16.16 fixed point
+src/gamepak/flash/atmel.c	27	topmask	data	flash chip window 0x0E000000 (Atmel/other chip path or sector address), data address; the SST driver entry points are port/pc/flash.c
+src/gamepak/flash/atmel.c	42	topmask	data	flash chip window 0x0E000000 (Atmel/other chip path or sector address), data address; the SST driver entry points are port/pc/flash.c
+src/gamepak/flash/atmel.c	114	topmask	data	flash chip window 0x0E000000 (Atmel/other chip path or sector address), data address; the SST driver entry points are port/pc/flash.c
+src/gamepak/flash/flash.c	36	topmask	replaced	ReadFlashId: flash window probe; replaced by port/pc/flash.c (port/tla/fn_overrides.tsv, TLA2b)
+src/gamepak/flash/flash.c	225	codediff	replaced	ReadFlash copies ReadFlashCore to the stack by address difference (table indices in wasm); replaced by port/pc/flash.c (port/tla/fn_overrides.tsv)
+src/gamepak/flash/flash.c	231	topmask	replaced	ReadFlash: flash window address; the function is replaced by port/pc/flash.c
+src/gamepak/flash/flash.c	270	codediff	replaced	Flash_VerifySector copies VerifyFlashCore by address difference; replaced by port/pc/flash.c (port/tla/fn_overrides.tsv)
+src/gamepak/flash/flash.c	277	topmask	replaced	Flash_VerifySector: flash window address; replaced by port/pc/flash.c
+src/gamepak/flash/program_flash_sector.c	23	topmask	data	flash chip window 0x0E000000 (Atmel/other chip path or sector address), data address; the SST driver entry points are port/pc/flash.c
+src/gamepak/flash/sst.c	31	topmask	replaced	EraseFlashChip: replaced by port/pc/flash.c (port/tla/fn_overrides.tsv)
+src/gamepak/flash/sst.c	60	topmask	replaced	EraseFlashSector: replaced by port/pc/flash.c
+src/gamepak/flash/sst.c	115	topmask	replaced	ProgramFlashSectorWithEraseRetry: replaced by port/pc/flash.c
+src/menu/credits/clear_character_block.c	21	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/menu/credits/load_character_block.c	43	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/menu/title_intro/title_wait.c	35	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/scene/airs_rock/s1f7c.c	205	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/alhafra/s07d4.c	27	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra/s0aa0.c	333	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra/s1958.c	90	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra/s1958.c	91	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra/s1958.c	94	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra/s1958.c	95	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/alhafra_interiors/s05b8.c	38	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/ancient_lemuria/s0468.c	71	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/scene/anemos_inner_sanctum/s0158.c	14	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/anemos_inner_sanctum_entrance/data2.c	167	region	data	a map position in 16.16 fixed point in a scene table, never code
+src/scene/anemos_inner_sanctum_entrance/data2.c	179	region	data	a map position in 16.16 fixed point in a scene table, never code
+src/scene/apojii_islands_cave/s0070.c	12	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/aqua_rock_inside/s1a1c.c	53	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/aqua_rock_inside/s1a1c.c	54	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/atteka_inlet/data.c	72	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/caverns/data.c	98	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/caverns/data.c	99	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/champa/s0638.c	86	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0638.c	87	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0638.c	89	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0638.c	90	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0b18.c	30	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	142	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	143	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	146	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	147	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	187	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	188	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	195	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	196	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	879	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	880	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	887	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa/s0e30.c	888	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/champa_cliff_caves/s0038.c	5	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/scene/champa_cliff_caves/s1138.c	5	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/scene/contigo/data.c	602	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/contigo/event4.c	24	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/contigo/event4.c	29	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/contigo/s3720.c	86	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/contigo/s3720.c	91	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/events2.c	19	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/events2.c	23	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/events2.c	42	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/events2.c	46	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/scene_tables.c	112	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/eastern_alhafra/scene_tables.c	114	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/gabomba_statue/s3634.c	136	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/gabomba_statue/s3634.c	139	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/data.c	394	region	data	packed event-table word beside a routine pointer; the word itself is never code
+src/scene/garoh/data.c	395	region	data	packed event-table word beside a routine pointer; never code
+src/scene/garoh/s2694.c	128	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	129	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	134	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	135	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	338	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	339	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	345	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	346	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	451	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	452	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	465	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/garoh/s2694.c	466	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_aerie/s0e80.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_aerie/s0e80.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_aerie_beacon/s1bc4.c	234	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_aerie_beacon/s1bc4.c	266	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_aerie_beacon/s1bc4.c	379	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_aerie_beacon/s1bc4.c	520	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_aerie_beacon/s3d9c.c	39	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_aerie_beacon/s3d9c.c	63	below64k	data	range test on a u16 counter (shifted), never code
+src/scene/jupiter_lighthouse_basement/s0b04.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_basement/s0b04.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_entrance/s091c.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_entrance/s091c.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_1/s09ac.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_1/s09ac.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_2/s042c.c	12	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_room_2/s0440.c	12	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_room_2/s10cc.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_2/s10cc.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_3/s0ae8.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_3/s0ae8.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_5/s13a8.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_5/s13a8.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_6/s09cc.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_6/s09cc.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_7/s0e30.c	26	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/jupiter_lighthouse_room_7/s184c.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_7/s184c.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_8/s0960.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_8/s0960.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_9/s0a88.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_9/s0a88.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_m/s35ec.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/jupiter_lighthouse_room_m/s35ec.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/lemuria/s062c.c	58	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/lemuria/s0bdc.c	37	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/loho/s0198.c	387	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/loho/s0198.c	396	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_aerie/s065c.c	107	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	122	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	305	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	308	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	312	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	343	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	345	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	531	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_aerie/s065c.c	538	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_aerie/s065c.c	584	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_aerie/s065c.c	700	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	704	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s065c.c	765	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	106	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	109	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_aerie/s3ff4.c	139	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	163	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	229	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	267	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	283	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/s3ff4.c	376	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_aerie/update_a.c	28	below64k	data	a scale in 16.16 fixed point (1.0 = 0x10000)
+src/scene/mars_lighthouse_room_f/s1bcc.c	32	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_room_f/s1bcc.c	33	region	data	a map position in 16.16 fixed point (512 px), argument or table field, never code
+src/scene/mars_lighthouse_star_room/data.c	190	region	data	a map position in 16.16 fixed point in a scene table, never code
+src/scene/mars_lighthouse_star_room/s0714.c	162	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_star_room/s0714.c	163	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_star_room/s0714.c	166	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_star_room/s0714.c	167	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/mars_lighthouse_star_room/s1bf8.c	59	region	data	IWRAM globals at 0x03000000 (data, identity map D5)
+src/scene/prox/s2a38.c	21	below64k	data	range test on the entrance number, never code
+src/scene/trial_road/s0330.c	33	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/venus_lighthouse_entrance/s0128.c	37	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/venus_lighthouse_entrance/s1c30.c	54	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/scene/venus_lighthouse_entrance/s1c30.c	144	region	data	IWRAM word 0x0300006c (field work pointer), data address (identity map, D5)
+src/shop/f10a960.c	16	codediff	data	difference of two message ids (absolute symbols, port/tla/symbols/absolute.tsv), never code
+src/shop/f10a960.c	19	codediff	data	difference of two message ids (absolute symbols), never code
+src/shop/f10a960.c	22	codediff	data	difference of two message ids (absolute symbols), never code
+src/system/f01319c.c	33	region	data	IWRAM 0x03000000: clears IWRAM at boot (data, identity map D5)
+src/system/memory.c	32	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/system/memory.c	95	region	data	EWRAM end 0x02040000 minus the EWRAM allocator cursor (data)
+src/system/task/resume_and_run.c	39	shr24	fixed	Task_ResumeOverlayTasks: the same test; the same port/tla/c_rules.tsv rule (Port_CodeIsOverlay, trap 41)
+src/system/task/task.c	199	shr24	fixed	Task_SuspendOverlayTasks: overlay task by routine top byte 0x02 (EWRAM); a wasm routine is a table index. port/tla/c_rules.tsv adds Port_CodeIsOverlay (GS1 trap 41 twin)
+src/window/copy_tile.c	40	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/window/copy_tile.c	41	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/window/f0415a0.c	21	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/window/f0415a0.c	68	shr24	data	byte extraction of a tile slot number
+src/window/f0415a0.c	78	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/window/f0416cc.c	174	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+src/window/uiinit.c	49	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+include/gamepak/rom_header.h	6	region	fixed	Cart_Restart 0x08000000: System_Reset jumps there (asm_rules bx -> indirect call, Port_ResolveCode sends it to Port_SystemEntry, trap 36); serial_stub.c reads it as ROM data (identity map, D5)
+include/system/io_reg.h	155	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+include/system/io_reg.h	156	region	data	VRAM 0x06000000 (BG tiles), data address (identity map, D5)
+include/system/ram_buffer.h	6	region	data	fixed EWRAM buffer address (gMapCellBuffer), data
+include/system/ram_buffer.h	86	region	data	fixed IWRAM address of gHeapSlots, data

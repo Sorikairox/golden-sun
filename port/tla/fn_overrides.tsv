@@ -1,3 +1,9 @@
 # TLA: vendor C functions whose definitions the wasm build drops because port/pc defines a replacement
 # (same format as port/fn_overrides.tsv). None yet (TLA2).
 function	ours	why
+ReadFlashId	port/pc/flash.c	reads the chip id through a RAM copy of a Thumb routine in flash command mode; our flash answers as an SST chip (TLA2b: the TLA driver has the same API and SST path)
+ProgramFlashSectorWithEraseRetry	port/pc/flash.c	programs through flash command sequences and status polling of the chip; ours writes the 4 KB sector of the emulated flash (TLA2b: the TLA driver has the same API and SST path)
+EraseFlashChip	port/pc/flash.c	chip command sequence + polling; ours fills the 64 KB with 0xff (TLA2b: the TLA driver has the same API and SST path)
+EraseFlashSector	port/pc/flash.c	sector command sequence + polling; ours fills the sector with 0xff (TLA2b: the TLA driver has the same API and SST path)
+ReadFlash	port/pc/flash.c	runs ReadFlashCore from a halfword copy on the stack (no wasm function there); ours copies directly (TLA2b: the TLA driver has the same API and SST path)
+Flash_VerifySector	port/pc/flash.c	runs VerifyFlashCore from a stack copy; ours compares directly, same result (TLA2b: the TLA driver has the same API and SST path)

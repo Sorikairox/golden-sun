@@ -13,7 +13,7 @@ call_via	yes	libgcc _call_via_rX
 codemap	yes	GBA code address -> wasm function
 decompress	no	tbs decompress_tagged_lz.s ports
 field_asm	no	tbs field ARM routines
-flash	no	tbs flash driver replacement (fn_overrides)
+flash	yes	the flash driver replaced at its API (port/tla/fn_overrides.tsv): TLA's driver has the same six entry points as tbs (TLA2b)
 hw	yes	DMA, timers, IRQs, keypad, frame driver
 iwram	no	tbs resident IWRAM routines (libgcc division ports included: TLA's own come with TLA3)
 link	no	tbs serial driver replacement (D21)
