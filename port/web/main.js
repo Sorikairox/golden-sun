@@ -3,8 +3,10 @@
 // touch pad and gamepads will feed too (orchestrator rule 11), so all of them share one path.
 'use strict';
 
-const ROM_SHA1 = '5c4695205413df7db52b9a184815a07783999971';
-const ROM_SIZE = 8388608;
+// TLA4c: a page built with The Lost Age's game (tools/site.sh WASM=build/wasm-tla, local tests) takes its ROM
+const GAME_TLA = window.GS_GAME === 'tla';
+const ROM_SHA1 = GAME_TLA ? 'b500663220cb9bf56b9f8e8c0c544f1d6fa3a824' : '5c4695205413df7db52b9a184815a07783999971';
+const ROM_SIZE = GAME_TLA ? 16777216 : 8388608;
 const FRAME_MS = 1000 / 59.7275;
 const KEY = { A: 1, B: 2, SELECT: 4, START: 8, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128, R: 256, L: 512 };
 const KEYMAP = {

@@ -7,10 +7,13 @@ cd "$(dirname "$0")/.."
 rm -rf build/site && mkdir -p build/site
 cp port/web/index.html port/web/main.js port/web/touch.js port/web/touch.css port/web/audio.js port/web/net.js build/site/
 cp port/web/manifest.webmanifest port/web/icon-192.png port/web/icon-512.png port/web/apple-touch-icon.png build/site/
-cp build/wasm/game.js build/wasm/game.wasm build/site/
+# WASM=build/wasm-tla (TLA4c): the page with The Lost Age's build (local tests; the default stays GS1's)
+WASM=${WASM:-build/wasm}
+cp $WASM/game.js $WASM/game.wasm build/site/
 # build id for the online hello / room check (G7): both players must run the same game code
 BUILD=$(cat build/site/game.wasm build/site/game.js | shasum -a 256 | cut -c1-16)
 echo "window.GS_BUILD = '$BUILD';" > build/site/build_id.js
+[ "$WASM" = build/wasm-tla ] && echo "window.GS_GAME = 'tla';" >> build/site/build_id.js
 # offline: every file above is precached (the page itself as './'); the site hash changes with any file, so any
 # page change is a new cache, not only a new game build
 SITE=$(cd build/site && for f in $(ls | sort); do shasum -a 256 "$f"; done | shasum -a 256 | cut -c1-12)
