@@ -891,6 +891,13 @@ class Fn:
                     # pc, ip, lsr #3` into its unrolled stmia run): the same computed jump, at any instruction
                     self.localrets.update(t for t in range(a + 8, self.end, 4))
                     succ_extra = succ_extra + [(a + 8, 'arm?')]
+                elif opc == 4 and rn == 15 and bits == 0 and not op & 0x10 and not (op >> 5) & 3 and not cj \
+                        and self.rel16_table(a, op & 15):
+                    # add pc, pc, rm after `ldrsh rm, [pc, rX]` (TLA6: picture_decode.s's colour-table modes, a
+                    # table of signed halfword offsets from pc right after the jump): every entry is a local target
+                    for t in self.rel16_table(a, op & 15):
+                        self.localrets.add(t)
+                        succ_extra = succ_extra + [(t, 'arm')]
                 elif opc == 4 and rn != 15 and bits == 0 and not op & 0x10 and not (op >> 5) & 3:
                     # add pc, rB, rI, lsl #k after `add rB, pc, #imm` and `and rI, rX, #M` (TLA4c: decode_2's
                     # `mov lr, pc; add pc, r9, r8, lsl #5` into a table of 0x20-byte helpers after
@@ -953,6 +960,27 @@ class Fn:
                 return [f'goto L_{t:08x};'], [(t, 'arm')], True
             return self.tail(t, False), [], True
         raise Unsupported(f'ARM 0x{op:08x}')
+
+    def rel16_table(self, a, rm):
+        """TLA6: the targets of `ldrsh rm, [pc, rX]; add pc, pc, rm` (the ldrsh just before the jump, so its table
+        starts at a + 4, right after the jump): signed halfwords, each an offset from a + 8, read until the first
+        forward target (the code after the table); [] when the pattern or a target does not fit"""
+        w = self.L.w(a - 4)
+        if w is None or (w & 0x0ffffff0) != (0x019f00f0 | (rm << 12)):  # ldrsh rm, [pc, rX] (P U, register offset)
+            return []
+        out, p, end = [], a + 4, None
+        while end is None or p < end:
+            hw = self.L.h(p)
+            if hw is None or len(out) > 64:
+                return []
+            t = (a + 8 + ((hw ^ 0x8000) - 0x8000)) & 0xffffffff
+            if t % 4 or not self.inside(t):
+                return []
+            out.append(t)
+            if t > p:
+                end = t if end is None else min(end, t)
+            p += 2
+        return sorted(set(out))
 
     def table_targets(self, a, rb, ri, k):
         """the slots of a computed `add pc, rb, ri, lsl #k`: rb from `add rb, pc, #imm`, ri from `and ri, rx, #M`

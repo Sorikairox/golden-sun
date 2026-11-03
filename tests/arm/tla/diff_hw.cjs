@@ -49,6 +49,10 @@ const RULES = {
   IwramCopyWords: (w, R) => [EWS + 4 * (R() & 63), EWS + 0x8000 + 4 * (R() & 63), R() & 1023],
   IwramFillWords: (w, R) => [EWS + 4 * (R() & 63), R() & 1023, R()],
   IwramClearWords: (w, R) => [EWS + 4 * (R() & 63), R() & 1023],
+  // TLA6: the picture decoders' colour-table modes (r2 1..15: `ldrsh` offset table + `add pc, pc, r4`): source and
+  // destination in EWRAM, the mode in 0..15 (0: the plain copy)
+  Render_DecodePicture: (w, R) => [EWS + (R() & 255), EWS + 0x8000 + (R() & 255), R() & 15],
+  BattleEffect_DecodePicture: (w, R) => [EWS + (R() & 255), EWS + 0x8000 + (R() & 255), R() & 15],
 };
 
 // Routines whose stack words are not random: name -> stack(word, R)
