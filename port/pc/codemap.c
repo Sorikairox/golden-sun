@@ -214,6 +214,12 @@ void *Port_ResolveCode(void *p) {
     if (run != a)
       return Port_ResolveCode((void *)(uintptr_t)run);
   }
+  { /* TLA4c: a translated routine with no C name (port/tla/a2c/a2c_rt.c) */
+    void *Port_A2cPointer(u32 a);
+    fn = Port_A2cPointer(a);
+    if (fn)
+      return fn;
+  }
 #endif
   printf("Port_ResolveCode: no function at GBA address 0x%08x (overlay %x)\n", (unsigned)a, (unsigned)currentOverlay);
   fflush(stdout);

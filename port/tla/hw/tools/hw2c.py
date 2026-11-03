@@ -174,6 +174,14 @@ def write_listings(outdir, skip, extra_listing=True):
         # it go to Port_ResolveCode (TLA4b, trap 66). Named by address; no symbol, so only asm2c's codemap has it
         if marks.get(base) in ('arm', 'thumb') and base not in labels:
             labels[base] = [f'HwCode_{base:08x}']
+        # TLA4c: an unlabelled Thumb `bx pc` stub at a $t mark is the Thumb entry of an ARM function (iwram_math.s's
+        # 0x03000314, which C calls by that constant as Iwram_ExpandBitRuns): its own routine, named by address
+        for a, md in marks.items():
+            o = a - base
+            if md == 'thumb' and a not in labels and 0 <= o and o + 2 <= len(data) and \
+                    int.from_bytes(data[o:o + 2], 'little') == 0x4778:
+                labels[a] = [f'HwCode_{a:08x}']
+                print(f'hw2c: unlabelled bx-pc stub {a:08x} in {objs_in[0]} gets an entry', file=sys.stderr)
         if not labels:
             continue
         lines = [f'@ {" ".join(objs_in)}: linked bytes at the run address (port/tla/hw/tools/hw2c.py)']

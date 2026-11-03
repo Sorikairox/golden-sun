@@ -107,6 +107,38 @@ int a2c_is_return(u32 t) {
   return !a2c_lookup(t) && !Port_CodeAt(Port_TlaRunAddress(t)) && !Port_CodeAliasAt(t);
 }
 
+/* TLA4c: C calls a translated routine that has no C name by its GBA address (Func_0803a8fc calls 0x03000314,
+   iwram_math.s's unlabelled Iwram_ExpandBitRuns, by a constant). Port_ResolveCode (port/pc/codemap.c) asks here
+   before it gives up and gets a trampoline that runs the routine as a2c_enter_wrapped does: r0-r3 the arguments,
+   lr a sentinel, the result r0. bind.py puts Port_ResolveCode just before the indirect call, so the routine kept
+   here is the one the trampoline runs. Only four register arguments (stack arguments are not passed on). */
+void a2c_badreturn(u32 addr, u32 expected);
+static void (*a2cPointerFn)(void);
+static u32 a2c_pointer_trampoline(u32 a0, u32 a1, u32 a2, u32 a3) {
+  A2cRegs save = a2c_r;
+  void (*f)(void) = a2cPointerFn;
+  u32 rt = a2c_ret_to, res;
+  memset(&a2c_r, 0, sizeof a2c_r);
+  a2c_r.r[0] = a0; a2c_r.r[1] = a1; a2c_r.r[2] = a2; a2c_r.r[3] = a3;
+  a2c_r.r[13] = save.r[13] ? save.r[13] : 0x03007f00u;
+  a2c_r.r[14] = 0x0d0ffff0u;
+  a2c_ret_to = 0x0d0ffff0u;
+  f();
+  res = a2c_r.r[0];
+  if (((a2c_ret_to ^ 0x0d0ffff0u) & ~1u) != 0)
+    a2c_badreturn(a2c_ret_to, 0x0d0ffff0u);
+  a2c_ret_to = rt;
+  a2c_r = save;
+  return res;
+}
+void *Port_A2cPointer(u32 a) {
+  void (*f)(void) = a2c_lookup(a);
+  if (!f)
+    return 0;
+  a2cPointerFn = f;
+  return (void *)a2c_pointer_trampoline;
+}
+
 /* A jump to an address that is neither the routine's return nor one of its own continuations. */
 void a2c_badreturn(u32 addr, u32 expected) {
   printf("asm2c: continuation at 0x%08x, expected the return to 0x%08x\n", (unsigned)addr, (unsigned)expected);
