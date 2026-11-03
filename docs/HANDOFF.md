@@ -2,6 +2,24 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA3 — 2026-11-03: asm2c translates TLA's listing asm; D20 proof 30/30 EQUIV; D23
+
+- Read docs/TLA3.md. `tools/wasm/asm2c.py -o build/a2c/x.c --report build/a2c/report.tsv` translates every listing
+  (1 s); 1,202 of 1,207 routines translate, the 5 left are listed in TLA3.md 2.
+- Proof: `tests/arm/tla/build_test.sh` (emsdk, 52 s, build/a2c/a2c_test.js), then `node tests/arm/tla/diff_tla.cjs`:
+  30/30 EQUIV at 100 cases (2 ARM, 8 overlays, jump tables, flags, multiple returns, indirect calls, a 2 KB battle
+  effect builder, a 13 KB overlay routine); `--negative` 4/4; `tools/test_arm.sh` (GS1) 79/79 + negative controls OK.
+- Vendor drafts (`tests/arm/tla/drafts.py`, `DRAFTS=1 diff_tla.cjs`): 6 EQUIV of 22 main routines; asm2c 22/22. D23:
+  asm2c is the default, drafts/hand ports are fallbacks. Traps 56 (one a2c_r across fibers), 57 (wait in D20), 58
+  (listing facts).
+- Debugging: `ONLY=a,b OUT=a2c_trace TRACE=1 tests/arm/tla/build_test.sh`, then `OUT=a2c_trace TRACE=1 node
+  tests/arm/tla/diff_tla.cjs --all` prints the first instruction where the original and the translation differ.
+- Next (TLA5): wire the build hooks of TLA3.md 6 (asm2c stage, runtime a2c_call/a2c_r per fiber, stubs to wrappers,
+  codemap into Port_ResolveCode); commit bss/absolute symbols + Thumb bit as a names-only table so asm2c stops reading
+  port_work/tla1; per-routine input rules or captured states for the ~960 routines generic worlds cannot run (battle
+  effect scripts first).
+- Untouched: build.py and its stages, tools/web_build.sh, port/tla, port/pc, port/web, the site. Nothing deployed.
+
 ## TLA2 — 2026-11-03: build.py --game tla; TLA's C compiled and linked (0 warnings), leak check 0; audit not done
 
 - Read docs/TLA2.md. `tools/web_build.sh --game tla --only ll,bind,obj,link,leak` builds build/wasm-tla (about 40 s).

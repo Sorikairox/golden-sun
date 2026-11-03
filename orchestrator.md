@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA3 (2026-11-03): **asm2c** (tools/wasm/asm2c.py, D23): 1,202/1,207 TLA listing routines translate to C; D20 proof
+  30/30 EQUIV (ARM, overlays, jump tables, battle effect, 13 KB overlay routine), negative controls 4/4, vendor drafts
+  6/22; GS1 tests/arm 79/79 (docs/TLA3.md). Build hooks for TLA5 in TLA3.md 6.
 - TLA2 (2026-11-03): `build.py --game tla` (tools/wasm/game.py); TLA C 3,654/3,702 objects, link 0 warnings, 2,545 stubs,
   leak 0; TLA code-range audit 187 hits not yet audited (docs/TLA2.md). GS1 still 687968a7/895d45cc.
 
@@ -282,6 +285,16 @@ that edition's address map, not a port. Out of scope until asked.
   port/symbols/tbs-en*.tsv) stays at 24b72a32 with alchemy-gcc 9bc4e65a. TLA's reference (`/ref/alchemy-tla`) uses
   alchemy-gcc 641764a5 (D13 f; alchemy 34c36297 moved TLA's three options into the compiler); GS1's wasm uses no
   alchemy-gcc at all (emsdk clang), rebuilt after the TLA bootstrap: still 687968a7.
+- **D23 TLA's listing asm is translated mechanically by asm2c, every routine D20-proven (TLA3, 2026-11-03; user decision
+  TLA_PLAN 6.2):** `tools/wasm/asm2c.py` reads the vendor's listings (`recon/tla/raw`, overlay listings) at build time and
+  writes C into the build tree (never committed, D2/D18): a register file `a2c_r` loaded into C locals, identity memory,
+  the GBA stack in memory, NZCV as locals, direct calls between translated routines, `a2c_call` (Port_ResolveCode) for
+  everything else, `a2c_dispatch` for code pointers (overlay-aware), lr continuations for returns, local calls and tail
+  calls, jump tables as switches, and a codemap. Evidence (docs/TLA3.md): 1,202 of 1,207 routines translate; 30 varied
+  routines EQUIV against the ROM (`tests/arm/tla/diff_tla.cjs`, 100 cases each), negative controls 4/4; the vendor's C
+  drafts for the same routines give 6 EQUIV of 22 (compile, link and semantic failures). **asm2c is the default** for all
+  listing routines. A vendor draft replaces a translation only when it is D20 EQUIV and wanted for readability; a hand port
+  only where asm2c cannot go (the 5 routines of TLA3.md 2, the hardware-bound hand `.s`, TLA4). Supersedes D6 for TLA.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
@@ -500,3 +513,17 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     another): one wasm import with several types, ~1,100 wasm-ld warnings. link.py adapt_mismatched_calls (TLA only) routes each
     odd call through a NAME$c<sig> adapter; attribute lists (`captures(none)`, `initializes((8, 12))`) and return attributes
     (`call zeroext i8`) must be parsed or the canonical type is wrong.
+56. asm2c's register file `a2c_r` is one global (TLA3): a translated routine reloads all registers from it after every call.
+    If the callee yields (`wait`, a fiber switch, D8) and another task's translated code runs, the reload picks up that
+    task's registers. Save and restore `a2c_r` per fiber on every switch (docs/TLA3.md 6) before translated code runs under
+    the scheduler.
+57. D20 on coroutine routines (TLA3): under the interpreter `wait` switches task stacks, and a call out of a translation
+    (a nested interpreter call) cannot follow, so the original and the translation diverge at the first yield (14 false
+    FAILs in the first batch). tests/arm/tla/diff_tla.cjs makes `wait` return at once and stops both runs at the YIELDS-th
+    yield, then compares memory. Battle effect scripts still need real battle state (NOINPUT under generic worlds).
+58. TLA listing facts asm2c depends on (TLA3): port/symbols/tla-en.tsv has no bss or linker-script symbols (gInput,
+    IwramResident_Rom, gIrqVector) and stores Thumb functions without bit 0, but a pool word `.4byte Func` holds
+    address|1 (a jump table or callback built from it differs by one); the listings hide code in `.2byte`/`.4byte`
+    (`mov lr, rX; .2byte 0xf800` = call via lr), use `1:` + `.reloc 1b, R_ARM_ABS32_NOI, sym` for a pool word, alias two
+    global labels to one address, and let a routine fall through into the next. Check the D20 trace (TRACE=1) first when a
+    translation fails.
