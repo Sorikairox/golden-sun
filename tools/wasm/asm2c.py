@@ -677,7 +677,7 @@ class Fn:
             L += [f'lr = 0x{nxt | 1:x}u;'] + self.call(t, True)
         elif mn == 'blh':
             off = self.imm(o[0]) if o and o[0].startswith('#') else 0
-            L += [f'{{ u32 t_ = lr + {off}u; lr = 0x{nxt | 1:x}u; A2C_SPILL(); a2c_dispatch((t_ & ~1u) | 1u); A2C_RELOAD(); }}']
+            L += [f'{{ u32 t_ = lr + {off}u; lr = 0x{nxt | 1:x}u; A2C_SPILL(); a2c_dispatch(A2C_THUMB(t_)); A2C_RELOAD(); }}']
             self.uses_dispatch = True
         elif mn == 'bx':
             r = self.reg(o[0])
@@ -1099,6 +1099,10 @@ static inline u32 a2c_enter_wrapped(u32 nstack, const u32 *a, void (*f)(void)) {
   if (((a2c_ret_to ^ k_) & ~1u) != 0) A2C_CONT(a2c_ret_to); } while (0)
 #define A2C_RETJUMP(t) do { u32 tt_ = (t); if (((tt_ ^ lr0) & ~1u) == 0) { a2c_ret_to = tt_; goto ret; } A2C_LOCALRET(tt_); \
   if (a2c_is_return(tt_)) { a2c_ret_to = tt_; goto ret; } A2C_TAILK(a2c_dispatch(tt_)); } while (0)
+/* TLA4c: a Thumb `bl` suffix through lr runs Thumb code: bit 0 set, but only on a GBA address. A C function pointer
+   the game stored (m4a's SoundInfo func/CgbSound: a wasm table index, below 0x20000 = PORT_TABLE_END) is passed on
+   as it is: index|1 is another function (CgbSound's call ran the VBlank handler) */
+#define A2C_THUMB(t) ((t) >= 0x20000u ? ((t) & ~1u) | 1u : (t))
 int a2c_is_return(u32 t); /* the run time: t is no code entry (a return address of an outer frame, the sentinel) */
 void a2c_spin(void); /* TLA4c: a polling loop's back edge: wait for an interrupt (the game: the BIOS halt) */
 '''
