@@ -62,7 +62,17 @@ def load_symbols(symdir, extra=None):
             ovl.setdefault(f[0].lower(), {}).setdefault(f[1], int(f[2], 16))
     # bss and linker-script (absolute) symbols are not in tla-en.tsv: the reference build's full symbol list
     # (tools/build_ref_tla.sh output, `name addr size type`) fills them in
-    if extra and os.path.exists(extra):
+    if extra and extra.endswith('.tsv'):
+        # the committed table (TLA5, tools/wasm/a2c_extra_symbols.py): overlay ('' = main), name, address
+        for line in open(extra):
+            f = line.rstrip('\n').split('\t')
+            if line.startswith('#') or len(f) < 3 or not re.fullmatch(r'[0-9a-f]{8}', f[2]):
+                continue
+            if f[0]:
+                ovl.setdefault(f[0], {})[f[1]] = int(f[2], 16)
+            else:
+                main[f[1]] = int(f[2], 16)
+    elif extra and os.path.exists(extra):
         for line in open(extra):
             f = line.split()
             if len(f) >= 2 and not f[0].startswith(('$', '.L')) and re.fullmatch(r'[0-9a-f]{8}', f[1]):
@@ -1032,7 +1042,7 @@ def main():
     ap.add_argument('--only', help='comma-separated routine names (default: all)')
     ap.add_argument('--export', default='', help='routine names that get a wrapper u32 NAME(r0..r3, stack0..7)')
     ap.add_argument('--report')
-    ap.add_argument('--extra-symbols', default='port_work/tla1/syms.txt')
+    ap.add_argument('--extra-symbols', default='port/tla/symbols/tla-en-extra.tsv')
     args = ap.parse_args()
     tr = Translator(args.vendor, args.symbols, args.extra_symbols)
     tr.load()
