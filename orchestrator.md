@@ -14,6 +14,11 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA6 part 1 (2026-11-03): **new game to Jenna under control at Venus Lighthouse** (intro, talk, quake, area name,
+  walking, menus), **in-game save -> Continue** works; fixes: asm2c rel16 jump tables, long-jump `bl` return points
+  (Func_080cf78c/08173aac/02002f64@681 translate), link adapter for cast calls (trap 74); tools/regress_tla.sh 5 cases;
+  /tla/ site prep local (BOTH=1 site.sh, own workers, shared IndexedDB with tla-* keys), not deployed (docs/TLA6.md).
+
 - TLA4d (2026-11-03): **new game to "Transfer data from Golden Sun?"** (empty save: logos, logo, Felix naming, the
   question, No -> Isaac naming: the original's order; the pulsing windows were a task never removed, trap 73);
   **sound**: TLA mixer + render in C (pc_tla_mixer.c, GS1's channel mixers shared), D20-style 300/300 vs the ROM's
@@ -620,4 +625,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     list: Task_Remove/Find/Add/SetFlags/SuspendAll/ResumeAll) must compare one key: Port_TlaTaskKey (pc_tla.c). Symptom:
     the clear scene's blend task never ended, BLDALPHA kept counting, windows pulsed over the logo. Look for the same
     pattern wherever C stores or compares callbacks that asm also passes (event/script handlers, IRQ slots).
+74. A direct call through a cast to another function type (TLA6: `((s32 (*)(s32))BattleEffect_GetResourceGroup)(x)`
+    on an s8 function) is valid on the ARM and a trap in wasm: LLVM emits a `NAME_bitcast_invalid` stub and wasm-opt
+    turns the caller into `unreachable` (Scene_GetAreaNameIndex). link.py's adapt_mismatched_calls sends such calls to
+    the `NAME$c<signature>` adapter. After a link, `grep -rl _bitcast_invalid build/wasm-tla/obj` must be empty.
 

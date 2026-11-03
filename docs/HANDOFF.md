@@ -2,6 +2,24 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA6 (part 1) — 2026-11-03: new game to Jenna under control; save -> continue; /tla/ site prep (local)
+
+- Read docs/TLA6.md and trap 74.
+- Real play (node, tools/regress_tla.sh): naming, transfer No, the intro, the Venus Lighthouse talk, the quake, the
+  area name, **Jenna walks**, field menu, **in-game save -> power-on -> Continue -> back in the field**. First battle
+  not reached (the way down the aerie not found by hand).
+- Fixed: asm2c relative halfword jump tables (picture decoders, D20 60/60); asm2c long-jump `bl` return points +
+  vendor listing fallback (Func_080cf78c, Func_08173aac, Func_02002f64@681 translate; D20 NOINPUT); link.py adapter
+  for calls cast to another type (Scene_GetAreaNameIndex was `unreachable`, trap 74).
+- Copyright line: the original's (the clear overlay's background is the title's LogoOnBlack picture, which holds it).
+- Site: `BOTH=1 tools/site.sh` -> GS1 at /, TLA at /tla/ (own workers/caches, one IndexedDB: rom/flash vs
+  tla-rom/tla-flash); web_offline + web_phone ALL PASS for both; staged in ~/golden-sun-site-tla/publish. Not deployed;
+  deploy_web.sh needs: TLA leak check, BOTH=1, the tla/ allowlist, cp -R, /tla/ headers and live checks (TLA6.md 4).
+- Checks: D20 batch 248/0/957; diff_tla 30/30; diff_hw 131/0/57, negative 4/4; diff_mixer 300/300; test_arm 79/79;
+  calls PASS; leak 0; regress_tla 5/5; GS1 687968a7 / 895d45cc, regress --quick 9/9.
+- **Next:** the Venus Lighthouse trigger table -> the way down, Felix/Idejima, the first battle (a TLA path probe);
+  D20 inputs for the three new translations; audio check of the opening; then deploy (user's bar).
+
 ## TLA4d — 2026-11-03: new game to the transfer question; TLA sound in C
 
 - Read docs/TLA4.md section 9 and trap 73.
