@@ -13,3 +13,6 @@ u32 a2c_regs_addr(void) { return (u32)(uintptr_t)&a2c_r; }
 void a2c_badreturn(u32 a, u32 e) { (void)e; a2c_js_call(a); }
 extern void a2c_js_trace(u32 addr);
 void a2c_trace(u32 addr) { a2c_js_trace(addr); }
+u32 a2c_ret_to; /* TLA4b: where a translated routine returned to (asm2c's A2C_RETJUMP) */
+int a2c_is_return(u32 t) { return (t & ~1u) == 0x0d0ffff0u; } /* only the wrappers' sentinel: any other jump is interpreted */
+void a2c_io_written(u32 a) { (void)a; } /* TLA4b: the game's run time starts DMAs here; the test world has no hardware */

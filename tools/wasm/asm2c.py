@@ -593,7 +593,7 @@ class Fn:
             if mn == 'push':
                 L.append(f'sp -= {4 * len(order)};')
                 for i, r in enumerate(order):
-                    L.append(f'a2c_st32(sp + {4 * i}, {r});')
+                    L.append(f'a2c_st32s(sp + {4 * i}, {r});')
             elif mn == 'stmia':
                 for i, r in enumerate(order):
                     L.append(f'a2c_st32(({base} & ~3u) + {4 * i}, {r});')
@@ -650,8 +650,8 @@ class Fn:
     def call(self, t, thumb):
         cn = self.tr.known(self.L.ovl, t)
         if cn:
-            return [f'A2C_SPILL(); {cn}(); A2C_RELOAD();']
-        return [f'A2C_SPILL(); a2c_call(0x{t | (1 if thumb else 0):x}u); A2C_RELOAD();']
+            return [f'A2C_CALLK({cn}());']
+        return [f'A2C_CALLK(a2c_call(0x{t | (1 if thumb else 0):x}u));']
 
     def tail(self, t, thumb=True):
         cn = self.tr.known(self.L.ovl, t)
@@ -800,6 +800,11 @@ class Fn:
                     # local target of A2C_LOCALRET (k = 0 is an offset table read before it: left to dispatch)
                     self.localrets.update(t for t in range(a + 8, self.end, 1 << cj))
                     succ_extra = succ_extra + [(a + 8, 'arm?')]
+                elif opc == 4 and rn == 15 and bits == 0 and not op & 0x10 and (op >> 5) & 3 == 1 and cj:
+                    # add pc, pc, rm, lsr #k (TLA4b: IwramFillWords, `ands ip, r1, #224; rsb ip, ip, #224; add pc,
+                    # pc, ip, lsr #3` into its unrolled stmia run): the same computed jump, at any instruction
+                    self.localrets.update(t for t in range(a + 8, self.end, 4))
+                    succ_extra = succ_extra + [(a + 8, 'arm?')]
                 L.append('A2C_RETJUMP(pc);')
                 return L, succ_extra, True
             return L, succ_extra, False
@@ -831,7 +836,7 @@ class Fn:
                     else:
                         L.append(f'  {RNAMES[r]} = a2c_ld32(b_ + {4 * k});')
                 else:
-                    L.append(f'  a2c_st32(b_ + {4 * k}, {R(r) if r != 15 else hex(a + 12) + "u"});')
+                    L.append(f'  a2c_st32{"s" if rn == 13 else ""}(b_ + {4 * k}, {R(r) if r != 15 else hex(a + 12) + "u"});')
             if W and not (Lb and rn in regs):
                 L.append(f'  {RNAMES[rn]} = {RNAMES[rn]} {"+" if U else "-"} {nb}u;')
             if pc:
@@ -893,7 +898,10 @@ class Fn:
             res += ['  ' + x for x in lines]
             if (nxt, mo) in succ and (i + 1 >= len(addrs) or addrs[i + 1] != nxt):
                 res.append(f'  goto L_{nxt:08x};')
-        res += ['ret:', '  A2C_LEAVE();', '}', '']
+        # TLA4b: the one place a call's or tail call's unexpected return lands (A2C_CONT): the routine's own return,
+        # one of its local return points, or a return past it (unwinding goes on in the caller)
+        res += ['unw:', '  if (((a2c_k ^ lr0) & ~1u) == 0) goto ret;', '  A2C_LOCALRET(a2c_k);', '  goto ret;',
+                'ret:', '  A2C_LEAVE();', '}', '']
         return res
 
 
@@ -944,9 +952,13 @@ static inline u32 a2c_ld16(u32 a) { u32 h = *(u16 *)A2C_MEM(a & ~1u); return (a 
 static inline u32 a2c_ld8(u32 a) { return *A2C_MEM(a); }
 static inline u32 a2c_lds8(u32 a) { return (u32)(s32)*(s8 *)A2C_MEM(a); }
 static inline u32 a2c_lds16(u32 a) { return (a & 1) ? (u32)(s32)*(s8 *)A2C_MEM(a) : (u32)(s32)*(s16 *)A2C_MEM(a); }
-static inline void a2c_st32(u32 a, u32 v) { *(u32 *)A2C_MEM(a & ~3u) = v; }
-static inline void a2c_st16(u32 a, u32 v) { *(u16 *)A2C_MEM(a & ~1u) = (u16)v; }
-static inline void a2c_st8(u32 a, u32 v) { *A2C_MEM(a) = (u8)v; }
+/* a store to the I/O registers: the run time does what the hardware does on it (TLA4b: a DMA started by register
+   writes, as the colour kernel loaders' stmia to DMA3, runs at once; the D20 test run time ignores it) */
+void a2c_io_written(u32 a);
+static inline void a2c_st32(u32 a, u32 v) { *(u32 *)A2C_MEM(a & ~3u) = v; if ((a >> 24) == 4u) a2c_io_written(a & ~3u); }
+static inline void a2c_st32s(u32 a, u32 v) { *(u32 *)A2C_MEM(a & ~3u) = v; } /* a push: the stack is no I/O */
+static inline void a2c_st16(u32 a, u32 v) { *(u16 *)A2C_MEM(a & ~1u) = (u16)v; if ((a >> 24) == 4u) a2c_io_written(a & ~1u); }
+static inline void a2c_st8(u32 a, u32 v) { *A2C_MEM(a) = (u8)v; if ((a >> 24) == 4u) a2c_io_written(a); }
 /* register-specified shift (amount 0-255) with carry out, as the ARM7 */
 static inline u32 a2c_shift_reg(int t, u32 x, u32 k, u32 *c) {
   if (k == 0) return x;
@@ -968,8 +980,8 @@ static inline u32 a2c_shift_imm(int t, u32 x, u32 k, u32 *c) {
 static inline u32 a2c_shift_imm_nc(int t, u32 x, u32 k, u32 c) { u32 cc = c; return a2c_shift_imm(t, x, k, &cc); }
 #define A2C_ENTER() u32 r0 = a2c_r.r[0], r1 = a2c_r.r[1], r2 = a2c_r.r[2], r3 = a2c_r.r[3], r4 = a2c_r.r[4], \
   r5 = a2c_r.r[5], r6 = a2c_r.r[6], r7 = a2c_r.r[7], r8 = a2c_r.r[8], r9 = a2c_r.r[9], r10 = a2c_r.r[10], \
-  r11 = a2c_r.r[11], r12 = a2c_r.r[12], sp = a2c_r.r[13], lr = a2c_r.r[14], pc = 0; const u32 lr0 = lr; \
-  u32 n = a2c_r.n, z = a2c_r.z, c = a2c_r.c, v = a2c_r.v; (void)pc; (void)n; (void)z; (void)c; (void)v
+  r11 = a2c_r.r[11], r12 = a2c_r.r[12], sp = a2c_r.r[13], lr = a2c_r.r[14], pc = 0, a2c_k = 0; const u32 lr0 = lr; \
+  u32 n = a2c_r.n, z = a2c_r.z, c = a2c_r.c, v = a2c_r.v; (void)pc; (void)n; (void)z; (void)c; (void)v; (void)a2c_k
 #define A2C_SPILL() (a2c_r.r[0] = r0, a2c_r.r[1] = r1, a2c_r.r[2] = r2, a2c_r.r[3] = r3, a2c_r.r[4] = r4, \
   a2c_r.r[5] = r5, a2c_r.r[6] = r6, a2c_r.r[7] = r7, a2c_r.r[8] = r8, a2c_r.r[9] = r9, a2c_r.r[10] = r10, \
   a2c_r.r[11] = r11, a2c_r.r[12] = r12, a2c_r.r[13] = sp, a2c_r.r[14] = lr, a2c_r.n = n, a2c_r.z = z, a2c_r.c = c, a2c_r.v = v)
@@ -978,22 +990,35 @@ static inline u32 a2c_shift_imm_nc(int t, u32 x, u32 k, u32 c) { u32 cc = c; ret
   r11 = a2c_r.r[11], r12 = a2c_r.r[12], sp = a2c_r.r[13], lr = a2c_r.r[14], n = a2c_r.n, z = a2c_r.z, c = a2c_r.c, v = a2c_r.v)
 #define A2C_LEAVE() A2C_SPILL()
 /* C -> translated routine: r0-r3, nstack words on the GBA stack (AAPCS), r4-r12 and flags 0, lr a sentinel */
+extern u32 a2c_ret_to; /* where the last translated routine returned to (the run time defines it) */
+void a2c_badreturn(u32 addr, u32 expected);
 static inline u32 a2c_enter_wrapped(u32 nstack, const u32 *a, void (*f)(void)) {
-  A2cRegs save = a2c_r; u32 top = A2C_STACK_TOP, sp = top - 4 * nstack, i, res;
+  A2cRegs save = a2c_r; u32 top = A2C_STACK_TOP, sp = top - 4 * nstack, i, res, rt = a2c_ret_to;
   for (i = 0; i < 16; i++) a2c_r.r[i] = 0;
   for (i = 0; i < 4; i++) a2c_r.r[i] = a[i];
   for (i = 0; i < nstack && i < 8; i++) a2c_st32(sp + 4 * i, a[4 + i]);
   a2c_r.r[13] = sp; a2c_r.r[14] = A2C_RET_SENTINEL; a2c_r.n = a2c_r.z = a2c_r.c = a2c_r.v = 0;
-  f(); res = a2c_r.r[0];
+  a2c_ret_to = A2C_RET_SENTINEL; f(); res = a2c_r.r[0];
+  if (((a2c_ret_to ^ A2C_RET_SENTINEL) & ~1u) != 0) a2c_badreturn(a2c_ret_to, A2C_RET_SENTINEL);
+  a2c_ret_to = rt;
   save.r[0] = a2c_r.r[0]; save.r[1] = a2c_r.r[1]; a2c_r = save; return res;
 }
 /* a jump through a register: the return when it is the entry lr, else a tail call */
 /* the continuation of a jump: the entry lr returns, a local call's return address (A2C_LOCALRET, per routine)
    goes back into the routine; any other address is a tail call whose callee returns to the lr of the jump */
-#define A2C_CONT(k) do { if ((((k) ^ lr0) & ~1u) == 0) goto ret; A2C_LOCALRET(k); a2c_badreturn((k), lr0); goto ret; } while (0)
-#define A2C_TAILK(callstmt) do { u32 k_ = lr; A2C_SPILL(); callstmt; A2C_RELOAD(); A2C_CONT(k_); } while (0)
-#define A2C_RETJUMP(t) do { u32 tt_ = (t); if (((tt_ ^ lr0) & ~1u) == 0) goto ret; A2C_LOCALRET(tt_); \
-  A2C_TAILK(a2c_dispatch(tt_)); } while (0)
+/* TLA4b: a callee reports the address it actually returned to in a2c_ret_to (set to the lr it was given before
+   the call: what C callees and a plain `bx lr` return to). A routine can return past its caller: mplay_main's
+   `pop {pc}` epilogue (Func_081c0c0c), reached by a chain of tail branches after MPlayMain's own `bl`s changed lr,
+   pops the return address MPlayMain pushed. Such a return unwinds every frame whose entry lr differs (goto ret,
+   a2c_ret_to kept) until the frame that returns there, or a local return point; a2c_enter_wrapped checks that the
+   unwinding ends at its sentinel. */
+#define A2C_CONT(k) do { a2c_k = (k); goto unw; } while (0)
+#define A2C_TAILK(callstmt) do { u32 k_ = lr; A2C_SPILL(); a2c_ret_to = k_; callstmt; A2C_RELOAD(); A2C_CONT(a2c_ret_to); } while (0)
+#define A2C_CALLK(callstmt) do { u32 k_ = lr; A2C_SPILL(); a2c_ret_to = k_; callstmt; A2C_RELOAD(); \
+  if (((a2c_ret_to ^ k_) & ~1u) != 0) A2C_CONT(a2c_ret_to); } while (0)
+#define A2C_RETJUMP(t) do { u32 tt_ = (t); if (((tt_ ^ lr0) & ~1u) == 0) { a2c_ret_to = tt_; goto ret; } A2C_LOCALRET(tt_); \
+  if (a2c_is_return(tt_)) { a2c_ret_to = tt_; goto ret; } A2C_TAILK(a2c_dispatch(tt_)); } while (0)
+int a2c_is_return(u32 t); /* the run time: t is no code entry (a return address of an outer frame, the sentinel) */
 '''
 
 
@@ -1053,6 +1078,7 @@ def main():
     ap.add_argument('--names', help='TSV of every global label of a translated routine (aliases too): name, overlay, '
                                     'address, function (the build binds the logged stubs to these, TLA5)')
     ap.add_argument('--extra-symbols', default='port/tla/symbols/tla-en-extra.tsv')
+    ap.add_argument('--no-overlap', action='store_true', help='no overlap entries for mid-routine call targets')
     args = ap.parse_args()
     tr = Translator(args.vendor, args.symbols, args.extra_symbols)
     tr.load()
@@ -1076,6 +1102,50 @@ def main():
         except Unsupported as e:
             tr.fnaddr.pop((L.ovl, addr), None)
             report.append((name, L.ovl, f'{addr:08x}', end - addr, 'hand', str(e)))
+    # overlap entries (TLA4b, trap 66): a constant call or branch into the middle of a translated routine (the m4a
+    # driver's chk_adr_r2 / ld_r3_tp_adr_i spots, entered by `bl` from other routines) gets a second routine from
+    # the target to the containing routine's end, named ROUTINE+0xOFF. The routine itself is not split (a split
+    # turns its own back edges into nested calls). Repeated: an overlap entry may branch to another such spot.
+    if not args.no_overlap:
+        tried = set()
+        for _ in range(4):
+            spans = sorted((r[0].ovl, r[2], r[4], r) for r in sel)
+            starts = {(r[0].ovl, r[2]) for r in sel}
+            okset = {(L.ovl, a) for L, _, a, _ in ok}
+            want = {}
+            for b, (L, name, addr, mode) in zip(bodies, ok):
+                for t in re.findall(r'a2c_call\(0x([0-9a-f]+)u\)', '\n'.join(b)):
+                    t = int(t, 16) & ~1
+                    for ov in ([L.ovl, ''] if L.ovl else ['']):
+                        if (ov, t) in starts:
+                            break
+                        hit = [x for x in spans if x[0] == ov and x[1] < t < x[2] and (ov, x[1]) in okset]
+                        if hit:
+                            want[(ov, t)] = hit[-1][3]
+                            break
+            new = []
+            for (ov, t), r in sorted(want.items()):
+                if (ov, t) in starts or (ov, t) in tried:
+                    continue
+                tried.add((ov, t))
+                Lr, nm, a0, md, end = r
+                mt = [it[1] for it in Lr.items if it[0] == t]
+                if not mt:
+                    continue
+                new.append((Lr, f'{nm}+0x{t - a0:x}', t, mt[0] if mt[0] in ('thumb', 'arm') else md, end))
+            if not new:
+                break
+            for L, name, addr, mode, end in new:
+                tr.fnaddr[(L.ovl, addr)] = tr.cname(L.ovl, addr)
+            for L, name, addr, mode, end in new:
+                try:
+                    bodies.append(Fn(tr, L, name, addr, mode, end).translate())
+                    ok.append((L, name, addr, mode))
+                    sel.append((L, name, addr, mode, end))
+                    report.append((name, L.ovl, f'{addr:08x}', end - addr, 'ok', 'overlap entry'))
+                except Unsupported as e:
+                    tr.fnaddr.pop((L.ovl, addr), None)
+                    report.append((name, L.ovl, f'{addr:08x}', end - addr, 'hand', 'overlap entry: ' + str(e)))
     # routines whose direct calls point at a dropped routine are regenerated (they then use a2c_call)
     bodies = []
     for L, name, addr, mode in ok:
