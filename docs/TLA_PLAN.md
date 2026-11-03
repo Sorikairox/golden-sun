@@ -49,9 +49,21 @@ reproduced from the files named.
 That makes **about 1,204 functions and about 974 KB of game code still asm**. That is about 15 % of the functions.
 By bytes it is much more, because the asm is concentrated in very large routines: the battle effects.
 
-For scale, all of GS1's code is 1.36 MB (552 KB main + 812 KB overlays, from `port/symbols/tbs-en*.tsv`). If TLA's
-code is 1.5 to 2 times that, **35 to 50 % of TLA's code bytes are still asm**. This is an estimate. TLA1 replaces
-it with the exact figure from the tla-en map.
+**Exact census (TLA1, from the tla-en map; `port/symbols/tla-en-census.tsv`, docs/TLA1.md 4).** It replaces the
+estimate that stood here (35 to 50 %). Bytes of linked sections; asm = the vendor's disassembled listings, pools
+included; hand = handwritten `.s` in games/tla/src (veneers, mixer, kernels):
+
+| | C | asm (listings) | hand .s | data |
+|---|---|---|---|---|
+| main image | 253,752 B (2,358 fn) | **628,240 B (525 fn)** | 34,346 B | 13,927,737 B + 745,180 overlay stream |
+| overlays (114) | 659,332 B (4,497 fn) | **330,912 B (678 fn)** | 55,992 B | 331,070 B |
+| **all code: 1,962,634 B** | **913,084 B, 46.5 %** | **959,152 B, 48.9 %** | 90,338 B, 4.6 % | |
+
+So **49 % of TLA's code bytes are still asm** (69 % of the main image's), at the top of the old estimate. The battle
+effects in `rom_main_09` are 347,520 B of it. The census comes from a near-match build (GS1's alchemy-gcc plus the
+three options alchemy moved into its newer compiler: main layout identical to the cart, 2 functions differ in place;
+50 of 114 overlays identical), so it is exact for the main image and within a few bytes for the overlays until the
+matching build (needs alchemy-gcc 641764a5, docs/TLA1.md 2).
 
 The pull already moved a lot: 127 files changed in `recon/tla/raw` (−37,252 lines). Before the pull (24b72a32)
 there were 534 + 794 asm functions, about 1,050 KB. **Alchemy is converting TLA quickly**, and every re-pin
@@ -379,7 +391,24 @@ TLA1–TLA4 can start now. TLA9 waits for TLA8 and for the user's answer on 3.3.
 
 ---
 
-## 6. Questions for the user
+## 6. User decisions 2026-11-03
+
+The user answered the questions below (via the coordinator):
+
+1. **Test save:** approved. A test-only cleared GS1 save is made by taking `ml_saturos_win` to GS1's own end-of-game
+   save screen, so the game writes the clear flag itself. Test use only, never shipped.
+2. **Assembly:** translate the remaining asm mechanically (asm2c), every routine D20-proven. Do not wait for alchemy.
+3. **Site:** the same site, under `/tla/` (https://golden-sun-web-port.netlify.app/tla/), with links between the games.
+4. **Deploy:** only once TLA is playable: new game plus the opening, with sound, touch and offline.
+
+Defaults the coordinator chose for the rest:
+
+- Several cleared GS1 files: take the newest automatically, with a chooser only if there are several.
+- Auto-transfer on by default, behind an option.
+- No "import GS1 save" button for now.
+- TLA may re-pin alchemy while GS1 stays pinned (each re-pin repeats the TLA1 GS1 identity check, D22).
+
+### The questions as asked (TLA0)
 
 1. **Test save:** may we make a test-only *cleared* GS1 save by sending our mid-game real-play save to GS1's own
    end-of-game save screen (the game writes the clear flag itself, no byte patching)? The alternative is real play
