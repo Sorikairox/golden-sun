@@ -82,13 +82,68 @@ def stage_asm2c():
     Never committed."""
     d = os.path.join(OUT, 'asm2c')
     os.makedirs(d, exist_ok=True)
-    rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/asm2c.py'), '--vendor', V,
-                      '--symbols', os.path.join(ROOT, 'port/symbols'),
-                      '--extra-symbols', os.path.join(ROOT, 'port/tla/symbols/tla-en-extra.tsv'),
+    # TLA4b (hook H3): hw2c (port/tla/hw/tools/hw2c.py) drives asm2c over the vendor listings and the byte listings
+    # of the handwritten asm in one pass, so both share one a2c_dispatch, codemap and names.tsv. The binds and GS1
+    # twins of port/tla/hw/bindings.tsv are left out there (link.py binds them by name)
+    rc, so, se = run([sys.executable, os.path.join(ROOT, 'port/tla/hw/tools/hw2c.py'), '--with-listings',
+                      '--listings', os.path.join(d, 'hw_listings'),
                       '-o', os.path.join(d, 'tla_asm.c'), '--report', os.path.join(d, 'report.tsv'),
                       '--names', os.path.join(d, 'names.tsv'), '--export', '*'])
     print(so.strip() or se[-3000:])
+    if rc == 0:
+        split_asm2c(os.path.join(d, 'tla_asm.c'), 16)
     return rc == 0
+
+
+def split_asm2c(path, n):
+    """TLA4b: tla_asm.c as one translation unit (43 MB) ran the compiler out of memory (exit 137); the routines are
+    independent functions, so it is split into n units tla_asm_K.c (each: the header and declarations, a share of
+    the routines; the last one also the dispatch, codemap and wrappers), which link.py compiles in parallel."""
+    lines = open(path, encoding='utf-8').read().split('\n')
+    head = re.compile(r'^/\* \S+ 0x[0-9a-f]{8} \((thumb|arm)\) \*/$')
+    first = next(i for i, l in enumerate(lines) if head.match(l))
+    disp = next(i for i, l in enumerate(lines) if l.startswith('void a2c_dispatch(u32 t) {'))
+    prefix, body, tail = lines[:first], lines[first:disp], lines[disp:]
+    starts = [i for i, l in enumerate(body) if head.match(l)] + [len(body)]
+    per = (sum(len(l) for l in body) + n - 1) // n  # by bytes
+    parts, cur, size = [], [], 0
+    for a, b in zip(starts, starts[1:]):
+        cur += body[a:b]
+        size += sum(len(l) for l in body[a:b])
+        if size >= per and len(parts) < n - 1:
+            parts.append(cur)
+            cur, size = [], 0
+    parts.append(cur + tail)
+    d = os.path.dirname(path)
+    for f in glob.glob(os.path.join(d, 'tla_asm_*.c')):
+        os.remove(f)
+    for k, part in enumerate(parts):
+        open(os.path.join(d, f'tla_asm_{k}.c'), 'w', encoding='utf-8').write('\n'.join(prefix + part) + '\n')
+
+
+def keep_twins(ll, keep):
+    """TLA4b (H3): a GS1 hand-port file linked for its GS1 twins only (game.pc_twins): every external function
+    definition not in `keep` becomes a declaration, so the TLA build's own routine (asm2c, C) answers for it."""
+    out, skip = [], False
+    # GS1 data names a kept twin reads (clang may inline a dropped helper into it) under their TLA names
+    renames = {'Trig_SineTable': 'Math_SineTable'}
+    rx = re.compile(r'^define (?!internal |private |linkonce)(.*?)@(?:"([^"]+)"|([-\w$.]+))\((.*)$')
+    for line in open(ll, encoding='utf-8'):
+        if skip:
+            skip = line.rstrip('\n') != '}'
+            continue
+        m = rx.match(line)
+        if m and (m.group(2) or m.group(3)) not in keep:
+            head = line[len('define '):line.rindex(')') + 1] if ')' in line else line[len('define '):].rstrip()
+            head = re.sub(r'\s#\d+\s*$', '', head)
+            out.append('declare ' + re.sub(r'^(dso_local |hidden |protected )+', '', head) + '\n')
+            skip = True
+            continue
+        out.append(line)
+    text = ''.join(out)
+    for a, b in renames.items():
+        text = re.sub(rf'@{a}\b', '@' + b, text)
+    open(ll, 'w', encoding='utf-8').write(text)
 
 
 def run(cmd, **kw):
@@ -138,13 +193,20 @@ def stage_src_ll(objs, jobs):
                 return False
             notes += [f'{obj}: {l}' for l in so.splitlines() if l]
 
+    twins = game.pc_twins()
+
     def one(item):
         image, obj = item
         ll = os.path.join(OUT, 'll', obj + '.ll')
         os.makedirs(os.path.dirname(ll), exist_ok=True)
         if obj.startswith('port/'):  # the PC layer: emscripten's libc headers, the game's types via port/pc
-            rc, _, se = run(['emcc', '-O2', '-S', '-emit-llvm', '-I' + os.path.join(ROOT, 'port/pc'),
+            # TLA4b: the TLA build's PC layer sees PORT_GAME_TLA (entry, soft-reset addresses); GS1's command is unchanged
+            gflags = ['-DPORT_GAME_TLA=1'] if game.C.game == 'tla' else []
+            rc, _, se = run(['emcc', '-O2', '-S', '-emit-llvm'] + gflags + ['-I' + os.path.join(ROOT, 'port/pc'),
                              '-o', ll, os.path.join(ROOT, obj + '.c')])
+            keep = twins.get(obj[len('port/pc/'):]) if obj.startswith('port/pc/') else None
+            if rc == 0 and keep is not None:
+                keep_twins(ll, keep)
         else:
             rc, _, se = run([CLANG] + CFLAGS + ['-S', '-emit-llvm', '-o', ll, src_of(obj)])
         return obj, (se[-2000:] if rc else None)
@@ -183,6 +245,7 @@ def main():
     stages = ['audit', 'll', 'bind', 'obj', 'link', 'leak']
     if game.C.game == 'tla':
         stages.insert(3, 'asm2c')
+        stages.insert(stages.index('link') + 1, 'calls')  # TLA4b: constant call targets (trap 66)
     if a.only:
         stages = a.only.split(',')
     if 'audit' in stages:  # vendor tests of code addresses by range/bits: every hit audited (GS14, trap 41)
@@ -205,6 +268,11 @@ def main():
     if 'obj' in stages or 'link' in stages:
         import link
         if not link.run(objs, OUT, ROOT, CLANG, a.jobs, stages):
+            sys.exit(1)
+    if 'calls' in stages:  # TLA4b (trap 66): every constant call target of the generated C is a bound entry point
+        rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/call_targets.py'), '--out', OUT])
+        print((so or se).strip())
+        if rc:
             sys.exit(1)
     if 'leak' in stages:
         import leak_check

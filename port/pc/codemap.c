@@ -168,6 +168,19 @@ void Port_CodeUnalias(u32 to, u32 bytes) {
   aliasCount = k;
 }
 
+#ifdef PORT_GAME_TLA
+/* TLA4b: the function a RAM copy at `gba` runs (Port_CodeAlias), or 0; asm2c's run time asks before it takes a
+ * jump to an unknown address for a return past the caller (port/tla/a2c/a2c_rt.c a2c_is_return). */
+void *Port_CodeAliasAt(u32 gba) {
+  int i;
+  gba &= ~1u;
+  for (i = aliasCount - 1; i >= 0; i--)
+    if (aliases[i].gba == gba)
+      return aliases[i].fn;
+  return 0;
+}
+#endif
+
 void Port_SystemEntry(void);
 
 void *Port_ResolveCode(void *p) {
@@ -188,8 +201,20 @@ void *Port_ResolveCode(void *p) {
   fn = Port_CodeAt(a);
   if (fn)
     return fn;
+#ifdef PORT_GAME_TLA
+  if (a == 0x08000000u || a == 0x08000428u) /* TLA4b: Cart_Start, TLA's Entry: the soft reset (main.c, trap 36) */
+#else
   if (a == 0x08000000u || a == 0x080003C0u) /* Cart_Start, System_Entry: the soft reset (main.c, trap 36) */
+#endif
     return (void *)Port_SystemEntry;
+#ifdef PORT_GAME_TLA
+  { /* TLA4b (H4): the ROM load address of code copied to IWRAM (port/tla/hw/pc_tla.c) */
+    u32 Port_TlaRunAddress(u32 a);
+    u32 run = Port_TlaRunAddress(a);
+    if (run != a)
+      return Port_ResolveCode((void *)(uintptr_t)run);
+  }
+#endif
   printf("Port_ResolveCode: no function at GBA address 0x%08x (overlay %x)\n", (unsigned)a, (unsigned)currentOverlay);
   fflush(stdout);
   abort();

@@ -1,10 +1,11 @@
 # The PC layer (port/pc) files the TLA build links (tools/wasm/game.py pc_files). yes = shared with GS1 as is
 # (hardware, memory, renderer, sound output, BIOS, code map, relocation, blocks runtime); no = GS1's hand ports
 # of tbs asm routines (D6) and GS1's driver replacements: TLA's own asm is TLA3's (asm2c), so they stay out
-# until a TLA routine is proven to be the same (D20) and turned on here.
+# until a TLA routine is proven to be the same (D20) and turned on here. twins = linked only for the GS1 twins of
+# port/tla/hw/bindings.tsv (kind gs1, TLA4b hook H3): their functions are kept, every other definition dropped.
 file	use	why
 apu	yes	DirectSound FIFOs and PSG: hardware
-asm_small	no	tbs trig/heap/... hand ports
+asm_small	twins	Trig_Cos, umul3232H32, RelocatedQ16DotProduct (GS1 twins, bindings.tsv gs1)
 battle_asm	no	tbs battle ARM routines
 bios	yes	BIOS calls from GBATEK: hardware
 blitter	no	tbs battle effect blitters (code generation, trap 29)
@@ -15,16 +16,16 @@ decompress	no	tbs decompress_tagged_lz.s ports
 field_asm	no	tbs field ARM routines
 flash	yes	the flash driver replaced at its API (port/tla/fn_overrides.tsv): TLA's driver has the same six entry points as tbs (TLA2b)
 hw	yes	DMA, timers, IRQs, keypad, frame driver
-iwram	no	tbs resident IWRAM routines (libgcc division ports included: TLA's own come with TLA3)
+iwram	twins	__divsi3 __udivsi3 __modsi3 __umodsi3 (GS1 twins, bindings.tsv gs1)
 link	no	tbs serial driver replacement (D21)
-m4a	no	tbs m4a sequencer asm
+m4a	twins	ply_* track commands, TrackStop, ply_endtie (GS1 twins, bindings.tsv gs1)
 main	yes	module entry
 memory	yes	identity memory map (D5)
 mixer	no	tbs PCM mixer asm
 oam_kernel	no	tbs OAM/palette kernels
 ppu	yes	scanline renderer
 relocate	yes	relocated data at run time (D19)
-sound_asm	no	tbs m4a driver asm
+sound_asm	twins	SoundMainBTM, RealClearChain (GS1 twins, bindings.tsv gs1)
 stubs	yes	logged stubs runtime
-text_asm	no	tbs message decoder ARM routines
+text_asm	twins	Message_FindArm (GS1 twin, bindings.tsv gs1)
 window_asm	no	tbs window/icon ARM routines

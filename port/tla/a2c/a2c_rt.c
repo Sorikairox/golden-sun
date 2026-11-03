@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef uint32_t u32;
 typedef struct { u32 r[16]; u32 n, z, c, v; } A2cRegs;
@@ -30,13 +31,80 @@ u32 a2c_overlay_current(void) { return a2cOverlay; }
    r0-r3 and the first four GBA stack words are its arguments (EMULATE_FUNCTION_POINTER_CASTS drops the extra ones),
    its result is r0. AAPCS: r4-r11 and sp survive the call, so the whole file comes back as it was, r0 aside. */
 typedef u32 (*A2cFn)(u32, u32, u32, u32, u32, u32, u32, u32);
+
+/* asm2c's codemap (tla_asm.c): every translated routine, overlap entries (TLA4b, trap 66: a second routine from a
+   mid-routine call target to the routine's end, such as the m4a driver's chk_adr_r2) included. Sorted here once. */
+struct A2cMapRow { u32 addr; u32 overlay; void (*fn)(void); };
+extern const struct A2cMapRow a2c_codemap[];
+extern const unsigned a2c_codemap_count;
+static struct A2cMapRow *a2cSorted;
+
+static int a2c_row_cmp(const void *x, const void *y) {
+  const struct A2cMapRow *a = x, *b = y;
+  u32 ka = a->addr & ~1u, kb = b->addr & ~1u;
+  if (ka != kb)
+    return ka < kb ? -1 : 1;
+  return a->overlay < b->overlay ? -1 : a->overlay > b->overlay;
+}
+
+/* The translated routine at `addr` (the main image's, or the loaded overlay's in the overlay area), or 0. */
+u32 Port_TlaRunAddress(u32 a); /* port/tla/hw/pc_tla.c (H4): a ROM copy's address -> the IWRAM run address */
+
+void (*a2c_lookup(u32 addr))(void) {
+  unsigned lo = 0, hi = a2c_codemap_count;
+  addr = Port_TlaRunAddress(addr & ~1u);
+  if (!a2cSorted) {
+    a2cSorted = malloc(sizeof *a2cSorted * (a2c_codemap_count ? a2c_codemap_count : 1));
+    memcpy(a2cSorted, a2c_codemap, sizeof *a2cSorted * a2c_codemap_count);
+    qsort(a2cSorted, a2c_codemap_count, sizeof *a2cSorted, a2c_row_cmp);
+  }
+  while (lo < hi) {
+    unsigned mid = (lo + hi) / 2;
+    if ((a2cSorted[mid].addr & ~1u) < addr)
+      lo = mid + 1;
+    else
+      hi = mid;
+  }
+  for (; lo < a2c_codemap_count && (a2cSorted[lo].addr & ~1u) == addr; lo++)
+    if (a2cSorted[lo].overlay == 0 || a2cSorted[lo].overlay == a2cOverlay)
+      return a2cSorted[lo].fn;
+  return 0;
+}
+
 void a2c_call(u32 addr) {
-  A2cRegs save = a2c_r;
+  A2cRegs save;
+  /* a translated routine (an overlap entry has no C name, so no wrapper): call it as a direct call would, on the
+     register file as it is */
+  void (*raw)(void) = a2c_lookup(addr);
+  if (raw) {
+    raw();
+    return;
+  }
+  save = a2c_r;
+  {
   const u32 *st = (const u32 *)(uintptr_t)(save.r[13] & ~3u);
   A2cFn f = (A2cFn)Port_ResolveCode((void *)(uintptr_t)addr);
   u32 r = f(save.r[0], save.r[1], save.r[2], save.r[3], st[0], st[1], st[2], st[3]);
   save.r[0] = r;
   a2c_r = save;
+  }
+}
+
+/* TLA4b: the address the last translated routine returned to (asm2c's A2C_RETJUMP, A2C_CALLK, A2C_TAILK). */
+u32 a2c_ret_to;
+
+/* A jump through a register to `t` that is not the routine's own return or local continuation: a return past the
+   caller (mplay_main's `pop {pc}` after a tail-branch chain) when no code starts at t, else a computed jump. Code
+   starts: a translated routine, a code map function, a RAM alias (Port_CodeAliasAt). */
+void *Port_CodeAt(u32 gba);
+void *Port_CodeAliasAt(u32 gba);
+int a2c_is_return(u32 t) {
+  t &= ~1u;
+  if (t == 0x0d0ffff0u) /* A2C_RET_SENTINEL: the wrapper's return */
+    return 1;
+  if ((t >> 24) != 8 && (t >> 24) != 3)
+    return 0;
+  return !a2c_lookup(t) && !Port_CodeAt(Port_TlaRunAddress(t)) && !Port_CodeAliasAt(t);
 }
 
 /* A jump to an address that is neither the routine's return nor one of its own continuations. */
@@ -47,3 +115,21 @@ void a2c_badreturn(u32 addr, u32 expected) {
 }
 
 void a2c_trace(u32 addr) { (void)addr; }
+
+/* TLA4b: what the hardware does on a store to an I/O register from translated code (asm2c's a2c_st32/16/8). C code
+   starts a DMA through Dma_Set (port_dma.h -> Port_DmaWritten); the handwritten asm writes the three DMA registers
+   itself (the colour kernel loaders' `stmia r4!, {r5, r6, r7}` to DMA3 copy a kernel to the stack and call it at
+   once), so a write of a channel's control half starts it here. Background registers reload as in ppu.c. */
+void Port_DmaWritten(volatile u32 *channel);
+void Port_PpuIoWritten(u32 addr);
+
+void a2c_io_written(u32 a) {
+  u32 o = a - 0x04000000u;
+  if (o >= 0xB0u && o < 0xE0u) {
+    u32 ch = (o - 0xB0u) / 12u, k = (o - 0xB0u) % 12u;
+    if (k == 8u || k == 10u)
+      Port_DmaWritten((volatile u32 *)(uintptr_t)(0x040000B0u + 12u * ch));
+  } else if (o < 0x60u)
+    Port_PpuIoWritten(a);
+}
+

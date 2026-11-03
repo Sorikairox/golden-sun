@@ -9,7 +9,6 @@ uintptr_t Port_HeapBase(void);
 uintptr_t Port_HeapEnd(void);
 int Port_RelocateAll(void);
 void Port_HwReset(void);
-void System_Initialize(void);
 extern const int gPortStubCount;
 
 /* The cartridge entry (GS11, trap 36). Cart_Start (0x08000000, the header's `b System_Entry`) and System_Entry
@@ -20,7 +19,16 @@ extern const int gPortStubCount;
  * to the call (EQUIV against the original: tests/arm/diff.cjs System_Entry); it returns the vector word, the
  * value r0 holds when the original reaches System_Initialize. wasm has its own stack. */
 #define GBA_IRQ_VECTOR 0x03007FFCu
+#ifdef PORT_GAME_TLA
+/* TLA4b: The Lost Age's Entry (0x08000428, src/system/entry.s) writes IwramResident_Rom (0x080006B8, the ROM copy
+ * of IwramIrqMain) and calls Func_0801319c, its System_Initialize (src/system/f01319c.c). */
+#define SYSTEM_ENTRY_IRQ_ENTRY 0x080006B8u
+#define System_Initialize Func_0801319c
+#else
 #define SYSTEM_ENTRY_IRQ_ENTRY 0x08000770u
+#endif
+void System_Initialize(void);
+
 unsigned Port_SystemEntryPrologue(void) {
   *(volatile unsigned *)(uintptr_t)GBA_IRQ_VECTOR = SYSTEM_ENTRY_IRQ_ENTRY;
   return SYSTEM_ENTRY_IRQ_ENTRY;

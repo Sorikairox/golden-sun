@@ -1,7 +1,7 @@
 // Boot runner (G3): loads game.js in node, writes the player's ROM to 0x08000000, runs main (the game's own
 // System_Initialize) for N frames and writes PNG captures of chosen frames to port_work/g3/ (gitignored: they
 // show the game). Keys can be held over frame ranges. Prints the game's log, stub hits and a summary.
-// Usage: node tests/boot.cjs build/wasm/game.js ROM FRAMES [--shot 60,120,...] [--keys START@300-305,A@400-402]
+// Usage: node tests/boot.cjs build/wasm/game.js ROM FRAMES (or --game tla|tbs FRAMES: that game's build and ROM) [--shot 60,120,...] [--keys START@300-305,A@400-402]
 //        [--out port_work/g3] [--quiet] [--every N] [--flash-in FILE] [--flash-out FILE]
 // Keys: NAME[+NAME]@A-B holds over frames A..B; NAME@A-B/P taps (3 frames held) every P frames in A..B.
 // --keys-file FILE[,FILE]: key specs one or more per line (comma separated, # comments), added to --keys.
@@ -35,7 +35,17 @@ function png(rgba, w, h) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  let args = process.argv.slice(2);
+  // --game tla (TLA4b): The Lost Age's build and ROM; then the positional arguments are FRAMES only
+  // (node tests/boot.cjs --game tla 600 --shot 300 --out port_work/tla4/x)
+  if (args[0] === '--game') {
+    const g = args[1];
+    const home = process.env.HOME;
+    const def = g === 'tla' ? ['build/wasm-tla/game.js', `${home}/roms/Golden_Sun_The_Lost_Age_USA_Europe.gba`]
+      : ['build/wasm/game.js', `${home}/roms/Golden_Sun_USA_Europe.gba`];
+    args = [path.resolve(__dirname, '..', def[0]), def[1], ...args.slice(2)];
+    if (!args.includes('--out')) args.push('--out', path.resolve(__dirname, '../port_work', g === 'tla' ? 'tla4' : 'g3'));
+  }
   const [gameJs, romPath, framesArg] = args;
   const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; };
   const frames = +framesArg || 300;
@@ -96,7 +106,7 @@ async function main() {
   try { m.callMain([]); } catch (e) { console.error('game stopped:', e.stack || e); done(); }
   await Promise.race([finished, new Promise((r) => setTimeout(r, 600000))]);
   const ms = Date.now() - t0;
-  console.log(`boot: ${frame} frames in ${ms} ms (${(frame / (ms / 1000)).toFixed(0)} fps); ${m._Port_StubHits()} distinct stubs hit; captures in ${path.relative(process.cwd(), out)}`);
+  console.log(`boot: ${frame} frames in ${ms} ms (${(frame / (ms / 1000)).toFixed(0)} fps); ${m._Port_StubHits ? m._Port_StubHits() : '?'} distinct stubs hit; captures in ${path.relative(process.cwd(), out)}`);
   process.exit(0);
 }
 

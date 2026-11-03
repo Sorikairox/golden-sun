@@ -75,9 +75,30 @@ def pc_files():
         if line.startswith('#') or not line.strip() or line.startswith('file\t'):
             continue
         f = line.rstrip('\n').split('\t')
-        if f[1] == 'yes':
+        if f[1] in ('yes', 'twins'):
             want.append(f[0])
     return [n for n in allf if n in want]
+
+
+def pc_twins():
+    """TLA4b (hook H3): {port/pc file: set of function names it provides}. A pc.tsv row with use `twins` is a GS1
+    hand-port file linked only for the GS1 twins of port/tla/hw/bindings.tsv (kind gs1): the build keeps those
+    functions' definitions and turns every other external definition of the file into a declaration (build.py
+    stage_src_ll), so TLA's own routines (asm2c) answer for the rest."""
+    if C.pc_list is None:
+        return {}
+    files = []
+    for line in open(C.pc_list, encoding='utf-8'):
+        f = line.rstrip('\n').split('\t')
+        if len(f) > 1 and f[1] == 'twins':
+            files.append(f[0])
+    keep = set()
+    p = os.path.join(ROOT, 'port/tla/hw/bindings.tsv')
+    for line in open(p, encoding='utf-8'):
+        f = line.rstrip('\n').split('\t')
+        if len(f) > 2 and not line.startswith('#') and f[2] == 'gs1':
+            keep.add(f[1])
+    return {n: keep for n in files}
 
 
 def bound_names(objs):

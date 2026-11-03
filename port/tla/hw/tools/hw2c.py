@@ -169,6 +169,11 @@ def write_listings(outdir, skip, extra_listing=True):
                 labels[a] = keep
             else:
                 del labels[a]
+        # code at the start of a run with no label (iwram_divide.s's shared signed-division body at 0x030004a8,
+        # entered by `bmi` from IwramSignedDivide/IwramSignedRemainder): a routine of its own, or the branches into
+        # it go to Port_ResolveCode (TLA4b, trap 66). Named by address; no symbol, so only asm2c's codemap has it
+        if marks.get(base) in ('arm', 'thumb') and base not in labels:
+            labels[base] = [f'HwCode_{base:08x}']
         if not labels:
             continue
         lines = [f'@ {" ".join(objs_in)}: linked bytes at the run address (port/tla/hw/tools/hw2c.py)']
@@ -194,6 +199,7 @@ def write_listings(outdir, skip, extra_listing=True):
         open(p, 'w').write('\n'.join(lines) + '\n')
         files.append((p, ' '.join(objs_in)))
     # names-only list for make_bindings.py (kind data: not an entry, part of the routine before it)
+    os.makedirs(os.path.join(ROOT, 'build/tla_hw'), exist_ok=True)
     open(os.path.join(ROOT, 'build/tla_hw/internal_labels.txt'), 'w').write(''.join(f'{n}\n' for n in sorted(INTERNAL)))
     return files
 
@@ -206,20 +212,31 @@ def main():
     ap.add_argument('--only')
     ap.add_argument('--listings', default=os.path.join(ROOT, 'build/tla_hw/listings'))
     ap.add_argument('--all', action='store_true', help='translate bound objects too (tests)')
+    ap.add_argument('--with-listings', action='store_true',
+                    help='the build (TLA4b, hook H3): translate the vendor listings too, so one output holds both: '
+                         'one a2c_dispatch, one codemap, one names.tsv')
+    ap.add_argument('--names')
     args = ap.parse_args()
     files = write_listings(args.listings, set() if args.all else bound_objects())
+    listing_load = asm2c.Translator.load
 
     def load(self, only_files=None):
+        # the byte listings first: where one covers a listing routine asm2c's listing front end cannot take
+        # (build/a2c/report.tsv 'hand'), its translation is the one kept (asm2c translates an address once)
         for p, obj in files:
             try:
                 self.listings.append(asm2c.Listing(p, '', self.syms))
             except asm2c.Unsupported as e:
                 self.failed[os.path.basename(p)] = str(e)
+        if args.with_listings:
+            listing_load(self)
     asm2c.Translator.load = load
     sys.argv = ['asm2c', '--vendor', os.path.join(ROOT, 'vendor/alchemy'), '--symbols', os.path.join(ROOT, 'port/symbols'),
                 '--extra-symbols', os.path.join(ROOT, 'port_work/tla1/syms.txt'), '-o', args.out, '--export', args.export]
     if args.report:
         sys.argv += ['--report', args.report]
+    if args.names:
+        sys.argv += ['--names', args.names]
     if args.only:
         sys.argv += ['--only', args.only]
     asm2c.main()

@@ -14,19 +14,32 @@ import os
 import bind
 
 
-def generate(out, root, sig, defined):
+def generate(out, root, sig, defined, resolve=None):
+    """resolve (TLA4b, trap 66): name -> the defined function a veneer label leads to, or None. With it, a far-call
+    or overlay-import veneer no C code calls by name (so it has no definition) still gets its row: translated code
+    calls veneers by address. GS1's build passes none (unchanged)."""
     t = bind.Tables(root)
     rows = {}
+
+    def fn_of(name):
+        if name in defined:
+            return name
+        if resolve:
+            tgt = resolve(name)
+            if tgt and tgt in defined:
+                return tgt
+        return None
     for r in t.main.values():
-        if r['kind'] != 'code' or r['name'] not in defined:
+        w = fn_of(r['name']) if r['kind'] == 'code' else None
+        if not w:
             continue
         a = int(r['address'], 16) & ~1
-        rows.setdefault((0, a), r['name'])
+        rows.setdefault((0, a), w)
     for (ov, name), r in t.ovl.items():
         if r['kind'] != 'code':
             continue
-        w = f'ov{ov}_{name}'
-        if w not in defined:
+        w = fn_of(f'ov{ov}_{name}')
+        if not w:
             continue
         rows.setdefault((int(ov, 16), int(r['address'], 16) & ~1), w)
     decls, items = set(), []

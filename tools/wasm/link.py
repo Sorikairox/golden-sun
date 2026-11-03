@@ -64,6 +64,13 @@ def veneer_map(root):
             if m and m.group(2) != 'name':
                 out.setdefault(m.group(2), m.group(3))
     out.update(overlay_imports.veneer_map())  # TLA: ovNNN_NAME -> the overlay's import target (TLA2b)
+    if game.C.game == 'tla':
+        # TLA4b (hook H3): port/tla/hw/bindings.tsv's binds (PC layer) and GS1 twins (port/pc files linked as
+        # `twins`, port/tla/pc.tsv) answer for their labels; a2c rows come from asm2c's names.tsv, veneers above
+        for line in open(os.path.join(root, 'port/tla/hw/bindings.tsv'), encoding='utf-8'):
+            f = line.rstrip('\n').split('\t')
+            if len(f) > 2 and not line.startswith('#') and f[2] in ('bind', 'gs1') and f[0] != f[1] and f[1] != 'main':
+                out.setdefault(f[0], f[1])
     return out
 
 
@@ -305,7 +312,9 @@ def run(objs, out, root, clang, jobs, stages):
     cfiles = [os.path.join(out, 'gen/relocated.c')]
     if game.C.game == 'tla' and os.path.exists(os.path.join(out, 'asm2c/tla_asm.c')):
         # TLA5 (D23): the translated listing asm and its run time
-        cfiles += [os.path.join(out, 'asm2c/tla_asm.c'), os.path.join(root, 'port/tla/a2c/a2c_rt.c')]
+        # (TLA4b: split into units, build.py split_asm2c)
+        parts = sorted(glob.glob(os.path.join(out, 'asm2c/tla_asm_*.c')))
+        cfiles += (parts or [os.path.join(out, 'asm2c/tla_asm.c')]) + [os.path.join(root, 'port/tla/a2c/a2c_rt.c')]
 
     def compile_one(src):
         rel = os.path.relpath(src, root).replace('/', '__')
@@ -313,8 +322,12 @@ def run(objs, out, root, clang, jobs, stages):
         flags = ['--target=wasm32-unknown-emscripten', '-O2', '-c', '-o', o, src]
         if src.endswith('.c'):
             cmd = ['emcc', '-O2', '-c', '-o', o, src]
+            if '/asm2c/tla_asm' in src:  # TLA4b: generated code: its style warnings say nothing
+                cmd.insert(2, '-w')
         else:
             cmd = [clang] + flags
+        if os.path.exists(o) and '/asm2c/tla_asm' in src:
+            os.remove(o)
         rc, _, err = sh(cmd)
         return o, (err[-1500:] if rc else None)
     if game.C.game != 'tbs' and ('obj' in stages or 'link' in stages):
@@ -322,10 +335,17 @@ def run(objs, out, root, clang, jobs, stages):
     adapters = adapt_unprototyped_calls(bound) if 'obj' in stages or 'link' in stages else {}
     if 'obj' in stages:
         fails = []
-        with cf.ThreadPoolExecutor(jobs) as ex:
-            for o, err in ex.map(compile_one, bound + cfiles):
-                if err:
-                    fails.append((o, err))
+        # TLA4b: asm2c's units need about a GB each at -O2: they compile after the rest, three at a time (the
+        # Docker VM has 8 GB; ten at once were killed, exit 137, leaving no object)
+        heavy = [c for c in cfiles if '/asm2c/tla_asm' in c]
+        light = [c for c in bound + cfiles if c not in heavy]
+        for todo, nj in ((light, jobs), (heavy, min(jobs, 3))):
+            with cf.ThreadPoolExecutor(nj) as ex:
+                for o, err in ex.map(compile_one, todo):
+                    if err is None and not os.path.exists(o):
+                        err = 'no object written (compiler killed?)'
+                    if err:
+                        fails.append((o, err))
         print(f'obj: {len(bound) + len(cfiles) - len(fails)}/{len(bound) + len(cfiles)} objects')
         for o, err in fails[:10]:
             print('  FAIL', os.path.basename(o), next((l for l in err.splitlines() if 'error' in l), err[:300]))
@@ -488,7 +508,16 @@ def run(objs, out, root, clang, jobs, stages):
     veneer_names = {re.match(r'define \S+ @"([^"]+)"', l).group(1) for l in lines if l.startswith('define')}
     reloc_ll = relocs_gen.generate(out, root, sig, defined | stub_names | veneer_names)
     import codemap_gen
-    codemap_ll = codemap_gen.generate(out, root, sig, defined | stub_names | veneer_names)
+    have = defined | stub_names | veneer_names
+    def through_veneers(n):  # TLA4b: a veneer label -> the function it leads to (one this link defines)
+        for _ in range(6):
+            if n in have:
+                return n
+            if n not in vmap:
+                return resolve(n)
+            n = vmap[n]
+        return None
+    codemap_ll = codemap_gen.generate(out, root, sig, have, through_veneers if game.C.game == 'tla' else None)
     for src in (glue, names_c, reloc_ll, codemap_ll):
         o, err = compile_one(src)
         if err:
@@ -511,7 +540,9 @@ def run(objs, out, root, clang, jobs, stages):
     # of tests/arm call them)
     exports = {'main'}
     for o in objects:
-        if os.path.basename(o).startswith('build__wasm__bound__port__pc__'):
+        # (TLA4b: the TLA build's objects are build__wasm-tla__..., and port/tla/hw's PC-layer files count too)
+        pre = f'build__{os.path.basename(out)}__bound__port__'
+        if os.path.basename(o).startswith((pre + 'pc__', pre + 'tla__hw__pc_')):
             rc, so, _ = sh([NM, '--defined-only', o])
             exports |= {p[2] for p in (l.split() for l in so.splitlines()) if len(p) == 3 and p[1] == 'T'}
     flags = LINK_FLAGS + ['--js-library', os.path.join(root, 'port/web/port_lib.js'),
