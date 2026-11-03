@@ -543,3 +543,16 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     brings in; a `static` definition of a header's extern function (spawn.c Effect_Create); `s32` vs `void` and
     volatile redeclarations; and an implicit declaration before the real one. TLA c_rules fix each per file text;
     a TLA replacement may contain `\n` to put a `#define` on its own line.
+62. TLA's handwritten asm is GAS source with macros, which asm2c does not read (TLA4a). port/tla/hw/tools/hw2c.py gives asm2c
+    the linked bytes instead, as a listing per run of adjacent objects:
+    - from the reference ELF, at the run address (IWRAM code at 0x03000xxx / 0x03006000, not its ROM copy);
+    - modes from the ELF's `$a`/`$t`/`$d` mapping symbols.
+
+    Thumb function values in syms.txt carry bit 0: mask them before reading bytes, or every Thumb routine is read one
+    byte off. Per-object byte compares against GS1 mislead for the IWRAM block (TLA splits GS1's iwram_routines.s into
+    files): compare per label.
+63. A GS1 port is a TLA twin only when three things hold (TLA4a): the TLA bytes equal GS1's (pool words and BL offsets
+    of moved symbols excepted), GS1's port is itself EQUIV, and the port is not `static`. SoundMain, MPlayMain, ply_note
+    and m4aSoundVSync are GS1 C without EQUIV, and clear_modM is static. Several TLA labels alias a GS1 port under
+    another name (BattleEffect_DotProduct = RelocatedQ16DotProduct, SoundNote_Detach = RealClearChain): find twins by
+    bytes, not by name.

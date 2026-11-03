@@ -2,6 +2,26 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA4a — 2026-11-03: TLA's handwritten asm ported or bound (asm2c byte front end, GS1 twins, binds); bindings.tsv
+
+- Read docs/TLA4.md. The census (port/tla/hw/tools/hand_census.py) finds 4,445 veneer labels and 109 code objects
+  (499 labels).
+- port/tla/hw/tools/hw2c.py feeds asm2c with byte listings from the reference ELF. Of 503 labels, 462 translate; the
+  rest are data, SWI and msr/mrs.
+- tests/arm/tla/build_hw.sh and diff_hw.cjs: 196 EQUIV, 6 FAIL, 141 NOINPUT; negative 4/4. TLA3 30/30 and GS1 79/79
+  unchanged.
+- port/tla/hw/bindings.tsv (names only, make_bindings.py) has 33 gs1 twins, 304 a2c (164 EQUIV), 10 binds, 146 data,
+  4,445 veneers and 6 left.
+- TLA3's 5 untranslated listing labels:
+  - Func_081c0168: now EQUIV;
+  - Func_081c05c8: translates, NOINPUT;
+  - 3 still need a bound on control flow.
+- Next:
+  - (1) TLA4b/TLA2b: hooks H1-H5 in TLA4.md 4: the IRQ order, Port_BiosNop and SoundGetJumpList, linking
+    bindings.tsv, IWRAM code aliases, kernels copied at run time;
+  - (2) trace the 4 decompressor FAILs and Func_081c0c0c;
+  - (3) NOINPUT routines need captured states (mixer, colour kernels, battle kernels).
+
 ## TLA2b — 2026-11-03: TLA audit 187/187, 47 of 48 left-out objects fixed, overlay veneers resolved (stubs 2,545 -> 647)
 
 - Read docs/TLA2.md, section "TLA2b". A full `tools/web_build.sh --game tla` passes every stage (about 40 s):
