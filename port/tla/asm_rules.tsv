@@ -4,3 +4,4 @@ template	replacement	why
 swi 2	Port_BiosHalt();	BIOS Halt until an interrupt: the frame driver's yield to the browser (D8), as GS1
 swi 3	Port_BiosStop();	BIOS Stop (sleep mode), as GS1
 bx %0	((void (*)(void))({0}))();	System_Reset jumps to Cart_Restart: an indirect call, which bind.py routes through Port_ResolveCode (GS11's Cart_Start path, trap 36)
+mov r0, %0\n\tmov r1, #128\n\tlsl r1, r1, #9\n\tmov r2, #0\n\t	{{ s32 *m_ = (s32 *)({0}); m_[0] = 0x10000; m_[1] = 0; m_[2] = 0; m_[3] = 0; m_[4] = 0x10000; m_[5] = 0; m_[6] = 0; m_[7] = 0; m_[8] = 0x10000; m_[9] = 0; m_[10] = 0; m_[11] = 0; }}	TLA6b: render.c Render_SetIdentity, three stmia of {0x10000, 0, 0, 0} (the identity 3x4 matrix, 1.0 first): word for word in C. render.c was left out (ll_failed) and its 7 transform routines were stubs, so battle scenes had no matrices

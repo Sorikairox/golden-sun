@@ -2,16 +2,6 @@
 # tla_asm.c) that are no bound entry point, allowed with a reason. tools/wasm/call_targets.py fails the build on any
 # target not listed here. Names and addresses only. overlay empty = main image (or a ROM copy's run address).
 target	overlay	reason
-08014e38		Transform_Push: src/system/render.c is left out (ll_failed: real ARM stmia asm in C, TLA2b); battle effect scripts call it by address. Port render.c (TLA6) before battles
-08014e74		Transform_Store: render.c left out (as 08014e38)
-08014e90		Transform_Load: render.c left out (as 08014e38)
-08014ea8		Transform_Pop: render.c left out (as 08014e38)
-08014ee0		SceneTransform_ResetMatrix: render.c left out (as 08014e38)
-080150e4		Func_080150e4: render.c left out (as 08014e38)
-08015160		Func_08015160: render.c left out (as 08014e38)
-080151ac		Func_080151ac: render.c left out (as 08014e38)
-080151e4		Func_080151e4: render.c left out (as 08014e38)
-0801521c		Func_0801521c: render.c left out (as 08014e38)
 081bf80c		sound driver (a2c_081c0428): branch into gData_081ba30c's range, the m4a driver's mid-routine spots (TLA4a2: 42 such); not an entry
 081bf81c		sound driver (a2c_081c0544): as 081bf80c
 081c00e4		sound driver: inside Func_081c00a8 (a GS1-twin object hw2c leaves out, bound to GS1 ports), entered from Func_081c0168
