@@ -21,6 +21,24 @@ function symbols() {
   return map;
 }
 
+// TLA (TLA3): port/symbols/tla-en.tsv (name address size ...), then the reference build's full list for bss and
+// linker-script symbols (port_work/tla1/syms.txt, gitignored; absent symbols just stay unknown)
+function symbolsTla() {
+  const map = new Map();
+  for (const line of fs.readFileSync(path.join(ROOT, 'port/symbols/tla-en.tsv'), 'utf8').split('\n')) {
+    const f = line.split('\t');
+    if (f.length > 2 && /^[0-9a-f]{8}$/.test(f[1]) && !map.has(f[0])) map.set(f[0], { addr: parseInt(f[1], 16), size: +f[2], kind: f[3] });
+  }
+  const extra = path.join(ROOT, 'port_work/tla1/syms.txt');
+  if (fs.existsSync(extra)) {
+    for (const line of fs.readFileSync(extra, 'utf8').split('\n')) {
+      const f = line.split(' ');
+      if (f.length > 1 && /^[0-9a-f]{8}$/.test(f[1]) && !map.has(f[0])) map.set(f[0], { addr: parseInt(f[1], 16), size: +f[2], kind: f[3] });
+    }
+  }
+  return map;
+}
+
 // xorshift32: deterministic inputs (no Math.random: runs are repeatable)
 function rng(seed) {
   let x = seed >>> 0 || 1;
@@ -42,13 +60,18 @@ class Harness {
   constructor(m, opts = {}) {
     this.m = m;
     this.mem = m.HEAPU8;
-    this.sym = symbols();
+    this.sym = opts.game === 'tla' ? symbolsTla() : symbols();
     this.cpu = new Arm7(this.mem, { onSwi: (n, cpu) => this.swi(n, cpu) });
     this.verbose = opts.verbose;
-    // the resident IWRAM code, copied as System_InstallIwramAndIrqs does (5120 bytes)
-    // (IwramResident_Rom starts at IwramIrqMain's load address)
-    const r = this.sym.get('IwramIrqMain');
-    this.mem.copyWithin(0x03000000, r.load, r.load + 5120);
+    if (opts.game === 'tla') {
+      // TLA's System_InstallIwramAndIrqs DMAs 0x400 words from IwramResident_Rom to IwramIrqMain
+      this.mem.copyWithin(this.addr('IwramIrqMain'), this.addr('IwramResident_Rom'), this.addr('IwramResident_Rom') + 4096);
+    } else {
+      // the resident IWRAM code, copied as System_InstallIwramAndIrqs does (5120 bytes)
+      // (IwramResident_Rom starts at IwramIrqMain's load address)
+      const r = this.sym.get('IwramIrqMain');
+      this.mem.copyWithin(0x03000000, r.load, r.load + 5120);
+    }
   }
   addr(name) { const s = this.sym.get(name); if (!s) throw new Error(`no symbol ${name}`); return s.addr; }
   // BIOS calls made by original code, from GBATEK (an independent reference for the C versions in bios.c)
@@ -110,4 +133,4 @@ class Harness {
   }
 }
 
-module.exports = { Harness, load, rng, symbols, ROOT };
+module.exports = { Harness, load, rng, symbols, symbolsTla, ROOT };
