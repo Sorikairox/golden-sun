@@ -180,13 +180,15 @@ def strip_clobbers(src, log):
 ASM_STMT = re.compile(r'__asm__\s*(?:volatile\s*|__volatile__\s*)?\(\s*"(?P<tmpl>(?:[^"\\]|\\.)+)"(?P<rest>[^;]*?)\)\s*;')
 
 
-def load_rules(path):
+def load_rules(path, newlines=False):
+    """text -> replacement. newlines (TLA c_rules only, TLA2b): a literal \\n in a replacement is a line break, so a
+    rule can add a preprocessor line (#define) before the text it replaces."""
     rules = {}
     for line in open(path, encoding='utf-8'):
         if line.startswith('#') or line.startswith(('template\t', 'text\t')) or not line.strip():
             continue
         t, r = line.rstrip('\n').split('\t')[:2]
-        rules[t] = r
+        rules[t] = r.replace('\\n', '\n') if newlines else r
     return rules
 
 
@@ -315,7 +317,8 @@ def mark_block_captures(top, clang_cmd, log):
         open(f, 'w').write(src)
 
 
-REG_PIN = re.compile(r'(\bregister\b[^;=(){}]*?)\s*(?:__asm__|asm)\s*\(\s*"(?:r\d+|ip|lr|sp|fp|sl)"\s*\)')
+# the declarator may be a function pointer (`register void (*func)(void) __asm__("r0")`, TLA2b)
+REG_PIN = re.compile(r'(\bregister\b[^;={}]*?)\s*(?:__asm__|asm)\s*\(\s*"(?:r\d+|ip|lr|sp|fp|sl)"\s*\)')
 
 
 def strip_register_pins(src, log):
@@ -335,7 +338,7 @@ def transform_text(path, log):
         out = strip_register_pins(out, log)
     rules = game.table('asm_rules.tsv')
     out = replace_asm(out, load_rules(rules), log)
-    for text, repl in load_rules(game.table('c_rules.tsv')).items():
+    for text, repl in load_rules(game.table('c_rules.tsv'), newlines=game.C.game == 'tla').items():
         if text in out:
             log.append(f'text "{text}" -> {repl}')
             out = out.replace(text, repl)
