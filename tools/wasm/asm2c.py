@@ -93,6 +93,7 @@ class Listing:
         self.words = {}          # addr -> (value, symbolic text or None) for .4byte
         self.image = {}          # addr -> byte (numeric data and resolved symbols)
         self.funcs = []          # (name, addr, mode)
+        self.locals = set()      # addresses of local (.L) labels
         self.warn = []
         self.parse()
 
@@ -175,6 +176,8 @@ class Listing:
                     self.warn.append(f'label {lab} at computed 0x{addr:08x}')
                     addr = int(lm.group(1), 16)
                 self.labels[lab] = addr
+                if lab.startswith('.'):
+                    self.locals.add(addr)
                 if lab in globs or not lab.startswith('.'):
                     if lab in globs:
                         self.funcs.append((lab, addr, mode))
@@ -336,10 +339,8 @@ def thumb_decode(hw, addr, nxt):
     if op >> 11 == 0x1e and nxt is not None and nxt >> 11 == 0x1f:
         off = ((((op & 0x7ff) << 11) | (nxt & 0x7ff)) ^ 0x200000) - 0x200000
         return f'bl 0x{addr + 4 + off * 2:x}', 4
-    if op >> 11 == 0x1f:
-        if op & 0x7ff:
-            raise Unsupported(f'blh offset 0x{op & 0x7ff:x}')
-        return 'blh lr', 2
+    if op >> 11 == 0x1f:  # BL suffix alone: call lr + offset * 2 (call-via-lr when 0)
+        return f'blh #{(op & 0x7ff) * 2}', 2
     raise Unsupported(f'thumb halfword 0x{op:04x}')
 
 
@@ -353,7 +354,7 @@ class Fn:
         self.localrets = set()
 
     def inside(self, a):
-        return self.addr <= a < self.end
+        return self.addr <= a < self.end and not getattr(self, '_stub', {}).get(a)
 
     # ---- operands
     def reg(self, t):
@@ -373,6 +374,8 @@ class Fn:
         if re.fullmatch(r'0x[0-9a-f]+', t):
             return int(t, 16)
         v = self.L.sym(t)
+        if v is None:
+            v = self.L.value(t)  # symbol +/- offset
         if v is None:
             raise Unsupported(f'unknown target {t}')
         return v & ~1
@@ -406,6 +409,9 @@ class Fn:
             seen.add((a, mo))
             if not self.inside(a):
                 if optional:
+                    continue
+                if any(f[1] == a for f in self.L.funcs) or self.tr.known(self.L.ovl, a):  # falls through into the next routine: a tail call
+                    self.code[a] = (mo, self.tail(a, mo == 'thumb'), [], a)
                     continue
                 raise Unsupported(f'flow leaves the routine at 0x{a:x}')
             try:
@@ -610,12 +616,13 @@ class Fn:
             return [f'if ({CONDC[mn[1:]]}) goto L_{t:08x};'], [(t, 'thumb'), (nxt, 'thumb')]
         elif mn == 'bl':
             t = self.target(o[0])
-            if self.inside(t) and t != self.addr:
+            if self.inside(t) and t != self.addr and t in self.L.locals:
                 self.localrets.add(nxt)
                 return [f'lr = 0x{nxt | 1:x}u; goto L_{t:08x};'], [(t, 'thumb'), (nxt, 'thumb?')]
             L += [f'lr = 0x{nxt | 1:x}u;'] + self.call(t, True)
         elif mn == 'blh':
-            L += [f'{{ u32 t_ = lr; lr = 0x{nxt | 1:x}u; A2C_SPILL(); a2c_dispatch(t_ & ~1u); A2C_RELOAD(); }}']
+            off = self.imm(o[0]) if o and o[0].startswith('#') else 0
+            L += [f'{{ u32 t_ = lr + {off}u; lr = 0x{nxt | 1:x}u; A2C_SPILL(); a2c_dispatch((t_ & ~1u) | 1u); A2C_RELOAD(); }}']
             self.uses_dispatch = True
         elif mn == 'bx':
             r = self.reg(o[0])
@@ -641,8 +648,16 @@ class Fn:
         c = f'{cn}()' if cn else f'a2c_call(0x{t | (1 if thumb else 0):x}u)'
         return [f'A2C_TAILK({c});']
 
+    def table_after(self, a):
+        w = (a + 2 + 3) & ~3
+        out = []
+        while w in self.L.words and (self.L.words[w][1] or '').startswith('.L') and self.inside(self.L.words[w][0] & ~1):
+            out.append(self.L.words[w][0] & ~1)
+            w += 4
+        return sorted(set(out))
+
     def jump_table(self, a, x):
-        labs = self.labels_in_tables()
+        labs = self.table_after(a) or self.labels_in_tables()
         L = [f'switch ({x} & ~1u) {{'] + [f'case 0x{t:x}u: goto L_{t:08x};' for t in labs] + \
             [f'default: A2C_RETJUMP({x}); }}']
         self.uses_dispatch = True
@@ -1023,7 +1038,11 @@ def main():
     tr.load()
     rs = tr.routines()
     only = set(args.only.split(',')) if args.only else None
-    sel = [r for r in rs if only is None or r[1] in only]
+    sel, seen_at = [], set()
+    for r in rs:  # aliases (two global labels at one address) translate once, under the first name
+        if (only is None or r[1] in only) and (r[0].ovl, r[2]) not in seen_at:
+            seen_at.add((r[0].ovl, r[2]))
+            sel.append(r)
     for L, name, addr, mode, end in sel:
         tr.fnaddr[(L.ovl, addr)] = tr.cname(L.ovl, addr)
     bodies, report, ok = [], [], []

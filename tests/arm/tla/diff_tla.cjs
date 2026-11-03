@@ -19,7 +19,7 @@ const OUT = process.env.OUT || 'a2c_test';
 // draft's result is not compared
 const DRAFTS = !!process.env.DRAFTS;
 const MOD = DRAFTS ? path.join(ROOT, 'build/a2c/drafts/drafts.js') : path.join(ROOT, `build/a2c/${OUT}.js`);
-const EW = 0x02000000, EWN = 0x40000, IW = 0x03001200, IWN = 0x7e00 - 0x1200;
+const EW = 0x02000000, EWN = 0x40000, IW = 0x03001100, IWN = 0x7e00 - 0x1100; // IWRAM after the resident code
 
 function readReport() {
   const rows = [];
@@ -96,7 +96,11 @@ async function main() {
     return ovlCache.get(id);
   };
   // generic world: RAM words that are mostly small numbers and pointers into RAM (so pointer chains resolve)
+  const HEAP = process.env.HEAP !== '0';
+  // WORLD=ptr: mostly pointers (scripts that walk many global structures)
+  const PTRW = process.env.WORLD === 'ptr';
   const word = () => {
+    if (PTRW && (R() & 7) < 6) return (EW + (R() % (EWN - 0x2000))) & ~3;
     const k = R() & 7;
     if (k < 3) return R() & 15;
     if (k < 5) return (EW + (R() % (EWN - 0x100))) & ~3;
@@ -108,6 +112,8 @@ async function main() {
   const world = (ovl) => {
     fill(EW, EWN); fill(IW, IWN);
     mem.fill(0, 0x04000000, 0x04000400);
+    // a real heap (Heap_Initialize from the ROM, in the interpreter): routines that allocate get RAM, not 0
+    if (HEAP) cpu.call(h.addr('Heap_Initialize') | 1, []);
     if (ovl) {
       const img = loadOverlay(ovl);
       if (!img) throw new Error(`no overlay image ${ovl}`);
