@@ -78,3 +78,12 @@ def pc_files():
         if f[1] == 'yes':
             want.append(f[0])
     return [n for n in allf if n in want]
+
+
+def bound_names(objs):
+    """The bound module name (build/<out>/bound/NAME.ll) of each (image, object) of objs, in order: the object's
+    path; for a TLA C object linked into several overlays (field/object/set_sprite_priority is in 49), path@image,
+    one module per overlay, each with that overlay's ovNNN_ names (TLA2b). tbs: always the path."""
+    from collections import Counter
+    n = Counter(o for _, o in objs)
+    return [o if (C.game == 'tbs' or n[o] == 1) else f'{o}@{i}' for i, o in objs]

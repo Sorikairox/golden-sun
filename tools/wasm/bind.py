@@ -20,6 +20,7 @@ import re
 from collections import defaultdict
 
 import game
+import overlay_imports
 
 TOKEN = re.compile(r'@(?:"([^"]+)"|([-\w$.]+))')
 DEF_GLOBAL = re.compile(r'^@(?:"([^"]+)"|([-\w$.]+)) = (.*)$')
@@ -168,9 +169,9 @@ def run(objs, out, root):
     os.makedirs(os.path.join(out, 'gen'), exist_ok=True)
     overlay_defs = defaultdict(set)   # overlay -> names its modules define (external linkage)
     modules = []
-    for image, obj in objs:
+    for (image, obj), module_name in zip(objs, game.bound_names(objs)):
         text = open(os.path.join(out, 'll', obj + '.ll'), encoding='utf-8').read()
-        modules.append((image, obj, text))
+        modules.append((image, obj, text, module_name))
         if image != 'main':
             for line in text.split('\n'):
                 for rx in (DEF_GLOBAL, DEF_FUNC):
@@ -182,7 +183,7 @@ def run(objs, out, root):
     code_targets = {r['target'] for r in t.relocs if r['target_kind'] == 'code' and not r['overlay']}
     relocated_used = {}     # bound name -> (overlay, symbol, size)
     kept, unresolved, code_as_data = [], defaultdict(set), defaultdict(set)
-    for image, obj, text in modules:
+    for image, obj, text, module_name in modules:
         lines = text.split('\n')
         if not obj.startswith('port/'):
             lines, nd = drop_bodies(lines, overrides)
@@ -244,9 +245,20 @@ def run(objs, out, root):
             init = rest.split(' x ', 1)[0]
             kept.append((obj, name, 'local' if local else 'global', len(rest)))
         if image != 'main':
+            ov_imports = overlay_imports.imports().get(image, {})  # TLA scene import veneers ({} for tbs)
             for name in funcs:
                 if name in overlay_defs[image]:
                     repl[name] = fmt(f'ov{image}_{name}')
+                elif name in ov_imports:
+                    # the overlay calls a main routine through its own import veneer (TLA2b): ovNNN_NAME, which
+                    # link.py makes a veneer to this overlay's target
+                    repl[name] = fmt(f'ov{image}_{name}')
+                    stats['overlay import calls'] += 1
+                elif game.C.game != 'tbs' and (t.ovl.get((image, name)) or {}).get('kind') == 'code':
+                    # TLA2b: a routine of this overlay that is not C here (its listing asm, or C in another
+                    # overlay only): ovNNN_NAME, so it never resolves to another overlay's copy; a stub until TLA5
+                    repl[name] = fmt(f'ov{image}_{name}')
+                    stats['overlay asm calls'] += 1
         new_lines = []
         n_rc = [0]
         div_used = set()
@@ -309,7 +321,7 @@ def run(objs, out, root):
                     continue
                 seen.add(name_of(m))
             final.append(line)
-        path = os.path.join(out, 'bound', obj + '.ll')
+        path = os.path.join(out, 'bound', module_name + '.ll')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         open(path, 'w', encoding='utf-8').write('\n'.join(final))
     # generated buffers for the relocated copies (filled at run time by port/pc)

@@ -132,10 +132,12 @@ def stage_src_ll(objs, jobs):
         return obj, (se[-2000:] if rc else None)
     fails = []
     with cf.ThreadPoolExecutor(jobs) as ex:
-        for obj, err in ex.map(one, objs):
+        # TLA: an object linked into several overlays is compiled once (bind writes one module per overlay)
+        todo = objs if game.C.game == 'tbs' else list({o: (i, o) for i, o in reversed(objs)}.values())[::-1]
+        for obj, err in ex.map(one, todo):
             if err is not None:
                 fails.append((obj, err))
-    print(f'src+ll: {len(objs) - len(fails)}/{len(objs)} C objects compiled to IR; {len(notes)} transform notes')
+    print(f'src+ll: {len(todo) - len(fails)}/{len(todo)} C objects compiled to IR; {len(notes)} transform notes')
     for obj, err in fails:
         first = next((l for l in err.splitlines() if 'error' in l), err.strip()[:300])
         print(f'  FAIL {obj}: {first}')

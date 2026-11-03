@@ -18,6 +18,7 @@ import subprocess
 from collections import defaultdict
 
 import game
+import overlay_imports
 
 NM = '/emsdk/upstream/bin/llvm-nm'
 TYPES = ('void', 'i1', 'i8', 'i16', 'i32', 'i64', 'float', 'double', 'ptr')
@@ -62,6 +63,7 @@ def veneer_map(root):
             m = re.match(r'\s*(export|import)\s+([\w.]+)\s*,\s*([\w.]+)', line)
             if m and m.group(2) != 'name':
                 out.setdefault(m.group(2), m.group(3))
+    out.update(overlay_imports.veneer_map())  # TLA: ovNNN_NAME -> the overlay's import target (TLA2b)
     return out
 
 
@@ -299,7 +301,7 @@ def zero(ret):
 def run(objs, out, root, clang, jobs, stages):
     obj_dir = os.path.join(out, 'obj')
     os.makedirs(obj_dir, exist_ok=True)
-    bound = [os.path.join(out, 'bound', o + '.ll') for _, o in objs]
+    bound = [os.path.join(out, 'bound', b + '.ll') for b in game.bound_names(objs)]
     cfiles = [os.path.join(out, 'gen/relocated.c')]
 
     def compile_one(src):
@@ -329,7 +331,16 @@ def run(objs, out, root, clang, jobs, stages):
     if 'link' not in stages:
         return True
     objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
-    objects = [o for o in objects if not o.endswith(('glue.ll.o', 'reloc_table.ll.o', 'code_map.ll.o'))]
+    vendor_prefix = os.path.relpath(os.path.join(out, 'bound', 'src'), root).replace('/', '__') + '__'
+    want = {os.path.relpath(b, root).replace('/', '__') + '.o' for b in bound}
+
+    def current(objects):
+        # TLA (TLA2b): only this build's vendor modules; an object of a module no longer built (a shared object
+        # now bound once per overlay, path@NNN; a left-out object) would link twice
+        if game.C.game == 'tbs':
+            return objects
+        return [o for o in objects if not os.path.basename(o).startswith(vendor_prefix) or os.path.basename(o) in want]
+    objects = current([o for o in objects if not o.endswith(('glue.ll.o', 'reloc_table.ll.o', 'code_map.ll.o'))])
     defined, undefined = set(), defaultdict(set)
     for o in objects:
         rc, so, _ = sh([NM, o])
@@ -357,8 +368,22 @@ def run(objs, out, root, clang, jobs, stages):
         if m:
             overlay_def[m.group(2)].append(d)
 
+    # TLA (TLA2b): a veneer chain that ends at a routine nobody defines yet (main asm) gets its stub under that
+    # routine's own name, and the veneers call it: one stub per real routine (build/wasm-tla/asm_stubs.tsv)
+    chain_stubs = set()
+    if game.C.game != 'tbs':
+        for name in list(missing):
+            end, seen = name, 0
+            while end in vmap and end not in defined and seen < 6:
+                end, seen = vmap[end], seen + 1
+            if end != name and end not in defined and end not in libc and name in sig:
+                chain_stubs.add(end)
+                missing.setdefault(end, set()).add('(veneer)')
+                r_, p_, _ = sig[name]
+                sig.setdefault(end, (r_, list(p_), False))  # a K&R caller's veneer takes the stub's fixed type
+
     def resolve(name, depth=0):
-        if name in defined:
+        if name in defined or (depth and name in chain_stubs):
             return name
         if depth > 5:
             return None
@@ -392,7 +417,7 @@ def run(objs, out, root, clang, jobs, stages):
             tret, tparams, _ = sig.get(re.sub(r'^ov[0-9a-f]{3}_', '', target), sig.get(target, (ret, params, False)))
             if (tret, tparams) != (ret, params):
                 mismatched += 1
-            if target not in declared:
+            if target not in declared and target not in chain_stubs:
                 declared.add(target)
                 dt = sig.get(target) or sig.get(re.sub(r'^ov[0-9a-f]{3}_', '', target)) or (ret, params, False)
                 lines.insert(2, f'declare {dt[0]} @"{target}"({", ".join(dt[1] + (["..."] if dt[2] else []))})')
@@ -448,12 +473,15 @@ def run(objs, out, root, clang, jobs, stages):
         f.write('name\tkind\tcalled_from\n')
         for row in stubs:
             f.write('\t'.join(row) + '\n')
+    if game.C.game != 'tbs':  # TLA2b: classes of the stubs (stub_classes.tsv) and the asm list (asm_stubs.tsv)
+        import stub_classes
+        stub_classes.classify(out)
     kinds = defaultdict(int)
     for _, k, _ in stubs:
         kinds[k] += 1
     print(f'link: {veneers} veneers ({mismatched} with differing signatures), {len(stubs)} logged stubs '
           f'({", ".join(f"{k} {v}" for k, v in sorted(kinds.items()))})')
-    objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
+    objects = current(sorted(glob.glob(os.path.join(obj_dir, '*.o'))))
     # exports: main and every function the PC layer defines (the page, node runners and the differential tests
     # of tests/arm call them)
     exports = {'main'}
