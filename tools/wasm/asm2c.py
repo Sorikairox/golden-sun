@@ -686,11 +686,49 @@ class Fn:
                 if not self.inside(t) or self.L.w(t) is None:  # a bx pc veneer into the next (ARM) routine
                     return self.tail(t, False), []
                 return [f'goto L_{t:08x};'], [(t, 'arm')]
+            k = self.adr_target(a, int(r[1:]), True) if r.startswith('r') and r[1:].isdigit() else None
+            if k is not None:
+                return self.const_jump(k), ([(k & ~1, 'thumb' if k & 1 else 'arm')] if self.inside(k & ~1) else [])
             self.uses_dispatch = True
             return [f'A2C_RETJUMP({r});'], []
         else:
             raise Unsupported(f'thumb {s}')
         return L, fall
+
+    def adr_target(self, a, rd, thumb):
+        """TLA4c: the constant of `add rd, pc, #imm` a few instructions before the `bx rd` at a (resident_mixer.s's
+        `add r1, pc, #8; bx r1` into its ARM half at 0x03000880, inside the same routine), or None. Only raw
+        halfwords/words (byte listings); no instruction in between may write rd."""
+        step = 2 if thumb else 4
+        for p in range(a - step, a - 5 * step, -step):
+            if thumb:
+                h = self.L.h(p)
+                if h is None or p not in self.code:
+                    return None
+                if (h & 0xf800) == 0xa000 and (h >> 8) & 7 == rd:
+                    return ((p + 4) & ~3) + (h & 0xff) * 4
+                txt, _ = thumb_decode(h, p, self.L.h(p + 2))
+                ops = txt.partition(' ')[2].split(',')
+                if txt.split()[0] in ('bl', 'blh', 'b', 'bx', 'pop', 'ldmia', 'stmia') or ops[0].strip() == f'r{rd}' \
+                        or txt.split()[0][0] == 'b':
+                    return None
+            else:
+                w = self.L.w(p)
+                if w is None or p not in self.code or w >> 28 != 14:
+                    return None
+                if (w & 0x0fff0000) == 0x028f0000 and (w >> 12) & 15 == rd:
+                    r, imm = (w >> 8) & 15, w & 0xff
+                    return (p + 8 + ((((imm >> (2 * r)) | (imm << (32 - 2 * r))) & 0xffffffff) if r else imm)) & 0xffffffff
+                if (w >> 12) & 15 == rd or (w >> 25) & 7 in (4, 5):
+                    return None
+        return None
+
+    def const_jump(self, k):
+        """a `bx` to the constant k: a local goto inside this routine, else a tail call"""
+        t = k & ~1
+        if self.inside(t):
+            return [f'goto L_{t:08x};']
+        return self.tail(t, bool(k & 1))
 
     def call(self, t, thumb):
         cn = self.tr.known(self.L.ovl, t)
@@ -725,7 +763,7 @@ class Fn:
             raise Unsupported(f'no ARM word at 0x{a:x}')
         cc = op >> 28
         if cc == 15:
-            raise Unsupported('ARM NV')
+            raise Unsupported(f'ARM NV at 0x{a:x}')
         body, succ, ends = self.arm_body(op, a)
         nxt = (a + 4, 'arm')
         if cc == 14:
@@ -737,6 +775,9 @@ class Fn:
         bits = (op >> 25) & 7
         if (op & 0x0ffffff0) == 0x012fff10:
             rm = op & 15
+            k = self.adr_target(a, rm, False) if (op >> 28) == 14 and rm < 13 else None
+            if k is not None:
+                return self.const_jump(k), ([(k & ~1, 'thumb' if k & 1 else 'arm')] if self.inside(k & ~1) else []), True
             self.uses_dispatch = True
             # a call when lr was pointed into this routine first (mov lr, pc / add lr, pc, #k): A2C_LOCALRET
             return [f'A2C_RETJUMP({R(rm)});'], [], True
@@ -1146,6 +1187,8 @@ class Translator:
             ends = sorted(set([f[1] for f in fs] + [it[0] + 4 for it in L.items[-1:]]))
             maxa = max([it[0] for it in L.items] + [0]) + 4
             for name, addr, mode in fs:
+                if name.startswith('HwData_'):  # TLA4c (hw2c): bytes kept as data only, an end but no routine
+                    continue
                 nxt = [e for e in ends if e > addr]
                 end = min(nxt) if nxt else maxa
                 # section pieces of overlays: stop at a gap in the items

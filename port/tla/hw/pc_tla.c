@@ -82,3 +82,28 @@ u32 _call_via_sp(u32 r0, u32 r1, u32 r2, u32 r3) {
   raw();
   return a2c_r.r[0];
 }
+
+/* TLA4c: SoundDriver_EnterVBlankUpdate (src/sound/driver/enter_vblank_update.s, bound here). The original checks the
+ * stack is in IWRAM and the SoundInfo ident, runs the two VBlank callbacks (SoundInfo.func(intp): the sequencer,
+ * MPlayMain; SoundInfo.CgbSound(si)) and jumps into the resident IWRAM mixer (IwramSoundMixEntry), which mixes every
+ * PCM channel into the workspace and returns 0; System_WaitForFrameInterrupt then renders (IwramSoundRenderVBlank).
+ * The resident mixer and its render patch their own instructions at run time (resident_mixer_lanes.s copies mla
+ * kernels over 0xfedcba98 placeholders, the render rewrites its branches), so asm2c cannot translate them, and
+ * TLA's mixer differs from GS1's port/pc/mixer.c. Until it is ported: the callbacks run (music and sound state
+ * advance as in the game), no PCM is mixed, and 1 is returned (the original's "not now"), so no render follows.
+ * The callbacks are C function pointers (wasm table indices) or GBA addresses: Port_ResolveCode takes both. */
+void *Port_ResolveCode(void *p);
+typedef void (*TlaSoundFn)(u32);
+u32 Port_TlaSoundEnterVBlank(void) {
+  u32 si = *(volatile u32 *)(uintptr_t)0x03007FF0u;
+  u32 func, cgb;
+  if (si == 0 || *(volatile u32 *)(uintptr_t)si != 0x68736D53u)
+    return 1;
+  func = *(volatile u32 *)(uintptr_t)(si + 32);
+  if (func)
+    ((TlaSoundFn)Port_ResolveCode((void *)(uintptr_t)func))(*(volatile u32 *)(uintptr_t)(si + 36));
+  cgb = *(volatile u32 *)(uintptr_t)(si + 40);
+  if (cgb)
+    ((TlaSoundFn)Port_ResolveCode((void *)(uintptr_t)cgb))(si);
+  return 1;
+}

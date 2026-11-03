@@ -24,6 +24,7 @@ VEND = os.path.join(ROOT, 'vendor/alchemy/games/tla/src')
 # PC-layer binds: TLA symbol -> (our function, why)
 BINDS = {
     'IwramIrqMain': ('Port_RaiseIrq', 'IRQ entry (msr/mrs, banked sp): port/pc/hw.c dispatches gIrqHandlers in IwramIrqMain\'s order (hook H1: check TLA\'s order and table)'),
+    'SoundDriver_EnterVBlankUpdate': ('Port_TlaSoundEnterVBlank', 'VBlank sound entry: callbacks, then the self-patching resident mixer asm2c cannot translate (TLA4c): port/tla/hw/pc_tla.c runs the callbacks, mixes no PCM yet'),
     'Iwram_Halt': ('Port_BiosHalt', 'swi 3 (Halt) from IWRAM: the frame driver\'s halt (fiber yield, D8)'),
     'Bios_CpuSet': ('Bios_CpuSet', 'swi 0x0B: port/pc/bios.c (GBATEK); object bytes identical to GS1\'s'),
     'Bios_SoundBiasOff': ('Bios_SoundBiasOff', 'swi 0x19: port/pc/bios.c; identical to GS1\'s'),

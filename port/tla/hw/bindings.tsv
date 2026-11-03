@@ -8,7 +8,7 @@ Sound_ResamplerRecord1	a2c_080004b8	a2c	src/sound/driver/resampler_records_2	D20
 Sound_ResamplerRecord2	a2c_08000504	a2c	src/sound/driver/resampler_records_3	D20 NOINPUT 0	
 Sound_ResamplerRecord3	-	data	src/sound/driver/resampler_records_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 SoundDriver_VSyncRefresh	a2c_080005e8	a2c	src/sound/driver/vsync_dma_refresh	D20 NOINPUT 0	
-SoundDriver_EnterVBlankUpdate	a2c_08000630	a2c	src/sound/driver/enter_vblank_update	D20 NOINPUT 0	
+SoundDriver_EnterVBlankUpdate	Port_TlaSoundEnterVBlank	bind	src/sound/driver/enter_vblank_update	VBlank sound entry: callbacks, then the self-patching resident mixer asm2c cannot translate (TLA4c): port/tla/hw/pc_tla.c runs the callbacks, mixes no PCM yet	
 AlchemyUncredited_08000646	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_08000646	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncredited_080006ac	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	

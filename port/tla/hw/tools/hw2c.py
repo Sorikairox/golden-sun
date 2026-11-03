@@ -47,6 +47,9 @@ def bound_objects():
 
 
 INTERNAL = set()  # local labels left out as routine starts (make_bindings.py: kind data)
+# TLA4c: bound objects whose bytes stay in the listing as data (no labels, no code): a neighbour reads their pool
+# (SoundDriver_VSyncRefresh loads 0x03007ff0 from SoundDriver_EnterVBlankUpdate's pool, now bound to C)
+DATA_ONLY = {'src/sound/driver/enter_vblank_update'}
 
 
 def entries_in(data, base, marks):
@@ -126,7 +129,7 @@ def write_listings(outdir, skip, extra_listing=True):
     for base, size, obj in objs:
         if re.search(r'far_call/|/import$|/entry$', obj) and obj != 'src/system/entry':
             continue
-        if obj in skip:
+        if obj in skip and obj not in DATA_ONLY:
             continue
         lo, hi = bisect.bisect_left(addrs, base), bisect.bisect_left(addrs, base + size)
         if not any(s[1] in ('$a', '$t') for s in syms[lo:hi]):
@@ -156,7 +159,14 @@ def write_listings(outdir, skip, extra_listing=True):
             continue
         marks = {}   # addr -> mode
         labels = {}  # addr -> [names]
+        dranges = [(b, b + n) for b, n, o in sel if o[0] in DATA_ONLY and base <= b < base + size] \
+            if any(o in DATA_ONLY for o in objs_in) else []
+        indata = lambda a: any(lo <= a < hi for lo, hi in dranges)
         for a, n, t in inside:
+            if indata(a):
+                if n in ('$a', '$t', '$d'):
+                    marks[a] = 'data'
+                continue
             if n in ('$a', '$t', '$d'):
                 marks[a] = {'$a': 'arm', '$t': 'thumb', '$d': 'data'}[n]
             elif not n.startswith(('$', '.')):
@@ -174,6 +184,8 @@ def write_listings(outdir, skip, extra_listing=True):
         # it go to Port_ResolveCode (TLA4b, trap 66). Named by address; no symbol, so only asm2c's codemap has it
         if marks.get(base) in ('arm', 'thumb') and base not in labels:
             labels[base] = [f'HwCode_{base:08x}']
+        for lo, hi in dranges:  # a data-only object ends the routine before it (asm2c: HwData_ is no routine)
+            labels[lo] = [f'HwData_{lo:08x}']
         # TLA4c: an unlabelled Thumb `bx pc` stub at a $t mark is the Thumb entry of an ARM function (iwram_math.s's
         # 0x03000314, which C calls by that constant as Iwram_ExpandBitRuns): its own routine, named by address
         for a, md in marks.items():

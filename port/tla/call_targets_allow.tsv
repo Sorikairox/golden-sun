@@ -21,3 +21,4 @@ target	overlay	reason
 081c0e70		sound driver: inside Sound_UpdateBgmRamps (C), from Func_081c0198/01ec (as 081c0c84)
 0200af64	681	Func_02002f64@681: not translated (asm2c: undefined thumb; TLA4 3, still hand)
 0200af68	681	Func_02002f64@681: as 0200af64
+030007b4		IwramSoundMixEntry: the resident mixer patches its own code (resident_mixer_lanes.s), asm2c cannot translate it; its only entry, SoundDriver_EnterVBlankUpdate, is bound to Port_TlaSoundEnterVBlank (TLA4c), so IwramSoundMixNextChannel's branch back is never reached
