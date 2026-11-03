@@ -1,13 +1,13 @@
 # tla-en code census (TLA1), alchemy f6c08e64: bytes of linked sections by class (see make_symbols_tla.py)
-# PROVISIONAL: built with GS1's alchemy-gcc 9bc4e65a plus the three options CFLAGS_tla dropped in 34c36297 (alchemy pins alchemy-gcc 641764a5, not fetched). Main image: same size and addresses as the cart (romdiff: 2 functions differ by 18 bytes in place). Overlays: 50 of 114 byte-identical; regenerate once compare-tla-en is OK (docs/TLA1.md).
+# Exact: compare-tla-en OK (SHA-1 b5006632...), alchemy-gcc 641764a5.
 place	class	bytes	functions
 main	C	253752	2358
 main	asm	628240	525
 main	hand	34346	1022
 main	libgcc	60	15
 main	data	13927737	0
-main	stream	745180	0
-overlays	C	659332	4497
+main	stream	744912	0
+overlays	C	659328	4497
 overlays	asm	330912	678
 overlays	hand	55992	6999
 overlays	libgcc	0	0
