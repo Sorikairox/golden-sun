@@ -6,268 +6,268 @@ Entry	main	bind	src/system/entry	cartridge entry (mode switches, stacks): the mo
 Sound_ResamplerRecords	a2c_0800046c	a2c	src/sound/driver/resampler_records	D20 NOINPUT 0	
 Sound_ResamplerRecord1	a2c_080004b8	a2c	src/sound/driver/resampler_records_2	D20 NOINPUT 0	
 Sound_ResamplerRecord2	a2c_08000504	a2c	src/sound/driver/resampler_records_3	D20 NOINPUT 0	
-Sound_ResamplerRecord3	a2c_08000550	a2c	src/sound/driver/resampler_records_4	D20 NOINPUT 0	
+Sound_ResamplerRecord3	-	data	src/sound/driver/resampler_records_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 SoundDriver_VSyncRefresh	a2c_080005e8	a2c	src/sound/driver/vsync_dma_refresh	D20 NOINPUT 0	
 SoundDriver_EnterVBlankUpdate	a2c_08000630	a2c	src/sound/driver/enter_vblank_update	D20 NOINPUT 0	
-AlchemyUncredited_08000646	-	data	src/sound/driver/enter_vblank_update	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000646	-	data	src/sound/driver/enter_vblank_update	data label, or code entered only from the routine before it	
-AlchemyUncredited_080006ac	-	data	src/sound/driver/enter_vblank_update	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080006ac	-	data	src/sound/driver/enter_vblank_update	data label, or code entered only from the routine before it	
+AlchemyUncredited_08000646	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000646	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_080006ac	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080006ac	-	data	src/sound/driver/enter_vblank_update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramIrqMain	Port_RaiseIrq	bind	src/system/irq	IRQ entry (msr/mrs, banked sp): port/pc/hw.c dispatches gIrqHandlers in IwramIrqMain's order (hook H1: check TLA's order and table)	
 IwramMulQ16	a2c_0300021c	a2c	src/system/iwram_mul_q16	D20 EQUIV 60	
-AlchemyUncredited_080007d6	-	data	src/system/iwram_mul_q16	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080007d6	a2c_03000220	a2c	src/system/iwram_mul_q16	D20 EQUIV 60	
+AlchemyUncredited_080007d6	-	data	src/system/iwram_mul_q16	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080007d6	-	data	src/system/iwram_mul_q16	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramRatioMulQ14	a2c_03000230	a2c	src/system/iwram_ratio_q14	D20 EQUIV 60	
-AlchemyUncredited_080007ea	-	data	src/system/iwram_ratio_q14	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080007ea	a2c_03000234	a2c	src/system/iwram_ratio_q14	D20 EQUIV 60	
+AlchemyUncredited_080007ea	-	data	src/system/iwram_ratio_q14	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080007ea	-	data	src/system/iwram_ratio_q14	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramClearWords	a2c_03000258	a2c	src/system/iwram_math	D20 EQUIV 60	
-AlchemyUncredited_08000812	-	data	src/system/iwram_math	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000812	a2c_0300025c	a2c	src/system/iwram_math	D20 EQUIV 55	
+AlchemyUncredited_08000812	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000812	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramFillWords	a2c_03000260	a2c	src/system/iwram_math	D20 EQUIV 60	
 IwramSqrt	a2c_030002d4	a2c	src/system/iwram_math	D20 EQUIV 60	
-AlchemyUncredited_0800088e	-	data	src/system/iwram_math	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0800088e	a2c_030002d8	a2c	src/system/iwram_math	D20 EQUIV 60	
-AlchemyUncredited_080008ce	-	data	src/system/iwram_math	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080008ce	a2c_03000318	a2c	src/system/iwram_math	D20 EQUIV 47	
-IwramTransformVector	a2c_03000354	a2c	src/system/iwram_transform	D20 EQUIV 36	
-AlchemyUncredited_0800090e	-	data	src/system/iwram_transform	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0800090e	a2c_03000358	a2c	src/system/iwram_transform	D20 EQUIV 37	
+AlchemyUncredited_0800088e	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800088e	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_080008ce	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080008ce	-	data	src/system/iwram_math	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+IwramTransformVector	a2c_03000354	a2c	src/system/iwram_transform	D20 EQUIV 40	
+AlchemyUncredited_0800090e	-	data	src/system/iwram_transform	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800090e	-	data	src/system/iwram_transform	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramTransformMatrix	a2c_030003c8	a2c	src/system/iwram_transform	D20 EQUIV 60	
-AlchemyUncredited_08000982	-	data	src/system/iwram_transform	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000982	a2c_030003cc	a2c	src/system/iwram_transform	D20 EQUIV 60	
+AlchemyUncredited_08000982	-	data	src/system/iwram_transform	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000982	-	data	src/system/iwram_transform	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramSignedRemainder	a2c_03000508	a2c	src/system/iwram_divide	D20 EQUIV 60	
-AlchemyUncredited_08000ac2	-	data	src/system/iwram_divide	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000ac2	a2c_0300050c	a2c	src/system/iwram_divide	D20 EQUIV 60	
+AlchemyUncredited_08000ac2	-	data	src/system/iwram_divide	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000ac2	-	data	src/system/iwram_divide	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramUnsignedRemainder	a2c_03000514	a2c	src/system/iwram_divide	D20 EQUIV 60	
 IwramDivide	a2c_03000528	a2c	src/system/iwram_divide	D20 EQUIV 60	IwramSignedDivide
-AlchemyUncredited_08000ae2	-	data	src/system/iwram_divide	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000ae2	a2c_0300052c	a2c	src/system/iwram_divide	D20 EQUIV 60	
+AlchemyUncredited_08000ae2	-	data	src/system/iwram_divide	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000ae2	-	data	src/system/iwram_divide	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramUnsignedDivide	a2c_03000534	a2c	src/system/iwram_divide	D20 EQUIV 60	
-IwramDecompress	a2c_03000694	a2c	src/system/iwram_decompress	D20 EQUIV 33	
-AlchemyUncredited_08000c4e	-	data	src/system/iwram_decompress	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000c4e	a2c_03000698	a2c	src/system/iwram_decompress	D20 EQUIV 32	
+IwramDecompress	a2c_03000694	a2c	src/system/iwram_decompress	D20 EQUIV 36	
+AlchemyUncredited_08000c4e	-	data	src/system/iwram_decompress	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000c4e	-	data	src/system/iwram_decompress	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramCopyWords	a2c_03000730	a2c	src/system/iwram_copy_words	D20 EQUIV 60	
-AlchemyUncredited_08000cea	-	data	src/system/iwram_copy_words	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000cea	a2c_03000734	a2c	src/system/iwram_copy_words	D20 EQUIV 39	
+AlchemyUncredited_08000cea	-	data	src/system/iwram_copy_words	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000cea	-	data	src/system/iwram_copy_words	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Iwram_Halt	Port_BiosHalt	bind	src/system/iwram_halt	swi 3 (Halt) from IWRAM: the frame driver's halt (fiber yield, D8)	
 IwramSoundMixEntry	a2c_030007b4	a2c	src/sound/resident_mixer	D20 NOINPUT 0	
-AlchemyUncredited_08000e34	-	data	src/sound/resident_mixer	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000e34	a2c_03000880	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000f64	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000f64	a2c_030009b4	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000f70	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000f70	a2c_030009c8	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000f88	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000f88	a2c_030009d8	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000f94	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000f94	a2c_030009ec	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000fac	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000fac	a2c_030009fc	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000fb8	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000fb8	a2c_03000a10	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000fd0	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000fd0	a2c_03000a20	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000fdc	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000fdc	a2c_03000a34	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08000ffc	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08000ffc	a2c_03000a4c	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001008	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001008	a2c_03000a60	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001020	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001020	a2c_03000a70	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_0800102c	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0800102c	a2c_03000a84	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001044	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001044	a2c_03000a94	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001050	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001050	a2c_03000aa8	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001068	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001068	a2c_03000ab8	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_08001074	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001074	a2c_03000acc	a2c	src/sound/resident_mixer_lanes	D20 NOINPUT 0	
-AlchemyUncredited_080010a0	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080010a0	-	data	src/sound/resident_mixer_lanes	data label, or code entered only from the routine before it	
-IwramSoundMixInterpolated	a2c_03000b44	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-IwramSoundMixDone	a2c_03000b94	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-IwramSoundMixBlock	a2c_03000c1c	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncredited_08001234	a2c_03000c7c	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncreditedEnd_08001234	a2c_03000c84	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncredited_08001240	a2c_03000c88	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncreditedEnd_08001240	a2c_03000c90	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncredited_0800124c	a2c_03000c94	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncreditedEnd_0800124c	a2c_03000c9c	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncredited_08001258	a2c_03000ca0	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-AlchemyUncreditedEnd_08001258	a2c_03000ca8	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
-IwramSoundMixSkipChannel	a2c_03000cf4	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
+AlchemyUncredited_08000e34	-	data	src/sound/resident_mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000e34	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000f64	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000f64	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000f70	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000f70	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000f88	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000f88	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000f94	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000f94	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000fac	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000fac	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000fb8	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000fb8	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000fd0	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000fd0	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000fdc	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000fdc	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08000ffc	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08000ffc	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001008	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001008	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001020	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001020	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0800102c	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800102c	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001044	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001044	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001050	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001050	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001068	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001068	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001074	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001074	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_080010a0	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080010a0	-	data	src/sound/resident_mixer_lanes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+IwramSoundMixInterpolated	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+IwramSoundMixDone	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+IwramSoundMixBlock	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001234	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001234	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001240	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001240	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0800124c	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800124c	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08001258	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001258	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+IwramSoundMixSkipChannel	-	data	src/sound/resident_mixer_channel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 IwramSoundMixNextChannel	a2c_03000cfc	a2c	src/sound/resident_mixer_channel	D20 NOINPUT 0	
 IwramSoundRenderVBlank	a2c_03000d40	a2c	src/sound/resident_mixer_render	D20 NOINPUT 0	
-AlchemyUncredited_080012fa	-	data	src/sound/resident_mixer_render	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080012fa	a2c_03000d44	a2c	src/sound/resident_mixer_render	D20 NOINPUT 0	
+AlchemyUncredited_080012fa	-	data	src/sound/resident_mixer_render	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080012fa	-	data	src/sound/resident_mixer_render	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_03000ee4	-	data	src/sound/resident_mixer_render	data label, or code entered only from the routine before it	
-IwramSoundSynthWave	a2c_03000eec	a2c	src/sound/resident_mixer_modes	D20 NOINPUT 0	
-Resource_DecodeByteLz	a2c_08001658	left	src/system/decompress_byte_lz	D20 FAIL 0	Resource_DecodeByteLzCode
-AlchemyUncredited_0800165a	-	data	src/system/decompress_byte_lz	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0800165a	a2c_0800165c	left	src/system/decompress_byte_lz	D20 FAIL 0	
-AlchemyUncredited_0800175c	a2c_0800175c	a2c	src/system/decompress_byte_lz	D20 NOINPUT 0	
-AlchemyUncreditedEnd_0800175c	a2c_08001760	a2c	src/system/decompress_byte_lz	D20 NOINPUT 0	
-AlchemyUncredited_0800180c	a2c_0800180c	a2c	src/system/decompress_byte_lz	D20 NOINPUT 0	
-AlchemyUncreditedEnd_0800180c	a2c_08001810	a2c	src/system/decompress_byte_lz	D20 NOINPUT 0	
+IwramSoundSynthWave	-	data	src/sound/resident_mixer_modes	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Resource_DecodeByteLz	a2c_08001658	a2c	src/system/decompress_byte_lz	D20 EQUIV 34	Resource_DecodeByteLzCode
+AlchemyUncredited_0800165a	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800165a	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0800175c	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800175c	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0800180c	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0800180c	-	data	src/system/decompress_byte_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Render_BuildOamListKernel	a2c_080018b4	a2c	src/system/build_oam_list	D20 NOINPUT 0	Render_BuildOamListKernelCode
-AlchemyUncredited_080018b6	-	data	src/system/build_oam_list	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080018b6	a2c_080018b8	a2c	src/system/build_oam_list	D20 NOINPUT 0	
+AlchemyUncredited_080018b6	-	data	src/system/build_oam_list	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080018b6	-	data	src/system/build_oam_list	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Render_BuildOamList	a2c_080019f4	a2c	src/system/build_oam_list	D20 NOINPUT 0	
 ColorBuffer_ScaleThreeQuartersKernelCode	a2c_08001a14	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
-AlchemyUncredited_08001a16	-	data	src/system/color_backup_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001a16	a2c_08001a18	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
+AlchemyUncredited_08001a16	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001a16	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_HalveKernelCode	a2c_08001ad4	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
-AlchemyUncredited_08001ad6	-	data	src/system/color_backup_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001ad6	a2c_08001ad8	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
-ColorBuffer_DarkenKernelCode	a2c_08001b54	a2c	src/system/color_backup_kernels	D20 EQUIV 1	
-AlchemyUncredited_08001b56	-	data	src/system/color_backup_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001b56	a2c_08001b58	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
+AlchemyUncredited_08001ad6	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001ad6	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+ColorBuffer_DarkenKernelCode	a2c_08001b54	a2c	src/system/color_backup_kernels	D20 NOINPUT 0	
+AlchemyUncredited_08001b56	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001b56	-	data	src/system/color_backup_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_BrightenKernelCode	a2c_08001c08	a2c	src/system/color_brighten_kernel	D20 NOINPUT 0	
-AlchemyUncredited_08001c0a	-	data	src/system/color_brighten_kernel	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001c0a	a2c_08001c0c	a2c	src/system/color_brighten_kernel	D20 NOINPUT 0	
+AlchemyUncredited_08001c0a	-	data	src/system/color_brighten_kernel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001c0a	-	data	src/system/color_brighten_kernel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_ScaleThreeQuarters	a2c_08001c90	a2c	src/system/color_backup_loaders	D20 NOINPUT 0	
 ColorBuffer_Halve	a2c_08001cb0	a2c	src/system/color_backup_loaders	D20 NOINPUT 0	
 ColorBuffer_Brighten	a2c_08001cd0	a2c	src/system/color_backup_loaders	D20 NOINPUT 0	
 ColorBuffer_Darken	a2c_08001cf0	a2c	src/system/color_backup_loaders	D20 NOINPUT 0	
 ColorBuffer_ScaleNonzeroThreeQuartersKernel	a2c_08001d10	a2c	src/system/color_kernels	D20 NOINPUT 0	ColorBuffer_ScaleNonzeroThreeQuartersKernelCode
-AlchemyUncredited_08001d12	-	data	src/system/color_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001d12	a2c_08001d14	a2c	src/system/color_kernels	D20 EQUIV 1	
+AlchemyUncredited_08001d12	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001d12	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_HalveNonzeroKernel	a2c_08001d70	a2c	src/system/color_kernels	D20 NOINPUT 0	ColorBuffer_HalveNonzeroKernelCode
-AlchemyUncredited_08001d72	-	data	src/system/color_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001d72	a2c_08001d74	a2c	src/system/color_kernels	D20 NOINPUT 0	
+AlchemyUncredited_08001d72	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001d72	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_DarkenPartialKernel	a2c_08001dd0	a2c	src/system/color_kernels	D20 NOINPUT 0	ColorBuffer_DarkenPartialKernelCode
-AlchemyUncredited_08001dd2	-	data	src/system/color_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001dd2	a2c_08001dd4	a2c	src/system/color_kernels	D20 EQUIV 1	
+AlchemyUncredited_08001dd2	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001dd2	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_BrightenPartialKernel	a2c_08001ea4	a2c	src/system/color_kernels	D20 NOINPUT 0	ColorBuffer_BrightenPartialKernelCode
-AlchemyUncredited_08001ea6	-	data	src/system/color_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001ea6	a2c_08001ea8	a2c	src/system/color_kernels	D20 EQUIV 1	
+AlchemyUncredited_08001ea6	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001ea6	-	data	src/system/color_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_ScaleNonzeroThreeQuarters	a2c_08001f7c	a2c	src/system/color_kernel_loaders	D20 NOINPUT 0	
 ColorBuffer_HalveNonzero	a2c_08001f9c	a2c	src/system/color_kernel_loaders	D20 NOINPUT 0	
 ColorBuffer_BrightenPartial	a2c_08001fbc	a2c	src/system/color_kernel_loaders	D20 NOINPUT 0	
 ColorBuffer_DarkenPartial	a2c_08001fdc	a2c	src/system/color_kernel_loaders	D20 NOINPUT 0	
-Resource_DecodeHalfwordLz	a2c_08001ffc	a2c	src/system/decompress_halfword_lz	D20 EQUIV 37	Resource_DecodeHalfwordLzCode
-AlchemyUncredited_08001ffe	-	data	src/system/decompress_halfword_lz	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08001ffe	a2c_08002000	a2c	src/system/decompress_halfword_lz	D20 EQUIV 39	
+Resource_DecodeHalfwordLz	a2c_08001ffc	a2c	src/system/decompress_halfword_lz	D20 EQUIV 34	Resource_DecodeHalfwordLzCode
+AlchemyUncredited_08001ffe	-	data	src/system/decompress_halfword_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08001ffe	-	data	src/system/decompress_halfword_lz	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 __divsi3	__divsi3	gs1	src/system/iwram_entry	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 __udivsi3	__udivsi3	gs1	src/system/iwram_entry	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 __modsi3	__modsi3	gs1	src/system/iwram_entry	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 __umodsi3	__umodsi3	gs1	src/system/iwram_entry	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 Math_UnsignedMulHigh	a2c_08002074	a2c	src/system/long_multiply	D20 EQUIV 60	
-AlchemyUncredited_08002076	a2c_08002076	a2c	src/system/long_multiply	D20 NOINPUT 0	
-AlchemyUncreditedEnd_08002076	a2c_08002078	a2c	src/system/long_multiply	D20 EQUIV 60	
+AlchemyUncredited_08002076	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08002076	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Math_UnsignedMulHighAdd	a2c_08002080	a2c	src/system/long_multiply	D20 EQUIV 60	
-AlchemyUncredited_08002082	a2c_08002082	a2c	src/system/long_multiply	D20 NOINPUT 0	
-AlchemyUncreditedEnd_08002082	a2c_08002084	a2c	src/system/long_multiply	D20 EQUIV 60	
+AlchemyUncredited_08002082	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08002082	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Trig_Cos	Trig_Cos	gs1	src/system/trig	GS1 twin: bytes differ@8; GS1 D20 EQUIV (tools/test_arm.sh)	
 Trig_Sin	a2c_08002096	a2c	src/system/trig	D20 EQUIV 60	
 Resource_Decode01	a2c_080128a8	a2c	src/system/decode_01	D20 EQUIV 60	Resource_Decode01Code
-AlchemyUncredited_080128aa	-	data	src/system/decode_01	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080128aa	a2c_080128ac	a2c	src/system/decode_01	D20 EQUIV 60	
-Resource_Decode2	a2c_08012b70	left	src/system/decode_2	D20 FAIL 18	Resource_Decode2Code
-AlchemyUncredited_08012b72	-	data	src/system/decode_2	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08012b72	a2c_08012b74	left	src/system/decode_2	D20 FAIL 25	
-Resource_DecodeType2Loop	-	data	src/system/decode_2_loop	data label, or code entered only from the routine before it	
+AlchemyUncredited_080128aa	-	data	src/system/decode_01	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080128aa	-	data	src/system/decode_01	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Resource_Decode2	a2c_08012b70	a2c	src/system/decode_2	D20 EQUIV 60	Resource_Decode2Code
+AlchemyUncredited_08012b72	-	data	src/system/decode_2	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012b72	-	data	src/system/decode_2	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Resource_DecodeType2Loop	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Resource_RefillType2Bits	a2c_08012e54	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012e7c	a2c_08012e7c	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012e7c	a2c_08012e94	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012ea8	a2c_08012ea8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012ea8	a2c_08012eb4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012ec8	a2c_08012ec8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012ec8	a2c_08012ed4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012ee8	a2c_08012ee8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012ee8	a2c_08012ef4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012f08	a2c_08012f08	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012f08	a2c_08012f14	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012f28	a2c_08012f28	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012f28	a2c_08012f34	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012f48	a2c_08012f48	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012f48	a2c_08012f54	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012f60	a2c_08012f60	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012f60	a2c_08012f74	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012f88	a2c_08012f88	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012f88	a2c_08012f94	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012fa8	a2c_08012fa8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012fa8	a2c_08012fb4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012fc8	a2c_08012fc8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012fc8	a2c_08012fd4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08012fe8	a2c_08012fe8	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08012fe8	a2c_08012ff4	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08013008	a2c_08013008	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08013008	a2c_08013014	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08013028	a2c_08013028	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08013028	a2c_08013034	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncredited_08013048	a2c_08013048	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-AlchemyUncreditedEnd_08013048	a2c_08013054	a2c	src/system/decode_2_loop	D20 EQUIV 60	
-Resource_Decode2End	a2c_08013060	a2c	src/system/resource/execute_transfer	D20 EQUIV 23	Resource_ExecuteTransfer,Resource_ExecuteTransferCode
-AlchemyUncredited_08013062	-	data	src/system/resource/execute_transfer	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08013062	a2c_08013064	a2c	src/system/resource/execute_transfer	D20 EQUIV 10	
-Resource_PatchThumbBranch	a2c_080130cc	a2c	src/system/resource/patch_thumb_branch	D20 EQUIV 39	Resource_PatchThumbBranchCode
-AlchemyUncredited_080130ce	-	data	src/system/resource/patch_thumb_branch	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080130ce	a2c_080130d0	a2c	src/system/resource/patch_thumb_branch	D20 EQUIV 44	
+AlchemyUncredited_08012e7c	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012e7c	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012ea8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012ea8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012ec8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012ec8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012ee8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012ee8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012f08	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012f08	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012f28	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012f28	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012f48	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012f48	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012f60	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012f60	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012f88	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012f88	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012fa8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012fa8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012fc8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012fc8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08012fe8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08012fe8	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08013008	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08013008	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08013028	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08013028	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08013048	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08013048	-	data	src/system/decode_2_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Resource_Decode2End	a2c_08013060	a2c	src/system/resource/execute_transfer	D20 EQUIV 11	Resource_ExecuteTransfer,Resource_ExecuteTransferCode
+AlchemyUncredited_08013062	-	data	src/system/resource/execute_transfer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08013062	-	data	src/system/resource/execute_transfer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Resource_PatchThumbBranch	a2c_080130cc	a2c	src/system/resource/patch_thumb_branch	D20 EQUIV 43	Resource_PatchThumbBranchCode
+AlchemyUncredited_080130ce	-	data	src/system/resource/patch_thumb_branch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080130ce	-	data	src/system/resource/patch_thumb_branch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 HeapSlot_Release	a2c_0801314c	a2c	src/system/heap_slot_release	D20 EQUIV 60	
-AlchemyUncredited_08013162	-	data	src/system/heap_slot_release	data label, or code entered only from the routine before it	
+AlchemyUncredited_08013162	-	data	src/system/heap_slot_release	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_08013162	a2c_08013164	a2c	src/system/heap_release	D20 EQUIV 60	Heap_Release
-AlchemyUncredited_08013172	-	data	src/system/heap_release	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08013172	-	left	src/system/heap_release	ARM 0xef030000	Irq_HaltOnGamePakRemoved
+AlchemyUncredited_08013172	-	data	src/system/heap_release	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08013172	Port_BiosStop	bind	src/system/heap_release	swi 3 (Stop) after the cartridge is pulled, as GS1's Irq_StopOnGamePakRemoved: never in the port	Irq_HaltOnGamePakRemoved
 Irq_StopOnGamePakRemoved	Port_BiosStop	bind	src/system/heap_release	swi 3 after the cartridge is pulled: never in the port	
 Bios_CpuSet	Bios_CpuSet	bind	src/system/bios	swi 0x0B: port/pc/bios.c (GBATEK); object bytes identical to GS1's	
 Bios_SoundBiasOff	Bios_SoundBiasOff	bind	src/system/bios	swi 0x19: port/pc/bios.c; identical to GS1's	
 Bios_SoundBiasOn	Bios_SoundBiasOn	bind	src/system/bios_sound_bias_on	swi 0x19: port/pc/bios.c; identical to GS1's	
 Math_DotProductQ16	a2c_08017ce8	a2c	src/system/q16_dot_product	D20 EQUIV 60	Math_DotProductQ16Code
-AlchemyUncredited_08017cea	-	data	src/system/q16_dot_product	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08017cea	a2c_08017cec	a2c	src/system/q16_dot_product	D20 EQUIV 60	
-Render_DecodePicture	a2c_08020da8	a2c	src/field/picture_decode	D20 EQUIV 11	Render_DecodePictureCode
-AlchemyUncredited_08020daa	-	data	src/field/picture_decode	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08020daa	a2c_08020dac	a2c	src/field/picture_decode	D20 EQUIV 10	
-AlchemyUncredited_08020dc8	a2c_08020dc8	a2c	src/field/picture_decode	D20 EQUIV 60	
-AlchemyUncreditedEnd_08020dc8	a2c_08020dcc	a2c	src/field/picture_decode	D20 EQUIV 60	
-Render_DecodePictureEnd	a2c_08021070	a2c	src/field/draw_map	D20 EQUIV 1	Render_DrawMap,Render_DrawMapCode
-AlchemyUncredited_08021072	-	data	src/field/draw_map	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08021072	a2c_08021074	a2c	src/field/draw_map	D20 EQUIV 1	
+AlchemyUncredited_08017cea	-	data	src/system/q16_dot_product	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08017cea	-	data	src/system/q16_dot_product	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Render_DecodePicture	a2c_08020da8	a2c	src/field/picture_decode	D20 EQUIV 18	Render_DecodePictureCode
+AlchemyUncredited_08020daa	-	data	src/field/picture_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08020daa	-	data	src/field/picture_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08020dc8	-	data	src/field/picture_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08020dc8	-	data	src/field/picture_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Render_DecodePictureEnd	a2c_08021070	a2c	src/field/draw_map	D20 EQUIV 3	Render_DrawMap,Render_DrawMapCode
+AlchemyUncredited_08021072	-	data	src/field/draw_map	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08021072	-	data	src/field/draw_map	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Render_ConvertMap	a2c_08021704	a2c	src/field/map_grid_convert	D20 EQUIV 2	Render_ConvertMapCode
-AlchemyUncredited_08021706	-	data	src/field/map_grid_convert	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08021706	a2c_08021708	a2c	src/field/map_grid_convert	D20 EQUIV 5	
+AlchemyUncredited_08021706	-	data	src/field/map_grid_convert	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08021706	-	data	src/field/map_grid_convert	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Render_CopyStrided	a2c_080217a4	a2c	src/field/copy_strided	D20 EQUIV 60	Render_CopyStridedCode
-AlchemyUncredited_080217a6	-	data	src/field/copy_strided	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080217a6	a2c_080217a8	a2c	src/field/copy_strided	D20 EQUIV 60	
+AlchemyUncredited_080217a6	-	data	src/field/copy_strided	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080217a6	-	data	src/field/copy_strided	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_08021824	a2c_08021824	a2c	src/field/f021828_entries	D20 EQUIV 15	Func_08021824
-AlchemyUncredited_08021826	-	data	src/field/f021828_entries	data label, or code entered only from the routine before it	
-Text_DecodeSymbol	a2c_08038438	a2c	src/window/message_decode	D20 EQUIV 27	Text_DecodeSymbolCode
-AlchemyUncredited_0803843a	-	data	src/window/message_decode	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0803843a	a2c_0803843c	a2c	src/window/message_decode	D20 EQUIV 43	
-Text_DecodeSymbolEnd	a2c_0803857c	a2c	src/window/lookup_symbol	D20 EQUIV 35	Text_LookupSymbol,Text_LookupSymbolCode
-AlchemyUncredited_0803857e	-	data	src/window/lookup_symbol	data label, or code entered only from the routine before it	
+AlchemyUncredited_08021826	-	data	src/field/f021828_entries	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Text_DecodeSymbol	a2c_08038438	a2c	src/window/message_decode	D20 EQUIV 22	Text_DecodeSymbolCode
+AlchemyUncredited_0803843a	-	data	src/window/message_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0803843a	-	data	src/window/message_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Text_DecodeSymbolEnd	a2c_0803857c	a2c	src/window/lookup_symbol	D20 EQUIV 38	Text_LookupSymbol,Text_LookupSymbolCode
+AlchemyUncredited_0803857e	-	data	src/window/lookup_symbol	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_0803857e	Message_FindArm	gs1	src/window/lookup_symbol	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
-Glyph_DrawCode	a2c_080385e0	a2c	src/window/glyph_arm_entries	D20 EQUIV 38	
-AlchemyUncredited_080385e2	-	data	src/window/glyph_arm_entries	data label, or code entered only from the routine before it	
-Tile_BuildCellPicturesCode	a2c_080388fc	a2c	src/window/cell_picture_entries	D20 EQUIV 27	
-AlchemyUncredited_080388fe	-	data	src/window/cell_picture_entries	data label, or code entered only from the routine before it	
-Tile_Decompress4bpp	a2c_08038b14	a2c	src/window/decompress_4bpp	D20 EQUIV 27	Tile_Decompress4bppCode
-AlchemyUncredited_08038b16	-	data	src/window/decompress_4bpp	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08038b16	a2c_08038b18	a2c	src/window/decompress_4bpp	D20 EQUIV 31	
-Tile_Decompress4bppLoop	a2c_08038b70	a2c	src/window/decompress_4bpp_loop	D20 NOINPUT 0	
-Tile_Decompress4bppEnd	a2c_08038d90	a2c	src/window/expand_masked	D20 EQUIV 6	Tile_ExpandMasked,Tile_ExpandMaskedCode
-AlchemyUncredited_08038d92	-	data	src/window/expand_masked	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08038d92	a2c_08038d94	a2c	src/window/expand_masked	D20 EQUIV 3	
-Tile_ExpandMaskedEnd	a2c_08038e30	a2c	src/window/expand_opaque	D20 EQUIV 5	Tile_ExpandOpaque,Tile_ExpandOpaqueCode
-AlchemyUncredited_08038e32	-	data	src/window/expand_opaque	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08038e32	a2c_08038e34	a2c	src/window/expand_opaque	D20 EQUIV 3	
+Glyph_DrawCode	a2c_080385e0	a2c	src/window/glyph_arm_entries	D20 EQUIV 39	
+AlchemyUncredited_080385e2	-	data	src/window/glyph_arm_entries	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Tile_BuildCellPicturesCode	a2c_080388fc	a2c	src/window/cell_picture_entries	D20 EQUIV 34	
+AlchemyUncredited_080388fe	-	data	src/window/cell_picture_entries	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Tile_Decompress4bpp	a2c_08038b14	a2c	src/window/decompress_4bpp	D20 EQUIV 31	Tile_Decompress4bppCode
+AlchemyUncredited_08038b16	-	data	src/window/decompress_4bpp	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08038b16	-	data	src/window/decompress_4bpp	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Tile_Decompress4bppLoop	-	data	src/window/decompress_4bpp_loop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Tile_Decompress4bppEnd	a2c_08038d90	a2c	src/window/expand_masked	D20 EQUIV 7	Tile_ExpandMasked,Tile_ExpandMaskedCode
+AlchemyUncredited_08038d92	-	data	src/window/expand_masked	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08038d92	-	data	src/window/expand_masked	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Tile_ExpandMaskedEnd	a2c_08038e30	a2c	src/window/expand_opaque	D20 EQUIV 2	Tile_ExpandOpaque,Tile_ExpandOpaqueCode
+AlchemyUncredited_08038e32	-	data	src/window/expand_opaque	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08038e32	-	data	src/window/expand_opaque	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_IntegrateVector3	a2c_080c8978	a2c	src/field/field_sequence/integrate_vectors	D20 EQUIV 60	
 BattleEffect_IntegrateVector2	a2c_080c89a6	a2c	src/field/field_sequence/integrate_vectors	D20 EQUIV 60	
-BattleEffect_DecodePicture	a2c_080c93cc	a2c	src/field/field_sequence/decode_picture	D20 EQUIV 14	BattleEffect_DecodePictureCode
-AlchemyUncredited_080c93ce	-	data	src/field/field_sequence/decode_picture	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_080c93ce	a2c_080c93d0	a2c	src/field/field_sequence/decode_picture	D20 EQUIV 6	
-AlchemyUncredited_080c93ec	a2c_080c93ec	a2c	src/field/field_sequence/decode_picture	D20 EQUIV 60	
-AlchemyUncreditedEnd_080c93ec	a2c_080c93f0	a2c	src/field/field_sequence/decode_picture	D20 EQUIV 60	
-Model_Decode	a2c_08118160	a2c	src/battle/model_decode	D20 EQUIV 9	Model_DecodeCode
-AlchemyUncredited_08118162	-	data	src/battle/model_decode	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08118162	a2c_08118164	a2c	src/battle/model_decode	D20 EQUIV 24	
+BattleEffect_DecodePicture	a2c_080c93cc	a2c	src/field/field_sequence/decode_picture	D20 EQUIV 7	BattleEffect_DecodePictureCode
+AlchemyUncredited_080c93ce	-	data	src/field/field_sequence/decode_picture	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080c93ce	-	data	src/field/field_sequence/decode_picture	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_080c93ec	-	data	src/field/field_sequence/decode_picture	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_080c93ec	-	data	src/field/field_sequence/decode_picture	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Model_Decode	a2c_08118160	a2c	src/battle/model_decode	D20 EQUIV 13	Model_DecodeCode
+AlchemyUncredited_08118162	-	data	src/battle/model_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08118162	-	data	src/battle/model_decode	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Model_DispatchBitCommand	a2c_08118238	a2c	src/battle/model_bit_dispatch	D20 EQUIV 60	
-AlchemyUncredited_08118240	a2c_08118240	a2c	src/battle/model_bit_dispatch	D20 EQUIV 60	
-AlchemyUncreditedEnd_08118240	-	data	src/battle/model_bit_dispatch	data label, or code entered only from the routine before it	
+AlchemyUncredited_08118240	-	data	src/battle/model_bit_dispatch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08118240	-	data	src/battle/model_bit_dispatch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Model_BitCommandTable	-	data	src/battle/model_bit_dispatch	data label, or code entered only from the routine before it	
 Model_BitCommands	a2c_08118284	a2c	src/battle/model_bit_commands	D20 EQUIV 60	
 Model_AddShortDelta	a2c_081182a0	a2c	src/battle/model_bit_commands	D20 EQUIV 60	
@@ -276,94 +276,94 @@ Model_AddLongDelta	a2c_081182f0	a2c	src/battle/model_bit_commands	D20 EQUIV 60
 Model_SubtractLongDelta	a2c_08118318	a2c	src/battle/model_bit_commands	D20 EQUIV 60	
 Model_AddSignedDelta	a2c_08118340	a2c	src/battle/model_bit_commands	D20 EQUIV 60	
 Model_SetBitValue	a2c_08118370	a2c	src/battle/model_bit_commands	D20 EQUIV 60	
-ColorBuffer_ScaleKernelCode	a2c_08118394	a2c	src/battle/color_scale_kernel	D20 EQUIV 39	Model_DecodeEnd
-AlchemyUncredited_08118396	-	data	src/battle/color_scale_kernel	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08118396	a2c_08118398	a2c	src/battle/color_scale_kernel	D20 EQUIV 34	
+ColorBuffer_ScaleKernelCode	a2c_08118394	a2c	src/battle/color_scale_kernel	D20 EQUIV 36	Model_DecodeEnd
+AlchemyUncredited_08118396	-	data	src/battle/color_scale_kernel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08118396	-	data	src/battle/color_scale_kernel	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ColorBuffer_Scale	a2c_08118410	a2c	src/battle/color_scale_loader	D20 NOINPUT 0	
 BattleEffectKernels_IntegrateVector3	a2c_08138058	a2c	src/battle_effect/kernel_bank_integrate_vectors	D20 EQUIV 60	
 BattleEffectKernels_IntegrateVector2	a2c_08138086	a2c	src/battle_effect/kernel_bank_integrate_vectors	D20 EQUIV 60	
 Data_081380ac	a2c_081380ac	a2c	src/battle_effect/relocated_kernel_0	D20 NOINPUT 0	Func_081380ac
-AlchemyUncredited_081380ae	-	data	src/battle_effect/relocated_kernel_0	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081380ae	a2c_081380b0	a2c	src/battle_effect/relocated_kernel_0	D20 NOINPUT 0	
-Data_0813847c	a2c_0813847c	a2c	src/battle_effect/relocated_kernel_0	D20 EQUIV 1	
-Data_08138fc8	a2c_08138fc8	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 2	Func_08138fc8
-AlchemyUncredited_08138fca	-	data	src/battle_effect/relocated_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08138fca	a2c_08138fcc	a2c	src/battle_effect/relocated_kernels	D20 NOINPUT 0	
+AlchemyUncredited_081380ae	-	data	src/battle_effect/relocated_kernel_0	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081380ae	-	data	src/battle_effect/relocated_kernel_0	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Data_0813847c	a2c_0813847c	a2c	src/battle_effect/relocated_kernel_0	D20 EQUIV 2	
+Data_08138fc8	a2c_08138fc8	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 1	Func_08138fc8
+AlchemyUncredited_08138fca	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08138fca	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_081391c8	a2c_081391c8	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 1	Func_081391c8
-AlchemyUncredited_081391ca	-	data	src/battle_effect/relocated_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081391ca	a2c_081391cc	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 2	
+AlchemyUncredited_081391ca	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081391ca	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_081393d8	a2c_081393d8	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 1	Func_081393d8
-AlchemyUncredited_081393da	-	data	src/battle_effect/relocated_kernels	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081393da	a2c_081393dc	a2c	src/battle_effect/relocated_kernels	D20 EQUIV 3	
+AlchemyUncredited_081393da	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081393da	-	data	src/battle_effect/relocated_kernels	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_081395f8	a2c_081395f8	a2c	src/battle_effect/relocated_kernel_4	D20 NOINPUT 0	Func_081395f8
-AlchemyUncredited_081395fa	-	data	src/battle_effect/relocated_kernel_4	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081395fa	a2c_081395fc	a2c	src/battle_effect/relocated_kernel_4	D20 NOINPUT 0	
-AlchemyUncredited_08139600	-	data	src/battle_effect/relocated_kernel_4	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139600	a2c_08139608	a2c	src/battle_effect/relocated_kernel_4	D20 NOINPUT 0	
-AlchemyUncredited_08139938	-	data	src/battle_effect/relocated_kernel_4	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139938	a2c_08139954	a2c	src/battle_effect/relocated_kernel_4	D20 NOINPUT 0	
-AlchemyUncredited_08139a94	-	data	src/battle_effect/relocated_kernel_4	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139a94	a2c_08139aa4	a2c	src/battle_effect/relocated_kernel_4	D20 NOINPUT 0	
-Data_08139aac	a2c_08139aac	a2c	src/battle_effect/relocated_kernel_5	D20 EQUIV 1	Func_08139aac
-AlchemyUncredited_08139aae	-	data	src/battle_effect/relocated_kernel_5	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139aae	a2c_08139ab0	a2c	src/battle_effect/relocated_kernel_5	D20 EQUIV 1	
-AlchemyUncredited_08139ab4	-	data	src/battle_effect/relocated_kernel_5	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139ab4	a2c_08139abc	a2c	src/battle_effect/relocated_kernel_5	D20 NOINPUT 0	
-AlchemyUncredited_08139df4	-	data	src/battle_effect/relocated_kernel_5	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139df4	a2c_08139e18	a2c	src/battle_effect/relocated_kernel_5	D20 NOINPUT 0	
-AlchemyUncredited_08139f58	-	data	src/battle_effect/relocated_kernel_5	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139f58	a2c_08139f68	a2c	src/battle_effect/relocated_kernel_5	D20 NOINPUT 0	
+AlchemyUncredited_081395fa	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081395fa	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139600	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139600	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139938	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139938	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139a94	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139a94	-	data	src/battle_effect/relocated_kernel_4	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Data_08139aac	a2c_08139aac	a2c	src/battle_effect/relocated_kernel_5	D20 NOINPUT 0	Func_08139aac
+AlchemyUncredited_08139aae	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139aae	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139ab4	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139ab4	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139df4	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139df4	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139f58	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139f58	-	data	src/battle_effect/relocated_kernel_5	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_08139f70	a2c_08139f70	a2c	src/battle_effect/relocated_kernel_6	D20 NOINPUT 0	Func_08139f70
-AlchemyUncredited_08139f72	-	data	src/battle_effect/relocated_kernel_6	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139f72	a2c_08139f74	a2c	src/battle_effect/relocated_kernel_6	D20 NOINPUT 0	
-AlchemyUncredited_08139f78	-	data	src/battle_effect/relocated_kernel_6	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_08139f78	a2c_08139f80	a2c	src/battle_effect/relocated_kernel_6	D20 NOINPUT 0	
-AlchemyUncredited_0813a2c0	-	data	src/battle_effect/relocated_kernel_6	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a2c0	a2c_0813a2ec	a2c	src/battle_effect/relocated_kernel_6	D20 NOINPUT 0	
-AlchemyUncredited_0813a42c	-	data	src/battle_effect/relocated_kernel_6	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a42c	a2c_0813a43c	a2c	src/battle_effect/relocated_kernel_6	D20 NOINPUT 0	
-Data_0813a444	a2c_0813a444	a2c	src/battle_effect/relocated_kernel_7	D20 NOINPUT 0	Func_0813a444
-AlchemyUncredited_0813a446	-	data	src/battle_effect/relocated_kernel_7	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a446	a2c_0813a448	a2c	src/battle_effect/relocated_kernel_7	D20 NOINPUT 0	
-AlchemyUncredited_0813a44c	-	data	src/battle_effect/relocated_kernel_7	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a44c	a2c_0813a454	a2c	src/battle_effect/relocated_kernel_7	D20 NOINPUT 0	
-AlchemyUncredited_0813a794	-	data	src/battle_effect/relocated_kernel_7	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a794	a2c_0813a7c0	a2c	src/battle_effect/relocated_kernel_7	D20 NOINPUT 0	
-AlchemyUncredited_0813a90c	-	data	src/battle_effect/relocated_kernel_7	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a90c	a2c_0813a91c	a2c	src/battle_effect/relocated_kernel_7	D20 NOINPUT 0	
-Data_0813a924	a2c_0813a924	a2c	src/battle_effect/relocated_kernel_8	D20 NOINPUT 0	Func_0813a924
-AlchemyUncredited_0813a926	-	data	src/battle_effect/relocated_kernel_8	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a926	a2c_0813a928	a2c	src/battle_effect/relocated_kernel_8	D20 NOINPUT 0	
-AlchemyUncredited_0813a92c	-	data	src/battle_effect/relocated_kernel_8	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813a92c	a2c_0813a934	a2c	src/battle_effect/relocated_kernel_8	D20 NOINPUT 0	
-AlchemyUncredited_0813ac7c	-	data	src/battle_effect/relocated_kernel_8	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813ac7c	a2c_0813acb0	a2c	src/battle_effect/relocated_kernel_8	D20 NOINPUT 0	
-AlchemyUncredited_0813adfc	-	data	src/battle_effect/relocated_kernel_8	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813adfc	a2c_0813ae0c	a2c	src/battle_effect/relocated_kernel_8	D20 NOINPUT 0	
+AlchemyUncredited_08139f72	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139f72	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_08139f78	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_08139f78	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a2c0	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a2c0	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a42c	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a42c	-	data	src/battle_effect/relocated_kernel_6	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Data_0813a444	a2c_0813a444	a2c	src/battle_effect/relocated_kernel_7	D20 EQUIV 1	Func_0813a444
+AlchemyUncredited_0813a446	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a446	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a44c	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a44c	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a794	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a794	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a90c	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a90c	-	data	src/battle_effect/relocated_kernel_7	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Data_0813a924	a2c_0813a924	a2c	src/battle_effect/relocated_kernel_8	D20 EQUIV 1	Func_0813a924
+AlchemyUncredited_0813a926	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a926	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813a92c	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813a92c	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813ac7c	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813ac7c	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813adfc	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813adfc	-	data	src/battle_effect/relocated_kernel_8	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_0813ae14	a2c_0813ae14	a2c	src/battle_effect/relocated_kernel_9	D20 NOINPUT 0	Func_0813ae14
-AlchemyUncredited_0813ae16	-	data	src/battle_effect/relocated_kernel_9	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813ae16	a2c_0813ae18	a2c	src/battle_effect/relocated_kernel_9	D20 NOINPUT 0	
-AlchemyUncredited_0813ae1c	-	data	src/battle_effect/relocated_kernel_9	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813ae1c	a2c_0813ae24	a2c	src/battle_effect/relocated_kernel_9	D20 NOINPUT 0	
-AlchemyUncredited_0813b160	-	data	src/battle_effect/relocated_kernel_9	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b160	a2c_0813b188	a2c	src/battle_effect/relocated_kernel_9	D20 NOINPUT 0	
-AlchemyUncredited_0813b2d4	-	data	src/battle_effect/relocated_kernel_9	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b2d4	a2c_0813b2e4	a2c	src/battle_effect/relocated_kernel_9	D20 NOINPUT 0	
+AlchemyUncredited_0813ae16	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813ae16	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813ae1c	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813ae1c	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813b160	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b160	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813b2d4	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b2d4	-	data	src/battle_effect/relocated_kernel_9	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_0813b2ec	a2c_0813b2ec	a2c	src/battle_effect/relocated_kernel_10	D20 NOINPUT 0	Func_0813b2ec
-AlchemyUncredited_0813b2ee	-	data	src/battle_effect/relocated_kernel_10	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b2ee	a2c_0813b2f0	a2c	src/battle_effect/relocated_kernel_10	D20 EQUIV 1	
-AlchemyUncredited_0813b2f4	-	data	src/battle_effect/relocated_kernel_10	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b2f4	a2c_0813b2fc	a2c	src/battle_effect/relocated_kernel_10	D20 NOINPUT 0	
-AlchemyUncredited_0813b62c	-	data	src/battle_effect/relocated_kernel_10	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b62c	a2c_0813b648	a2c	src/battle_effect/relocated_kernel_10	D20 NOINPUT 0	
-AlchemyUncredited_0813b788	-	data	src/battle_effect/relocated_kernel_10	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b788	a2c_0813b798	a2c	src/battle_effect/relocated_kernel_10	D20 NOINPUT 0	
+AlchemyUncredited_0813b2ee	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b2ee	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813b2f4	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b2f4	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813b62c	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b62c	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_0813b788	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b788	-	data	src/battle_effect/relocated_kernel_10	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Data_0813b7a0	a2c_0813b7a0	a2c	src/battle_effect/relocated_kernel_11	D20 EQUIV 3	Func_0813b7a0
-AlchemyUncredited_0813b7a2	-	data	src/battle_effect/relocated_kernel_11	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b7a2	a2c_0813b7a4	a2c	src/battle_effect/relocated_kernel_11	D20 NOINPUT 0	
-Data_0813b9a0	a2c_0813b9a0	a2c	src/battle_effect/relocated_kernel_11	D20 EQUIV 38	Func_0813b9a0
-AlchemyUncredited_0813b9a2	-	data	src/battle_effect/relocated_kernel_11	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_0813b9a2	a2c_0813b9a4	a2c	src/battle_effect/relocated_kernel_11	D20 EQUIV 39	
+AlchemyUncredited_0813b7a2	-	data	src/battle_effect/relocated_kernel_11	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b7a2	-	data	src/battle_effect/relocated_kernel_11	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+Data_0813b9a0	a2c_0813b9a0	a2c	src/battle_effect/relocated_kernel_11	D20 EQUIV 34	Func_0813b9a0
+AlchemyUncredited_0813b9a2	-	data	src/battle_effect/relocated_kernel_11	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_0813b9a2	-	data	src/battle_effect/relocated_kernel_11	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_CopyReverse	a2c_08196fdc	a2c	src/battle_effect/blitter_fragments	D20 NOINPUT 0	
 BattleEffect_CopyForward	a2c_08196fe4	a2c	src/battle_effect/blitter_fragments	D20 NOINPUT 0	
 BattleEffect_Copy8Forward	a2c_08196fec	a2c	src/battle_effect/blitter_fragments	D20 NOINPUT 0	
@@ -382,14 +382,14 @@ BattleEffect_Mask	a2c_08197224	a2c	src/battle_effect/blitter_fragments	D20 NOINP
 BattleEffect_ColorForward	a2c_08197230	a2c	src/battle_effect/blitter_color_fragments	D20 NOINPUT 0	
 BattleEffect_ColorReverse	a2c_08197268	a2c	src/battle_effect/blitter_color_fragments	D20 NOINPUT 0	
 BattleEffect_PatchTemplate	a2c_081972a0	a2c	src/battle_effect/patch_template	D20 NOINPUT 0	BattleEffect_PatchTemplateCode
-AlchemyUncredited_081972a2	-	data	src/battle_effect/patch_template	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081972a2	a2c_081972a4	a2c	src/battle_effect/patch_template	D20 NOINPUT 0	
+AlchemyUncredited_081972a2	-	data	src/battle_effect/patch_template	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081972a2	-	data	src/battle_effect/patch_template	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_DotProduct	RelocatedQ16DotProduct	gs1	src/menu/credits/credits_background_decode	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
-BattleEffect_Expand	a2c_081a004c	a2c	src/menu/credits/credits_background_expand	D20 EQUIV 22	BattleEffect_ExpandCode
-AlchemyUncredited_081a004e	-	data	src/menu/credits/credits_background_expand	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081a004e	a2c_081a0050	a2c	src/menu/credits/credits_background_expand	D20 EQUIV 21	
+BattleEffect_Expand	a2c_081a004c	a2c	src/menu/credits/credits_background_expand	D20 EQUIV 16	BattleEffect_ExpandCode
+AlchemyUncredited_081a004e	-	data	src/menu/credits/credits_background_expand	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081a004e	-	data	src/menu/credits/credits_background_expand	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_ExpandRead	a2c_081a0124	a2c	src/menu/credits/credits_background_expand_dispatch	D20 EQUIV 60	
-AlchemyUncredited_081a012c	-	data	src/menu/credits/credits_background_expand_dispatch	data label, or code entered only from the routine before it	
+AlchemyUncredited_081a012c	-	data	src/menu/credits/credits_background_expand_dispatch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_ExpandCase2	a2c_081a0170	a2c	src/menu/credits/credits_background_expand_commands	D20 EQUIV 60	BattleEffect_ExpandCommands
 BattleEffect_ExpandCase4Plus	a2c_081a018c	a2c	src/menu/credits/credits_background_expand_commands	D20 EQUIV 60	
 BattleEffect_ExpandCase4Minus	a2c_081a01b4	a2c	src/menu/credits/credits_background_expand_commands	D20 EQUIV 60	
@@ -398,11 +398,11 @@ BattleEffect_ExpandCase6Minus	a2c_081a0204	a2c	src/menu/credits/credits_backgrou
 BattleEffect_ExpandCase8	a2c_081a022c	a2c	src/menu/credits/credits_background_expand_commands	D20 EQUIV 60	
 BattleEffect_ExpandCase10	a2c_081a025c	a2c	src/menu/credits/credits_background_expand_commands	D20 EQUIV 60	
 BattleEffect_DotProduct2	RelocatedQ16DotProduct	gs1	src/menu/credits/credits_background_decode_2	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
-BattleEffect_Expand2	a2c_081a029c	a2c	src/menu/credits/credits_background_expand_2	D20 EQUIV 14	BattleEffect_Expand2Code
-AlchemyUncredited_081a029e	-	data	src/menu/credits/credits_background_expand_2	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081a029e	a2c_081a02a0	a2c	src/menu/credits/credits_background_expand_2	D20 EQUIV 9	
+BattleEffect_Expand2	a2c_081a029c	a2c	src/menu/credits/credits_background_expand_2	D20 EQUIV 11	BattleEffect_Expand2Code
+AlchemyUncredited_081a029e	-	data	src/menu/credits/credits_background_expand_2	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081a029e	-	data	src/menu/credits/credits_background_expand_2	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_ExpandRead2	a2c_081a0374	a2c	src/menu/credits/credits_background_expand_2_dispatch	D20 EQUIV 60	
-AlchemyUncredited_081a037c	-	data	src/menu/credits/credits_background_expand_2_dispatch	data label, or code entered only from the routine before it	
+AlchemyUncredited_081a037c	-	data	src/menu/credits/credits_background_expand_2_dispatch	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 BattleEffect_Expand2Case2	a2c_081a03c0	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	BattleEffect_ExpandCommands2
 BattleEffect_Expand2Case4Plus	a2c_081a03dc	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	
 BattleEffect_Expand2Case4Minus	a2c_081a0404	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	
@@ -410,96 +410,96 @@ BattleEffect_Expand2Case6Plus	a2c_081a042c	a2c	src/menu/credits/credits_backgrou
 BattleEffect_Expand2Case6Minus	a2c_081a0454	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	
 BattleEffect_Expand2Case8	a2c_081a047c	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	
 BattleEffect_Expand2Case10	a2c_081a04ac	a2c	src/menu/credits/credits_background_expand_2_commands	D20 EQUIV 60	
-MusicTrack_HandleNoteLeftover	a2c_081c0198	a2c	src/sound/driver/leftover_handle_note	D20 NOINPUT 0	
-AlchemyUncredited_081c038e	-	data	src/sound/driver/leftover_handle_note	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c038e	-	data	src/sound/driver/leftover_handle_note	data label, or code entered only from the routine before it	
+MusicTrack_HandleNoteLeftover	a2c_081c0198	a2c	src/sound/driver/leftover_handle_note	D20 EQUIV 1	
+AlchemyUncredited_081c038e	-	data	src/sound/driver/leftover_handle_note	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c038e	-	data	src/sound/driver/leftover_handle_note	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 MusicTrack_ReleaseKeyLeftover	ply_endtie	gs1	src/sound/driver/leftover_release_key	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
 MusicTrack_ClearModulationStateLeftover	a2c_081c03d8	a2c	src/sound/driver/leftover_clear_modulation	D20 EQUIV 60	
-AlchemyUncredited_081c03f2	-	data	src/sound/driver/leftover_clear_modulation	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c03f2	a2c_081c03f4	a2c	src/sound/driver/leftover_command_byte_reader	D20 EQUIV 30	MusicTrack_ReadCommandByteLeftover
-MusicTrack_SetLfoSpeedFromCommandLeftover	a2c_081c0400	a2c	src/sound/driver/leftover_command_byte_setters	D20 EQUIV 33	
-AlchemyUncredited_081c0412	-	data	src/sound/driver/leftover_command_byte_setters	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c0412	a2c_081c0414	a2c	src/sound/driver/leftover_command_byte_setters	D20 EQUIV 42	MusicTrack_SetModulationFromCommandLeftover
-AlchemyUncredited_081c0426	-	data	src/sound/driver/leftover_command_byte_setters	data label, or code entered only from the routine before it	
-AlchemyUncredited_081c05ee	-	data	src/sound/driver/midi_key_to_frequency	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c03f2	-	data	src/sound/driver/leftover_clear_modulation	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c03f2	a2c_081c03f4	a2c	src/sound/driver/leftover_command_byte_reader	D20 EQUIV 31	MusicTrack_ReadCommandByteLeftover
+MusicTrack_SetLfoSpeedFromCommandLeftover	a2c_081c0400	a2c	src/sound/driver/leftover_command_byte_setters	D20 EQUIV 35	
+AlchemyUncredited_081c0412	-	data	src/sound/driver/leftover_command_byte_setters	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c0412	a2c_081c0414	a2c	src/sound/driver/leftover_command_byte_setters	D20 EQUIV 37	MusicTrack_SetModulationFromCommandLeftover
+AlchemyUncredited_081c0426	-	data	src/sound/driver/leftover_command_byte_setters	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_081c05ee	-	data	src/sound/driver/midi_key_to_frequency	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c05ee	a2c_081c05f0	a2c	src/sound/driver/midi_key_to_frequency	D20 EQUIV 60	SoundDriver_MidiKeyToFrequency
-AlchemyUncredited_081c0612	a2c_081c0612	a2c	src/sound/driver/midi_key_to_frequency	D20 NOINPUT 0	
-AlchemyUncreditedEnd_081c0612	a2c_081c0614	a2c	src/sound/driver/midi_key_to_frequency	D20 EQUIV 60	
-SoundChannel_Unlink	a2c_081c0738	a2c	src/sound/driver/channel_unlink	D20 EQUIV 34	
+AlchemyUncredited_081c0612	-	data	src/sound/driver/midi_key_to_frequency	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c0612	-	data	src/sound/driver/midi_key_to_frequency	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+SoundChannel_Unlink	a2c_081c0738	a2c	src/sound/driver/channel_unlink	D20 EQUIV 29	
 SoundDriver_CalculateStereoVolume	a2c_081c077a	a2c	src/sound/driver/handle_note	D20 NOINPUT 0	
-ply_note	a2c_081c07a2	a2c	src/sound/driver/handle_note	D20 NOINPUT 0	
+ply_note	a2c_081c07a2	a2c	src/sound/driver/handle_note	D20 EQUIV 1	
 Func_081c08a4	a2c_081c08a4	a2c	src/sound/driver/handle_note	D20 NOINPUT 0	
-AlchemyUncredited_081c09c6	-	data	src/sound/driver/handle_note	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c09c6	-	data	src/sound/driver/handle_note	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c09c6	-	data	src/sound/driver/handle_note	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c09c6	-	data	src/sound/driver/handle_note	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 MPlayMain	a2c_081c09d0	a2c	src/sound/driver/mplay_main	D20 EQUIV 60	
 Func_081c0a68	a2c_081c0a68	a2c	src/sound/driver/mplay_main	D20 NOINPUT 0	
-Func_081c0c0c	a2c_081c0c0c	left	src/sound/driver/mplay_main	D20 FAIL 0	
+Func_081c0c0c	a2c_081c0c0c	a2c	src/sound/driver/mplay_main	D20 EQUIV 60	
 Bios_SoundDriverMode	Port_BiosNop	bind	src/sound/bios_sound_driver_mode	swi 0x1B (BIOS sound driver mode): no BIOS sound driver in the port (hook H2)	
 Bios_Swi23	Port_BiosNop	bind	src/sound/bios_sound_driver_mode	swi 0x23 (SoundDriverVSyncOn): no BIOS sound driver (hook H2)	
 umul3232H32	umul3232H32	gs1	src/sound/driver/umul_high	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
 SoundMain	a2c_081c128c	a2c	src/sound/driver/mixer_entry	D20 NOINPUT 0	
-AlchemyUncredited_081c12f6	-	data	src/sound/driver/mixer_entry	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c12f6	-	data	src/sound/driver/mixer_entry	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c12f6	-	data	src/sound/driver/mixer_entry	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c12f6	-	data	src/sound/driver/mixer_entry	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 SoundDriver_Mixer	a2c_03006000	a2c	src/sound/driver/mixer	D20 NOINPUT 0	
-AlchemyUncredited_081c131a	-	data	src/sound/driver/mixer	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c131a	a2c_0300600c	a2c	src/sound/driver/mixer	D20 NOINPUT 0	
-AlchemyUncredited_081c13c2	-	data	src/sound/driver/mixer	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c13c2	-	data	src/sound/driver/mixer	data label, or code entered only from the routine before it	
-AlchemyUncredited_081c14a6	-	data	src/sound/driver/mixer	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c14a6	a2c_03006198	a2c	src/sound/driver/mixer	D20 NOINPUT 0	
+AlchemyUncredited_081c131a	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c131a	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_081c13c2	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c13c2	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncredited_081c14a6	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c14a6	-	data	src/sound/driver/mixer	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Mixer_CallViaR3	a2c_0300639e	a2c	src/sound/driver/mixer	D20 NOINPUT 0	
 SoundDriver_ClearBuffer	SoundMainBTM	gs1	src/sound/driver/clear_buffer	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
 SoundNote_Detach	RealClearChain	gs1	src/sound/driver/clear_chain	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
 ply_fine	ply_fine	gs1	src/sound/driver/clear_chain	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c171a	-	data	src/sound/driver/clear_chain	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c171a	-	data	src/sound/driver/clear_chain	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c171a	a2c_081c171c	a2c	src/sound/driver/sequence_commands	D20 EQUIV 60	Sound_LoadCommandTable
-AlchemyUncredited_081c1732	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1732	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c1732	a2c_081c1734	a2c	src/sound/driver/sequence_commands	D20 EQUIV 60	
-AlchemyUncredited_081c175a	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c175a	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c175a	ply_goto	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_goto
 ply_patt	ply_patt	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c1796	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1796	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c1796	ply_pend	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_pend
 ply_rept	ply_rept	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c17da	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c17da	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c17da	ply_prio	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_prio
-AlchemyUncredited_081c17e6	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c17e6	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c17e6	ply_tempo	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_tempo
 ply_keysh	ply_keysh	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c180e	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c180e	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c180e	ply_voice	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_voice
-AlchemyUncredited_081c183e	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c183e	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c183e	ply_vol	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_vol
-AlchemyUncredited_081c1852	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1852	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c1852	ply_pan	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_pan
 ply_bend	ply_bend	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 ply_bendr	ply_bendr	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c188e	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c188e	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c188e	ply_lfodl	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_lfodl
-AlchemyUncredited_081c189a	-	data	src/sound/driver/sequence_commands	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c189a	-	data	src/sound/driver/sequence_commands	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c189a	ply_modt	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	ply_modt
 ply_tune	ply_tune	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 ply_port	ply_port	gs1	src/sound/driver/sequence_commands	GS1 twin: bytes reloc; GS1 D20 EQUIV (tools/test_arm.sh)	
 SoundDriver_Update	a2c_081c18e0	a2c	src/sound/driver/update	D20 NOINPUT 0	
-AlchemyUncredited_081c1922	-	data	src/sound/driver/update	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c1922	-	data	src/sound/driver/update	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1922	-	data	src/sound/driver/update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c1922	-	data	src/sound/driver/update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 SoundDriver_CallViaR3	a2c_081c1b84	a2c	src/sound/driver/update	D20 NOINPUT 0	
-AlchemyUncredited_081c1b86	-	data	src/sound/driver/update	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c1b86	-	data	src/sound/driver/update	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1b86	-	data	src/sound/driver/update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c1b86	-	data	src/sound/driver/update	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 TrackStop	TrackStop	gs1	src/sound/driver/track_stop	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c1bd2	-	data	src/sound/driver/track_stop	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c1bd2	-	data	src/sound/driver/track_stop	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1bd2	-	data	src/sound/driver/track_stop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c1bd2	-	data	src/sound/driver/track_stop	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 SoundDriver_CalculateStereoVolumeTwin	a2c_081c1bd8	a2c	src/sound/driver/calculate_stereo_volume	D20 NOINPUT 0	
-MusicTrack_HandleNoteUnreferenced	a2c_081c1c08	a2c	src/sound/driver/handle_note_unreferenced	D20 EQUIV 2	
-AlchemyUncredited_081c1dfe	-	data	src/sound/driver/handle_note_unreferenced	data label, or code entered only from the routine before it	
-AlchemyUncreditedEnd_081c1dfe	-	data	src/sound/driver/handle_note_unreferenced	data label, or code entered only from the routine before it	
+MusicTrack_HandleNoteUnreferenced	a2c_081c1c08	a2c	src/sound/driver/handle_note_unreferenced	D20 EQUIV 3	
+AlchemyUncredited_081c1dfe	-	data	src/sound/driver/handle_note_unreferenced	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
+AlchemyUncreditedEnd_081c1dfe	-	data	src/sound/driver/handle_note_unreferenced	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 ply_endtie	ply_endtie	gs1	src/sound/driver/release_key	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
 clear_modM	a2c_081c1e48	a2c	src/sound/driver/clear_modulation	D20 EQUIV 60	
-ld_r3_tp_adr_i_unchecked	a2c_081c1e64	a2c	src/sound/driver/command_byte_reader	D20 EQUIV 40	
+ld_r3_tp_adr_i_unchecked	a2c_081c1e64	a2c	src/sound/driver/command_byte_reader	D20 EQUIV 32	
 ply_lfos	ply_lfos	gs1	src/sound/driver/command_byte_setters	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	
-AlchemyUncredited_081c1e82	-	data	src/sound/driver/command_byte_setters	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1e82	-	data	src/sound/driver/command_byte_setters	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_081c1e82	ply_mod	gs1	src/sound/driver/command_byte_setters	GS1 twin: bytes same; GS1 D20 EQUIV (tools/test_arm.sh)	ply_mod
-AlchemyUncredited_081c1e96	-	data	src/sound/driver/command_byte_setters	data label, or code entered only from the routine before it	
+AlchemyUncredited_081c1e96	-	data	src/sound/driver/command_byte_setters	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 Bios_SoundGetJumpList	Port_BiosSoundGetJumpList	bind	src/sound/sound_get_jump_list	swi 0x2A: the BIOS sound jump list (hook H2; GS1 copies its relocated template, MPlayJumpTableCopy)	
 Ability_LoadGlyphFar	Ability_LoadGlyph	veneer	src/gamepak/far_call/uitext_4	alias of the target (far call / overlay import)	
 Actor_ApplyRandomChildValues	Actor_ApplyRandomChildValuesFar	veneer	src/scene/alhafran_cave/import	alias of the target (far call / overlay import)	

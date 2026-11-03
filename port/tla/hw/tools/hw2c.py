@@ -32,14 +32,70 @@ import hand_census as hc  # noqa: E402
 
 def bound_objects():
     """objects bindings.tsv binds instead of translating (kind bind or veneer)."""
-    out = set()
+    out, keep = set(), set()
     p = os.path.join(ROOT, 'port/tla/hw/bindings.tsv')
     if os.path.exists(p):
         for line in open(p):
             f = line.rstrip('\n').split('\t')
-            if len(f) >= 4 and not line.startswith('#') and f[0] != 'symbol' and f[2] in ('bind', 'veneer', 'gs1'):
-                out.add(f[3])
+            if len(f) >= 4 and not line.startswith('#') and f[0] != 'symbol':
+                if f[2] in ('bind', 'veneer', 'gs1'):
+                    out.add(f[3])
+                elif f[2] in ('a2c', 'left'):
+                    keep.add(f[3])
+    # an object with a translated routine stays (heap_release: Heap_Release a2c, its swi 3 tail bound: TLA4a2)
+    return out - keep
+
+
+INTERNAL = set()  # local labels left out as routine starts (make_bindings.py: kind data)
+
+
+def entries_in(data, base, marks):
+    """addresses a run enters by itself: bl targets (Thumb pairs, ARM bl) and aligned words (pool entries)."""
+    out, mode = set(), 'data'
+    for a in range(base, base + len(data) - 1, 2):
+        if a in marks:
+            mode = marks[a]
+        o = a - base
+        h = int.from_bytes(data[o:o + 2], 'little')
+        if a % 4 == 0 and o + 4 <= len(data):
+            w = int.from_bytes(data[o:o + 4], 'little')
+            out.add(w & ~1)
+            if mode == 'arm' and (w & 0x0f000000) == 0x0b000000:
+                off = (w & 0xffffff) - (1 << 24 if w & 0x800000 else 0)
+                out.add(a + 8 + 4 * off)
+        if mode == 'thumb' and (h & 0xf800) == 0xf000 and o + 4 <= len(data):
+            h2 = int.from_bytes(data[o + 2:o + 4], 'little')
+            if (h2 & 0xf800) == 0xf800:
+                off = ((h & 0x7ff) << 12) | ((h2 & 0x7ff) << 1)
+                out.add(a + 4 + off - (1 << 23 if off & 0x400000 else 0))
     return out
+
+
+def branch_only_labels(names):
+    """names whose every use in the vendor's TLA tree (outside their definition) is a b/bcc operand."""
+    ident = re.compile(r'[A-Za-z_]\w*')
+    br = re.compile(r'^\s*b(?:eq|ne|cs|cc|hs|lo|mi|pl|vs|vc|hi|ls|ge|lt|gt|le|al)?\s+([A-Za-z_]\w*)\s*(?:@.*)?$')
+    decl = re.compile(r'^\s*(?:\.(?:global|globl|thumb_func|type|size)\b.*|([A-Za-z_]\w*):.*)$')
+    used, other = set(), set()
+    for dp, _, fs in os.walk(os.path.join(ROOT, 'vendor/alchemy/games/tla')):
+        if '/.git' in dp:
+            continue
+        for fn in fs:
+            if not fn.endswith(('.s', '.c', '.h', '.inc', '.ld', '.txt', '.sym')):
+                continue
+            for line in open(os.path.join(dp, fn), errors='replace'):
+                hit = [t for t in ident.findall(line) if t in names]
+                if not hit:
+                    continue
+                m = br.match(line)
+                for t in hit:
+                    if m and m.group(1) == t:
+                        used.add(t)
+                    elif decl.match(line) and (line.strip().startswith('.') or line.strip().startswith(t + ':')):
+                        pass
+                    else:
+                        other.add(t)
+    return used - other
 
 
 def write_listings(outdir, skip, extra_listing=True):
@@ -48,6 +104,18 @@ def write_listings(outdir, skip, extra_listing=True):
     syms = hc.load_syms(os.path.join(ref, 'syms.txt'))
     addrs = [s[0] for s in syms]
     img = hc.Image(os.path.join(ref, 'tla-en.elf'))
+    # labels the source does not declare .global (STB_LOCAL in the ELF: AlchemyUncredited*, the vendor's names for
+    # unlabelled spots): no other object can enter them. As routine starts they would split a routine where its own
+    # flow continues (a computed `add pc, pc, ip, lsl #3` into an unrolled loop, a `beq` past the label: TLA4a2), so
+    # they are left out unless something in the run enters them (a bl, or a pool word holding the address)
+    local = {(s.value & ~1, s.name) for s in img.e.symbols if s.bind == 0}
+    glob = {(s.value & ~1, s.name) for s in img.e.symbols if s.bind != 0}
+    local -= glob
+    # global labels the vendor tree only ever branches to (b/bcc, never bl, a pool word or C): a loop head that the
+    # decomp's file split made global (Resource_DecodeType2Loop is entered from decode_2.s by `b` and branches back
+    # into it). As routine starts they would cut the loop, so they are treated like local labels
+    bonly = branch_only_labels({n for _, n in glob})
+    local |= {(a, n) for a, n in glob if n in bonly}
     os.makedirs(outdir, exist_ok=True)
     for f in os.listdir(outdir):
         if f.endswith('.s'):
@@ -93,6 +161,14 @@ def write_listings(outdir, skip, extra_listing=True):
                 marks[a] = {'$a': 'arm', '$t': 'thumb', '$d': 'data'}[n]
             elif not n.startswith(('$', '.')):
                 labels.setdefault(a, []).append(n)
+        entered = entries_in(data, base, marks)
+        for a in list(labels):
+            keep = [n for n in labels[a] if (a, n) not in local or a in entered or a == base]
+            INTERNAL.update(n for n in labels[a] if n not in keep)
+            if keep:
+                labels[a] = keep
+            else:
+                del labels[a]
         if not labels:
             continue
         lines = [f'@ {" ".join(objs_in)}: linked bytes at the run address (port/tla/hw/tools/hw2c.py)']
@@ -117,6 +193,8 @@ def write_listings(outdir, skip, extra_listing=True):
         p = os.path.join(outdir, f'{base:08x}.s')
         open(p, 'w').write('\n'.join(lines) + '\n')
         files.append((p, ' '.join(objs_in)))
+    # names-only list for make_bindings.py (kind data: not an entry, part of the routine before it)
+    open(os.path.join(ROOT, 'build/tla_hw/internal_labels.txt'), 'w').write(''.join(f'{n}\n' for n in sorted(INTERNAL)))
     return files
 
 

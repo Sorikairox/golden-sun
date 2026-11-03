@@ -33,6 +33,10 @@ BINDS = {
     'Bios_SoundGetJumpList': ('Port_BiosSoundGetJumpList', 'swi 0x2A: the BIOS sound jump list (hook H2; GS1 copies its relocated template, MPlayJumpTableCopy)'),
     'Entry': ('main', 'cartridge entry (mode switches, stacks): the module entry port/pc/main.c'),
     'Irq_StopOnGamePakRemoved': ('Port_BiosStop', 'swi 3 after the cartridge is pulled: never in the port'),
+    # heap_release's tail (local label + global alias Irq_HaltOnGamePakRemoved): `swi 3` (Stop) with no return, the
+    # same path as GS1's Irq_StopOnGamePakRemoved -> Port_BiosStop (TLA4a2)
+    'AlchemyUncreditedEnd_08013172': ('Port_BiosStop', 'swi 3 (Stop) after the cartridge is pulled, as GS1\'s Irq_StopOnGamePakRemoved: never in the port'),
+    'Irq_HaltOnGamePakRemoved': ('Port_BiosStop', 'swi 3 (Stop) after the cartridge is pulled, as GS1\'s Irq_StopOnGamePakRemoved: never in the port'),
 }
 # GS1 ports that are not themselves D20 EQUIV (port/overrides.tsv: SoundMain mixes with Camelot's mixer; MPlayMain,
 # ply_note, m4aSoundVSync in C, not EQUIV-tested): their TLA twins take the asm2c translation instead
@@ -105,6 +109,8 @@ def main():
     d20 = {}
     for r in tsv(os.path.join(b, 'tla_hw/d20_hw.tsv')):
         d20[r['name']] = f"{r['result']} {r['cases']}"
+    ip = os.path.join(b, 'tla_hw/internal_labels.txt')
+    internal = set(open(ip).read().split()) if os.path.exists(ip) else set()
     pcf = pc_functions()
     byrom = gs1_names_by_rom()
     rows = []
@@ -127,12 +133,18 @@ def main():
         if twin in pcf and twin not in GS1_NOT_EQUIV and (ov in ('same', 'reloc') or r['verdict'] in ('same', 'reloc')):
             rows.append((name, twin, 'gs1', obj, f'GS1 twin: bytes {ov or r["verdict"]}; GS1 D20 EQUIV (tools/test_arm.sh)', aliases))
             continue
-        rep = report.get(name)
+        # the report and D20 key a routine by its label in the listing: with a local name dropped (hw2c), the global
+        # alias (AlchemyUncreditedEnd_08013162 -> Heap_Release)
+        key = next((n for n in [name] + aliases.split(',') if n in report), name)
+        rep = report.get(key)
+        if name in internal and not rep:
+            rows.append((name, '-', 'data', obj, 'not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)', aliases))
+            continue
         if r['mode'] == 'data' or (rep and rep['result'] != 'ok' and ('ARM NV' in rep['reason'] or 'flow leaves' in rep['reason'])):
             rows.append((name, '-', 'data', obj, 'data label, or code entered only from the routine before it', aliases))
             continue
         if rep and rep['result'] == 'ok':
-            res = d20.get(name, 'untested 0')
+            res = d20.get(key, 'untested 0')
             k = 'a2c' if not res.startswith('FAIL') else 'left'
             rows.append((name, f'a2c_{int(addr, 16):08x}', k, obj, f'D20 {res}', aliases))
             continue

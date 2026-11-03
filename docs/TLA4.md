@@ -107,7 +107,41 @@ More hooks:
   the copy is executed as is (translate at the copy address: codemap alias) or patched (GS1 trap 29: blitter code
   generation). The NOINPUT entries above include them. They need captured battle state.
 
-## 5. Left (6 labels, plus 3 listing routines)
+## 5. TLA4a2 (2026-11-03): the decompressor FAILs
+
+Causes (all found with `TRACE=1` and the new `TRACETAIL=n` of diff_hw.cjs):
+- **Routine bounds (hw2c).** TLA's hand .s name spots inside a routine (`AlchemyUncredited*`: STB_LOCAL in the ELF).
+  hw2c gave each one to asm2c as a routine start, so Resource_DecodeByteLz was 2 bytes (`bx pc`) and its body was cut
+  three times; its `add pc, pc, ip, lsl #3` and `beq` went to mid-routine addresses through a2c_call. hw2c now leaves
+  out local labels nothing in the run enters by `bl` or a pool word, and global labels the vendor tree only ever
+  branches to (`b`/`bcc`; Resource_DecodeType2Loop, Tile_Decompress4bppLoop, the mixer's IwramSoundMix*, ...). The
+  dropped names go to build/tla_hw/internal_labels.txt; make_bindings.py gives them kind data. Call-out targets that
+  are no symbol: 119 -> 42 (trap 66).
+- **asm2c (3 ARM fixes, commit 0ab5055):** ldm/stm ignore the low two address bits (ByteLz's `ldmia r0, {r4-r6}` on
+  an odd source); `sub lr, pc, #0x11c` used the unrotated immediate for the local return (Resource_Decode01);
+  `add pc, pc, rm, lsl #k` (k >= 2) now jumps locally (A2C_LOCALRET) into the unrolled copy loop.
+- **Func_081c0c0c** is mplay_main's `pop {pc}` epilogue (global for the `bx r3` after it): random stack words made
+  both sides run garbage. diff_hw.cjs STACK rule: the return address on top.
+- bound_objects() (hw2c, build mode) skipped a whole object when one label in it was bound, which dropped
+  Heap_Release with its `swi 3` tail: objects with an a2c row now stay.
+
+Results: D20 **125 EQUIV, 1 FAIL, 61 NOINPUT** of 187 code labels (fewer labels: the internal ones are no longer
+routines); Resource_DecodeByteLz, Resource_Decode01, Resource_Decode2, Resource_DecodeHalfwordLz, the picture,
+symbol and model decoders and Func_081c0c0c EQUIV. Negative 4/4, diff_tla 30/30, test_arm 79/79.
+bindings.tsv: 33 gs1, 154 a2c (94 EQUIV, 60 NOINPUT), 11 bind, 301 data, 4,445 veneer, **0 left**.
+heap_release's `swi 3` tail (AlchemyUncreditedEnd_08013172 / Irq_HaltOnGamePakRemoved) binds to Port_BiosStop, as
+GS1's Irq_StopOnGamePakRemoved.
+
+Still open:
+- **ply_rept**'s translation FAILs (pre-existing). It is provided by GS1's EQUIV port (gs1 row), so nothing links
+  the translation. Its `bl .L_081c1750` and `b .L_081c175e` land inside ply_goto's routine; the call-out to the
+  interpreter then reads a garbage pointer, not yet understood. A fix needs asm2c entries that overlap a routine
+  (a second Fn from the target to the routine's end), not a split (trap 66).
+- 42 call-out targets are mid-routine sound-driver spots (same cause as ply_rept).
+- Func_080cf78c, Func_08173aac, Func_02002f64 @681: not done in TLA4a2 (no time); still `hand`.
+- NOINPUT counts not worked on.
+
+## 6. Left before TLA4a2
 
 - **Resource_DecodeByteLz** (+ internal entry `_0800165a`) and **Resource_Decode2** (+ `_08012b72`): D20 FAIL. The
   translation's interpreter call-outs end at a bad pc, which looks like an indirect jump the translation misroutes.

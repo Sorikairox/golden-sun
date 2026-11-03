@@ -2,6 +2,19 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA4a2 — 2026-11-03: TLA decompressors EQUIV (hw2c routine bounds, 3 asm2c ARM fixes); bindings 0 left
+
+- Read docs/TLA4.md section 5 and trap 66.
+- Causes: hw2c used labels inside a routine (AlchemyUncredited*, branch-only globals) as routine starts. asm2c had
+  three ARM bugs: ldm/stm ignored address alignment, `sub lr, pc, #imm` was not rotated, and `add pc, pc, rm, lsl #k`
+  was not local. Func_081c0c0c is a `pop {pc}` epilogue and needed a stack rule.
+- D20 hw: 125 EQUIV, 1 FAIL (ply_rept, gs1-bound, pre-existing), 61 NOINPUT; negative 4/4. diff_tla 30/30,
+  test_arm 79/79.
+- bindings.tsv: 0 left. heap_release `swi 3` binds to Port_BiosStop.
+- TLA5: the asm2c fixes change tla_asm.c, so re-run the batch D20.
+- Not done: Func_080cf78c / Func_08173aac / Func_02002f64@681, NOINPUT generators, ply_rept (needs
+  overlapping asm2c entries).
+
 ## TLA5 — 2026-11-03: asm2c wired into the TLA build (asm stubs 638 -> 38); D20 batch 251 EQUIV, 0 FAIL
 
 - Read docs/TLA5.md. A new build stage, asm2c (TLA only), translates the 1,202 listing routines into

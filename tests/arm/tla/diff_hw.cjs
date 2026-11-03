@@ -51,6 +51,13 @@ const RULES = {
   IwramClearWords: (w, R) => [EWS + 4 * (R() & 63), R() & 1023],
 };
 
+// Routines whose stack words are not random: name -> stack(word, R)
+const RET = 0x0d0ffff0; // the interpreter's return address (tests/arm/arm7.js) = A2C_RET_SENTINEL
+const STACK = {
+  // the `pop {pc}` epilogue of mplay_main, global for the bx r3 after it: the caller's pushed lr on top
+  Func_081c0c0c: (w) => [RET, w(), w(), w()],
+};
+
 async function main() {
   const argv = process.argv.slice(2);
   const filter = argv.find((a) => !a.startsWith('--'));
@@ -162,6 +169,9 @@ async function main() {
     while (i < to.length && i < tp.length && strip(to[i]) === strip(tp[i])) i++;
     console.log(`  trace: ${to.length} / ${tp.length} steps, first difference at step ${i}`);
     for (let k = Math.max(0, i - 3); k <= i + 1; k++) console.log(`   orig ${to[k] || '-'}\n   port ${tp[k] || '-'}`);
+    // TRACETAIL=n: the last n steps of each run too (where a translation that left the routine ended)
+    const tt = +(process.env.TRACETAIL || 0);
+    if (tt) for (const [w, t] of [['orig', to], ['port', tp]]) t.slice(-tt).forEach((x) => console.log(`   ${w} tail ${x}`));
   };
   const rows = readReport();
   const modes = readModes();
@@ -196,7 +206,7 @@ async function main() {
       // Func_08021470 (ARM) takes four structure pointers
       void ptr;
       const args = RULES[r.name] ? RULES[r.name](word, R, h) : [word(), word(), word(), word()];
-      const stk = [word(), word(), word(), word()];
+      const stk = STACK[r.name] ? STACK[r.name](word, R) : [word(), word(), word(), word()];
       const before = snap();
       lastCase = { before, args, stk };
       let ro;

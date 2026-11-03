@@ -568,3 +568,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     Port_A2cOverlayLoaded(id) next to Port_CodeMapOverlay(id), or overlay code pointers taken in translated code go
     to a2c_call and the codemap instead. In TLA nothing calls either yet: port/pc/decompress.c is GS1's, and
     Resource_LoadCode is TLA4's.
+66. A routine boundary must be a real entry (TLA4a2). TLA's hand .s label many spots inside a routine (AlchemyUncredited*,
+    local to the object, and a few globals such as Resource_DecodeType2Loop that are only ever branched to). As asm2c
+    routine starts they cut the routine: a computed `add pc, pc, ip, lsl #3` or a back branch then leaves for a spot
+    that is no entry, and a2c_call goes to Port_ResolveCode with a mid-routine address. D20 does not catch this: the
+    harness's a2cCall interprets ANY address, so such translations pass (TLA4a counted 119 such call-out targets;
+    hw2c now leaves those labels out, 42 remain, all sound-driver jumps into other routines). Splitting at the targets
+    instead (a new routine start) turns loop back edges into nested tail calls (unbounded C recursion): do not.
+    Check the generated C's constant a2c_call targets against the symbol table after any front-end change.
