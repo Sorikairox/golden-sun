@@ -2,6 +2,28 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS33 — 2026-11-05: "Menus: Edges": windows pinned to the zoomed picture's edges
+
+- Read docs/GS33.md and traps 95-96. On `main` (d92eb27 feature, a719675 expected.tsv + docs), **not deployed, not pushed**.
+- User report: at Map zoom Most near a map's top edge the field menu's status window floated mid-picture (windows are
+  drawn in the GBA's 240 x 160 inside the frame). User's choice "Pin to edges". New option **Menus: Centre / Edges**
+  (Extra settings row 4, page select gs-menus; default Edges as asked): at More/Most (field maps and the World Map)
+  each window with its sprites moves to the frame edge it is near: per-axis groups of touching windows; one edge touched
+  -> that edge, both -> centre, else by half (spanning the middle -> centre); a group keeps its oldest window's anchor.
+- Renderer only (ppu.c GS1 half): window rectangles from gWindowWork (VBlank + windows opened since: their text goes
+  straight to VRAM, trap 95); menu sprites by source (oam_kernel.c tags each entry: window sprites, menu heap slots,
+  C locals, the menus' party members at depth 251 inside a window). Map/actors never move (pixel check: 0 pixels outside
+  the menus differ, Edges vs Centre). Work arrays static (trap 96).
+- Tests: regress masked vs 1dd5c2e8 566/580 (link2's row + the new zoom_menus_* rows); new cases zoom_menus_field (Kolima
+  Forest entrance at the top edge: field menu, Psynergy/Djinn/Item/Status, Pause, Extra settings, World Map menu) and
+  zoom_menus_shop (Imil dialogues + item shop) with tests/probes/menujitter.cjs: 0 jumps; zoom_edges_* 0 reversals;
+  expected.tsv RAM rows rewritten (0 pictures, 0 saves), --quick OK; web_opts --worldmap ALL PASS (51), web_phone zoom
+  0/1/2 + plain ALL PASS, web_offline/web_touch/web_link/web_transfer PASS.
+- Builds: GS1 2e11d4d0 / ac048173 (site de3551885fbd8107); TLA df7c39fb / d184cc2a unchanged.
+- Contact sheet: port_work/gs33/sheet/sheet.png (local). Seen, not fixed: the Status screen's zoomed margins show wrong
+  tiles (GS29's, GS33.md 5).
+- Next: deploy when the user says so; the user may want to judge dialogues pinned away from their speakers.
+
 ## GS32 — 2026-11-04: merge GS31 (Map zoom edge jitter fix) with GS30 (World Map zoom)
 
 - Read docs/GS32.md. On `main` (merge 80b89c7, expected.tsv dce7d1d + docs), **not deployed, not pushed**.

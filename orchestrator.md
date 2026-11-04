@@ -14,6 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS33 (2026-11-05, main): **"Menus: Edges"** (docs/GS33.md; option, default Edges as the user asked; Extra settings row
+  "Menus" + page select gs-menus): at Map zoom More/Most (field maps, World Map) every window and its sprites move to the
+  frame edge they are near (per-axis groups of touching windows; one edge touched -> that edge, both -> centre, else by
+  half); renderer only: window rectangles from gWindowWork, menu sprites by the OAM kernel's source tags, read at the
+  VBlank; map/actors never move (pixel check 0). Regress masked 566/580 (link2's row + the new zoom_menus_* rows),
+  expected.tsv RAM rows rewritten (0 pictures, 0 saves); GS1 2e11d4d0 / ac048173 (site de3551885fbd8107); TLA df7c39fb /
+  d184cc2a unchanged; not deployed.
+
 - GS32 (2026-11-04, main): **merge of GS31 into main with GS30** (docs/GS32.md): Map zoom on field maps (VBlank camera,
   no edge jitter) and on the World Map together; GS31's traps renumbered 93-94. Regress masked = GS30's b13e7532 but
   for zoom_edges_most f2700 (the fix) and link2's own row; expected.tsv RAM rows rewritten; GS1 1dd5c2e8 / 13f7526d
@@ -776,3 +784,13 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     or a frame held at an edge jitters by the camera's last step. tests/probes/zoomjitter.cjs measures it.
 94. (GS31) **a worktree TLA build also needs build/a2c/report.tsv** (copy main's build/a2c): without it hw2c skips the
     extra listings, the call-target check FAILs (0x081c0168 new, 2 stale) and game.wasm differs (c1bdbbd2, not df7c39fb).
+95. (GS33) **a window's text reaches VRAM before the VBlank sees the window**: labels drawn at once
+    (Text_DrawMessageAsTiles, glyphs.c, name_entry.c) write the window tilemap in VRAM directly, while window rectangles
+    and the OAM list reach the screen through the VBlank. Anything that places window-layer pixels by the window work
+    (ppu.c "Menus: Edges") must take the VBlank's windows plus those opened since, or a new window's text shows for a
+    frame at the GBA's place.
+96. (GS33) **uninitialised vendor locals copy wasm-stack garbage into GBA RAM**: Message_OpenWindow's `u16 bounds[4]` is
+    filled only for the lines a message uses and Message_Start copies all four into the message (0x020330e8). In the
+    port the garbage comes from whatever ran deeper on the wasm stack before, e.g. the frame driver (ppu.c called from
+    the BIOS halt): adding stack arrays there changed masked regress RAM rows at Normal (pictures and saves equal). Keep
+    work arrays of per-frame port code static; check a masked RAM diff with a full-RAM dump before blaming the game.
