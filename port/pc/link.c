@@ -75,11 +75,10 @@ void Port_LinkSetFreshFrames(int frames) { freshFrames = frames > 0 ? frames : 1
 enum { MSG_FRAME = 1, MSG_BULK = 2 };
 #define FRAME_BYTES 36 /* type, epoch, rxEpoch, 0, rxDone u16, 0 u16, frame u32, payload[24] */
 #define BULK_HEADER 8  /* type, epoch, seq u16, size u32 */
-#ifdef PORT_GAME_TLA
-#define BULK_MAX 4352 /* TLA: Func_02000b24 receives GS1's 4100-byte save part */
-#else
-#define BULK_MAX 4096
-#endif
+/* Both games (TLA9a): GS1's clear-data send (FileScreen_Run: Serial_StartSend(gSaveBuffer, 4100)) and TLA's receive
+ * of it (Func_02000b24) need more than 4096 (trap 82). The wire format is unchanged (size is a u32 in the header);
+ * GS1's link battles send at most 340 bytes, so a peer with the old limit is unaffected. */
+#define BULK_MAX 4352
 #define QUEUE_LEN 8
 
 static u8 myEpoch;        /* bumped by each Serial_Initialize */
@@ -148,7 +147,7 @@ static void Drain(void) {
       continue;
     size = Rd32(buf + 4);
     if (size > BULK_MAX || (int)size + BULK_HEADER > n || qCount == QUEUE_LEN)
-      continue; /* cannot happen with the game's transfers (largest 340 bytes, at most 4 queued) */
+      continue; /* cannot happen with the game's transfers (battles: largest 340 bytes, at most 4 queued; the clear-data send 4100) */
     queue[(qHead + qCount) % QUEUE_LEN].size = size;
     memcpy(queue[(qHead + qCount) % QUEUE_LEN].data, buf + BULK_HEADER, size);
     qCount++;
