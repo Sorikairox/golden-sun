@@ -20,6 +20,8 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   else black; menus keep the last moving frame's ground in the margins; R's world picture stays 240 x 160; GBA view
   centred, no clamp. Projected-sprite culling widened by gPortZoom*. Regress masked = 43130de1 (61 cases), expected.tsv
   RAM rows rewritten; GS1 b13e7532 / 13f7526d; TLA df7c39fb / d184cc2a unchanged; not deployed.
+- GS31 (2026-11-04, branch, merged into main by GS32): Map zoom's picture no longer jitters at map edges (docs/GS31.md): the
+  frame is placed with the camera of the last VBlank (ppu.c). GS1 e5758f47 / 13f7526d; TLA unchanged; not deployed.
 
 - GS29 (2026-11-04, main): **Map zoom** replaces Wide view (docs/GS29.md): field maps at 288 x 192 / 336 x 224 (3:2),
   scaled into the same box, nothing on the page moves (canvas + touch boxes checked across levels, a battle, an
@@ -763,3 +765,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     frames (ppu.c's World Map cell checks) reads picture bytes: keep the last moving frame's result while the BG maps
     and Ram_CellPictures are unchanged. Also: World Map lines switch DISPCNT mode per line (VCount/HBlank handlers:
     the opening letterbox, the encounter's centre line), so a margin row must take its line's mode, not the frame's.
+93. (GS31) **game RAM at line 0 is one frame ahead of the BG registers**: the VBlank loads BGxHOFS/VOFS from gBgScroll,
+    then the game's logic (at once, in the port) moves gMapGridWork's camera for the next frame. Anything that places
+    or masks the picture from the camera (Map zoom's frame placement) must take it at Port_PpuVBlank, not at line 0,
+    or a frame held at an edge jitters by the camera's last step. tests/probes/zoomjitter.cjs measures it.
+94. (GS31) **a worktree TLA build also needs build/a2c/report.tsv** (copy main's build/a2c): without it hw2c skips the
+    extra listings, the call-target check FAILs (0x081c0168 new, 2 stale) and game.wasm differs (c1bdbbd2, not df7c39fb).

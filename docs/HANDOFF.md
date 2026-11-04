@@ -2,6 +2,20 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS31 — 2026-11-04: Map zoom's picture jittered at map edges (bug fix, worktree branch)
+
+- Read docs/GS31.md and traps 93-94 (renumbered by GS32). Branch `worktree-agent-a4be33ad62c902936` (aac4389 + docs),
+  merged into main by GS32, not deployed. GS30 (World Map zoom) works in ppu.c on main at the same time: merge by hand (GS31.md 7).
+- Cause: zoom_frame read the GBA camera at line 0, one frame ahead of the BG registers (VBlank copies gBgScroll, then
+  the game's logic moves the camera); held at a map's edge the picture stepped a pixel and back. Fix: snapshot the camera
+  in the GS1 Port_PpuVBlank. Normal and TLA unchanged.
+- Tests: new probe tests/probes/zoomjitter.cjs + regress cases zoom_edges_most / zoom_edges_more (fail on 43130de1,
+  pass now); regress full masked vs 43130de1 563/565 (link2's own row, one zoomed picture of the new case);
+  expected.tsv RAM rows rewritten; web_opts, web_phone zoom 0/1/2, web_offline, web_touch, web_link PASS; TLA
+  df7c39fb / d184cc2a identical.
+- Builds: GS1 e5758f47 / 13f7526d (site 6bdeaf7f10220d1e).
+- Next: merge with GS30, rerun regress --update (RAM rows), deploy when the user says so.
+
 ## GS30 — 2026-11-04: Map zoom on GS1's World Map
 
 - Read docs/GS30.md and trap 92. On `main` (fc337a4, b8473a3, a1f42b4 + docs), **not deployed, not pushed**.
