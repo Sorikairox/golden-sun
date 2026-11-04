@@ -11,9 +11,10 @@
 #     story flags, items and counts, coins, Func_080ae410's flags), printed PASS/FAIL with digests
 # Everything the games produce (save, passwords, keys, dumps, captures) stays in port_work/tla8 (save-derived data).
 # Cases cable and route_a (tests/transfer_a.cjs): route_a links a real GS1 instance (hidden Send -> Cable) with TLA
-# (Yes -> Cable) through port/pc/link.c: the greetings meet, but GS1's link.c sends its 4100-byte save part as 0 bytes
-# (BULK_MAX 4096: a GS1 change, not made in TLA8); cable runs TLA's receive against a stand-in that plays GS1's side
-# with the 4100 bytes GS1's Save_ChooseAndLoadFile loaded, and checks TLA's party (transfer_check.cjs cable).
+# (Yes -> Cable) through port/pc/link.c: the greetings meet, GS1 sends its 4100-byte save part (TLA9a: BULK_MAX 4352
+# in both games; TLA8's 4096 sent 0 bytes), TLA imports it, the review is left with B and TLA's party is checked
+# (transfer_check.cjs cable); cable runs TLA's receive against a stand-in that plays GS1's side with the 4100 bytes
+# GS1's Save_ChooseAndLoadFile loaded, with the same checks. Both give the same units and flags SHA-1.
 # Usage: tools/transfer_pw.sh [--update] [--twice] [gold|silver|bronze|cable|route_a ...]   (--twice: each TLA route twice, digests
 # compared). The digests (cleared save SHA-1, TLA's units/flags SHA-1, RAM and picture digests after the import) are
 # compared with tests/regress/expected_transfer.tsv; --update rewrites it.
@@ -73,7 +74,8 @@ cable() {
     TC_MODE=cable TC_GS1=$W/gs1_ram_cable.bin TC_PRE=700 TC_AT=1100 node tests/transfer_a.cjs --virtual $W/gs1_ram_cable.bin \
       --frames 1102 --keys1 B@1000-1002 --probe1 tests/probes/transfer_check.cjs --shot 790,900,1100 --out $W/shots/cable$tag > $W/tla_cable$tag.log 2>&1
   else
-    node tests/transfer_a.cjs --frames 2400 --shot 2050,2110,2300 --out $W/shots/route_a$tag > $W/tla_route_a$tag.log 2>&1
+    TC_MODE=cable TC_GS1=$W/gs1_ram_cable.bin TC_PRE=2021 TC_AT=2421 node tests/transfer_a.cjs --frames 2423 \
+      --keys1 B@2321-2323 --probe1 tests/probes/transfer_check.cjs --shot 2050,2110,2300,2421 --out $W/shots/route_a$tag > $W/tla_route_a$tag.log 2>&1
   fi
   grep -q 'FAIL' $W/tla_$L$tag.log && { grep 'FAIL' $W/tla_$L$tag.log; fail=1; }
   grep '^transfer_check\|bulk on the wire\|^route_a' $W/tla_$L$tag.log | sed 's/^transfer_check //'
