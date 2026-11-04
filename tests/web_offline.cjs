@@ -125,7 +125,9 @@ async function main() {
     const touch = (type, points) => send('Input.dispatchTouchEvent', { type, touchPoints: points.map((p, i) => ({ x: p.x, y: p.y, id: p.id ?? i + 1, radiusX: 4, radiusY: 4, force: 1 })) });
     const cacheNames = () => ev('caches.keys()');
     const cacheFiles = () => ev(`(async () => { const out = []; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) out.push(new URL(r.url).pathname.split('/').pop() || './'); return out.sort(); })()`);
-    const swFiles = () => ev(`fetch('sw.js').then((r) => r.text()).then((t) => JSON.parse(t.match(/const FILES = (\\[.*\\]);/)[1]).sort())`);
+    // (TLA9: each URL once, as the worker installs them: '../game.js' is 'game.js' when the page folder is the root)
+    const swFiles = () => ev(`fetch('sw.js').then((r) => r.text()).then((t) => [...new Set(JSON.parse(t.match(/const FILES = (\\[.*\\]);/)[1])
+      .map((f) => new URL(f, new URL('sw.js', location.href)).pathname))].map((p) => p.split('/').pop() || './').sort())`);
 
     await send('Runtime.enable');
     await send('Page.enable');

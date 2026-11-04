@@ -18,7 +18,9 @@ const PREFIX = '__GS_PREFIX__'; // golden-sun- (GS1 at /), golden-sun-tla- (TLA 
 const CACHE = PREFIX + BUILD + '-' + SITE;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'reload' }))))
+  // each URL once (TLA9: '../game.js' is 'game.js' when a page folder is served at the root, as local tests do)
+  const urls = [...new Set(FILES.map((f) => new URL(f, self.location.href).href))];
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(urls.map((u) => new Request(u, { cache: 'reload' }))))
     .then(() => self.skipWaiting()));
 });
 
@@ -38,7 +40,7 @@ self.addEventListener('fetch', (e) => {
   if (url.origin !== self.location.origin) return;
   const base = scopePath();
   // TLA9: files above the scope this worker keeps too (The Lost Age's: GS1's ../game.js and ../game.wasm)
-  const up = FILES.find((f) => f.startsWith('../') && new URL(f, self.registration.scope).pathname === url.pathname);
+  const up = !url.pathname.startsWith(base) && FILES.find((f) => f.startsWith('../') && new URL(f, self.registration.scope).pathname === url.pathname);
   if (up) { e.respondWith(caches.match(up, { cacheName: CACHE }).then((hit) => hit || fetch(req))); return; }
   if (!url.pathname.startsWith(base)) return;
   let rel = url.pathname.slice(base.length);
