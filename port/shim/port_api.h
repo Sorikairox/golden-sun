@@ -36,4 +36,10 @@ void Port_WideFieldStamp(void);
 void Port_WideFieldSequence(int on);
 int Port_SettingsMenuResult(int result, int seMove, int seConfirm, int seCancel);
 
+/* GS28 port/pc/save_compat.c: the actor snapshot (saved with the game) holds GBA addresses, not wasm ones
+ * (Actor_Snapshot / Actor_Restore, port/c_rules.tsv, trap 79) */
+void Port_ActorSnapshotToGba(void);
+void *Port_ActorFromSnapshot(void *snapshot);
+void Port_ActorSnapshotMigrate(void);
+
 #endif
