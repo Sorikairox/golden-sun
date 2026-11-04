@@ -67,6 +67,44 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
 - Local only: port_work/tla7/contact.png (both battles, Suhalla Gate, scene 7).
 - Next: scene 7 -> scene 8 (trigger 5), then on (Felix, Idejima); Func_08173aac captures (Psynergy effects run now).
 
+## GS28 — 2026-11-04: build-independent saves; live saves migrate (branch gs1-options)
+
+- Read docs/GS27.md section 8 and trap 85. Worktree `~/golden-sun-wt/gs1-opts`, branch `gs1-options` (not merged).
+- **Cause**: the save holds gActorSnapshot (32 actors, 0x70 bytes each): `script` (+0x00) of a relocated actor script
+  was the module's reloc buffer (sol_star_room's statues: 0x88d4c on the live build 687968a7; GBA 0x0200cbd0), `update`
+  (+0x6c) a table index (GBA: code address | 1). Nothing else in the save is build-specific.
+- **Fix** (port/pc/save_compat.c, 3 c_rules on actors.c): Actor_Snapshot writes GBA addresses, Actor_Restore copies
+  each actor from a copy turned back for the loaded overlay. **Migration**: Actor_Restore first maps old values with the
+  live build's tables (port/pc/save_legacy.h), then main-clean (-0x20) and gs1-options (+0x7b70) layouts.
+- Tests: live-build saves (sol_star_room, Vale day one) load on the new build and replay with **unmasked RAM digests
+  equal** to the new build's own saves, re-saves byte-identical; a 24 KB-padded build saves byte-identically; web_opts
+  with the live Vale save ALL PASS. Full regress vs clean HEAD: pictures 61/61 equal, 46/46 saves differ only in the
+  snapshot words (each HEAD value -> its GBA value), masked RAM equal but the save workspace's heap copy after saving;
+  link2 20/20. expected.tsv rewritten from the clean branch build. web_opts (+wide), web_phone (+wide=1), web_offline,
+  web_touch ALL PASS; regress --quick 9/9.
+- link.py refuses stale port/pc objects and any probe/tmp object (trap 84).
+- GS1 game.wasm SHA-1 087d3b7e..., game.js cab9b56b... (site build fadab39f727e70df).
+- **Next:** the user merges and deploys (tools/deploy_web.sh) from a clean build; keep port/pc/save_legacy.h.
+
+## GS27 — 2026-11-04: in-game "Extra settings" (colours, brightness) and the optional "Wide view" (branch gs1-options)
+
+- Read docs/GS27.md and traps 83-84. Worktree `~/golden-sun-wt/gs1-opts`, branch `gs1-options` (not merged; the user merges).
+- **Feature 1** (commit 6a5ad51): START on the field, then **R** (on the Pause menu, or in Change settings, which now shows
+  an "R: More" window) opens **Extra settings**, drawn with the game's windows, font, hand and Setup heading
+  (port/pc/options.c + c_rules hooks): Screen colours Original/GBA LCD (gs-lcd), Brightness Normal/Bright/Brighter (new,
+  gs-bright), Wide view Off/On (gs-wide). The page menu and the game stay in sync (Port_OptSet / Port_OptGeneration).
+- **Feature 2** (the next commit): **Wide view** 288 x 160 for the field sequence's maps only (margins from the map grid's
+  cells; centre exactly as before; black past the map's bounds; actor culling widened by c_rules); battles, World Map,
+  title/naming/File screens stay 240 with black bars; applied without reload; canvas, CSS and touch layout follow the width.
+  TLA's ppu.c branch is the old renderer: TLA byte-identical.
+- Checks: web_opts (new) ALL PASS with/without wide; web_phone ALL PASS off and `--query wide=1`; web_offline, web_touch
+  ALL PASS; regress with options off vs a clean HEAD build, MASK_CODE=1: all 61 cases' RAM and picture digests equal, 28 save
+  rows differ only by a module-data pointer the game saves (trap 83); link2 20/20 both. GS1 game.wasm SHA-1 f0a86799...,
+  game.js f606f720... (clean HEAD fdd0e5e2... / 7dd28c21...; main's build/wasm 687968a7 links a stale probe_tmp, trap 84).
+- **Next:** decide on the saved module pointer (docs/GS27.md 4: which structure, relocate on load); gamepad input on the
+  page (none yet); update tests/regress/expected.tsv after the merge with a clean build (RAM rows are build-specific);
+  deploy after the user's merge.
+
 ## TLA6b — 2026-11-04: the way down, the first battle reached (not won); D20 batch order explained; audio
 
 - Read docs/TLA6.md sections 7-13 and traps 75-76.

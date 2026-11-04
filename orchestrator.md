@@ -34,6 +34,10 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
   160 builds + 4,800 draws EQUIV), 11 short K&R calls given their words + build check tools/wasm/short_knr.py (trap 75).
   regress_tla 9 cases. docs/TLA6.md 14-17.
 
+- GS28 (2026-11-04, branch gs1-options, merged into main by TLA9a): **saves are build-independent** (the saved actor snapshot holds
+  GBA addresses, trap 85) and saves of the live build 687968a7 migrate on load (tested: unmasked digests equal);
+  expected.tsv from the clean branch build (087d3b7e / cab9b56b); link.py refuses stale objects (docs/GS27.md 8).
+
 - TLA6b (2026-11-04): **down Venus Lighthouse to the first battle** (the rooms by the vendor's scene tables, the
   entrance, the guards, Alex, Kraden, "Ruffian appeared!", drawn right); the battle is not won (Fight stops in a
   self-patching IWRAM blitter run through a stale decoder alias, docs/TLA6.md 9). Fixes: K&R GameFlag_Test argument
@@ -687,3 +691,16 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     clear-data send is 4100 bytes, so GS1 -> TLA by cable carries nothing (and TLA imports its stale buffer) until GS1's
     BULK_MAX is raised (a GS1 build change). TLA's path (PORT_GAME_TLA) takes 4352. Shared port/pc files differ per game
     only under PORT_GAME_TLA; check GS1's IR of the file is unchanged (emcc -S -emit-llvm before/after).
+83. (GS27) **regress RAM digests are build-specific**: the game keeps wasm table indices and pointers into the module's own
+    data (relocated buffers) in its RAM, and even writes such a pointer into its save. Any change to code or data layout
+    changes them; pictures do not. Compare two builds with `MASK_CODE=1` (tests/probes/digest.cjs: words in 0x10000-0x1ffffff
+    count as 0), `--update` with one build and compare with the other (docs/GS27.md 4).
+84. (GS27) **stale objects are linked**: the wasm build links every object left in build/wasm*/obj, also those of deleted or
+    renamed port files (main's build/wasm had `probe_tmp.ll.o`, Port_ProbeMsg, in the "GS1 687968a7" build). Hash or
+    compare builds only after `rm -rf build/wasm` (or deleting the stale ll/bound/obj files).
+85. (GS28) **the save holds the actor snapshot; keep it in GBA spelling**: gActorSnapshot (0x02001104, in the save
+    buffer) gets DMA copies of live actors, whose `script` may be a reloc buffer (module data) and `update` a table
+    index. port/pc/save_compat.c turns them into GBA addresses at the end of Actor_Snapshot and back in Actor_Restore,
+    and migrates pre-GS28 saves with the live build 687968a7's tables (port/pc/save_legacy.h, never remove). Any other
+    saved structure that gets a relocated pointer or a callback needs the same; find them by diffing the saves of one
+    route on two builds (docs/GS27.md 8). Since GS28, link.py refuses stale port/pc and probe/tmp objects.

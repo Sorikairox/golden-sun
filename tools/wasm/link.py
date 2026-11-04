@@ -370,7 +370,17 @@ def run(objs, out, root, clang, jobs, stages):
     if 'link' not in stages:
         return True
     objects = sorted(glob.glob(os.path.join(obj_dir, '*.o')))
-    vendor_prefix = os.path.relpath(os.path.join(out, 'bound', 'src'), root).replace('/', '__') + '__'
+    # GS28 (trap 84): every object in obj/ is linked, also one left by a deleted or renamed port/pc file (main's
+    # "687968a7" linked a stale probe_tmp). Refuse a PC-layer object this build has no source for, and any probe/tmp.
+    pc_pre = f'build__{os.path.basename(out)}__bound__port__pc__'
+    pc_now = {pc_pre + n + '.ll.o' for n in game.pc_files()}
+    stale = [os.path.basename(o) for o in objects
+             if (os.path.basename(o).startswith(pc_pre) and os.path.basename(o) not in pc_now)
+             or re.search(r'probe|tmp', os.path.basename(o), re.I)]
+    if stale:
+        print(f'link: stale objects in {obj_dir} (delete them, or rm -rf the build dir): ' + ', '.join(stale))
+        return False
+    vendor_prefix =os.path.relpath(os.path.join(out, 'bound', 'src'), root).replace('/', '__') + '__'
     want = {os.path.relpath(b, root).replace('/', '__') + '.o' for b in bound}
 
     def current(objects):

@@ -11,6 +11,7 @@ extern const u32 Resource_DirectoryTable[1000];
 void Port_CodeMapOverlay(u32 id);
 int Port_CodeMapHasOverlay(u32 id);
 int Port_RelocateOverlay(u32 id);
+void Port_SaveCompatOverlay(u32 id);
 
 /* LSB-first bit stream over bytes (the ARM reader's 32-bit buffer refilled by halfwords is the same stream) */
 struct Bits {
@@ -138,6 +139,7 @@ s32 Decompress_TaggedLzArm(const void *source, void *destination) {
       if (Resource_DirectoryTable[id] == (u32)(uintptr_t)source && Port_CodeMapHasOverlay(id)) {
         Port_CodeMapOverlay(id);
         Port_RelocateOverlay(id);
+        Port_SaveCompatOverlay(id); /* GS28: the overlay whose buffers saved actors may name (save_compat.c) */
         break;
       }
   }

@@ -18,6 +18,7 @@
     padding: 16px; box-sizing: border-box; gap: 16px; }
   #screen { width: min(100%, 720px); aspect-ratio: 3 / 2; image-rendering: pixelated; background: #000;
     display: none; }
+  #screen.wide { width: min(100%, 864px); }   /* GS27 Wide view: 288 x 160 */
   #picker { max-width: 34em; text-align: center; }
   #picker h1 { font-size: 1.4em; margin: 0 0 .5em; color: var(--accent); }
   #picker p { color: var(--dim); margin: .4em 0; }
@@ -75,6 +76,9 @@
   <div id="opts-sound"><label class="opt-big"><input id="opt-mute" type="checkbox"> Mute</label>
     <label class="opt-big">Volume <input id="opt-volume" type="range" min="0" max="100" step="5" value="80"></label>
     <label class="opt-big" title="Darker, less saturated colours like the original unlit Game Boy Advance screen"><input id="opt-lcd" type="checkbox"> GBA screen colours</label>
+    <label class="opt-big" title="Lighten the picture">Brightness <select id="opt-bright"><option value="0">Normal</option><option value="1">Bright</option><option value="2">Brighter</option></select></label>
+    <label class="opt-big" title="Show more of the map: field maps fill a 16:9-like 288 x 160 picture (battles, menus and the World Map stay 240 wide)"><input id="opt-wide" type="checkbox"> Wide view</label>
+    <small id="opt-ingame">In the game: START, then R opens these picture settings too.</small>
     <label class="opt-big" title="Keep the page on this device so the game starts with no network (your ROM and saves are always kept)"><input id="opt-offline" type="checkbox" checked> Offline play</label> <span id="opt-offline-state"></span></div>
   <div id="opts-game" hidden><button id="opt-title" title="Restart the game (like switching it off and on); the save is kept">Return to title</button></div>
   <details id="net" hidden><summary>Link battle online</summary>

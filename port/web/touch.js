@@ -85,14 +85,15 @@
     if (t.portrait !== null && t.portrait !== portrait) release();   // rotated mid-press: nothing stays held
     t.portrait = portrait;
     let pic;
+    const ar = cv.width / cv.height || 1.5;   // GS27: 3:2, or 288:160 in Wide view
     if (portrait) {
-      let w = W - sa.l - sa.r, h = w * 2 / 3;
-      if (h > (H - sa.t) * 0.5) { h = (H - sa.t) * 0.5; w = h * 3 / 2; }
+      let w = W - sa.l - sa.r, h = w / ar;
+      if (h > (H - sa.t) * 0.5) { h = (H - sa.t) * 0.5; w = h * ar; }
       pic = { x: (W - w) / 2, y: sa.t, w, h };
     } else {
       const side = Math.max(150, W * 0.2);   // room for a thumb's controls on each side
-      let h = H - sa.t - sa.b, w = h * 3 / 2;
-      if (w > W - 2 * side) { w = Math.max(W - 2 * side, W * 0.5); h = w * 2 / 3; }
+      let h = H - sa.t - sa.b, w = h * ar;
+      if (w > W - 2 * side) { w = Math.max(W - 2 * side, W * 0.5); h = w / ar; }
       pic = { x: (W - w) / 2, y: (H - h) / 2, w, h };
     }
     Object.assign(cv.style, { left: pic.x + 'px', top: pic.y + 'px', width: pic.w + 'px', height: pic.h + 'px' });
