@@ -36,7 +36,11 @@ async function main() {
   const h = new Harness(m, { game: 'tla' });
   const mem = h.mem, cpu = h.cpu;
   const dv = new DataView(mem.buffer);
-  const R = rng(0x7a3 + shard);
+  // TLA6b: one random stream per routine, seeded by its name and overlay. With one stream per shard (routines dealt
+  // by index) a routine added to the report re-dealt every later routine to other inputs: 3 new routines moved
+  // 55 routines between EQUIV and NOINPUT (251 -> 248) with no translation changed
+  let R = rng(0x7a3 + shard);
+  const seedOf = (s) => { let x = 0x7a3; for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 0x01000193) >>> 0; return x || 1; };
   const regs = m._a2c_regs_addr();
   // `wait` returns at once and the YIELDS-th yield stops both runs (trap 57, as diff_tla.cjs)
   const WAIT = h.addr('wait') & ~1;
@@ -127,15 +131,25 @@ async function main() {
     for (let i = 0; i < RAM.length; i++) {
       if (Buffer.compare(a[i], b[i]) === 0) continue;
       let k = 0; while (a[i][k] === b[i][k]) k++;
+      if (process.env.DIFFALL) { const l = []; for (let j = 0; j < a[i].length && l.length < 40; j++) if (a[i][j] !== b[i][j]) l.push(`${(RAM[i][0] + j).toString(16)}:${a[i][j]}/${b[i][j]}`); console.log('diff', l.join(' ')); }
       return `memory differs at 0x${(RAM[i][0] + k).toString(16)}: original ${a[i][k]} port ${b[i][k]}`;
     }
     return null;
   };
   const N = +(process.env.CASES || 8), TRIES = +(process.env.TRIES || 12), TMAX = +(process.env.TMAX || 15000);
-  const rows = readReport().filter((_, i) => i % count === shard);
+  // ONLY=name@ovl,...: just those routines (debugging one FAIL); WATCH=addr: print each interpreter store there; DIFFALL=1:
+  // every differing byte of a FAIL (up to 40)
+  const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
+  const rows = readReport().filter((r, i) => (ONLY ? ONLY.has(`${r.name}@${r.ovl}`) : i % count === shard));
+  if (process.env.WATCH) { const w = parseInt(process.env.WATCH, 16); cpu.onWrite = (a, n) => { if (a <= w && w < a + n) console.log(`store 0x${w.toString(16)} = ${mem[w]} pc 0x${(cpu.r[15] >>> 0).toString(16)} lr 0x${(cpu.r[14] >>> 0).toString(16)}`); }; }
   const outp = path.join(ROOT, `build/a2c/batch/shard_${shard}.tsv`);
   fs.writeFileSync(outp, '');
+  // and every routine starts from the same memory (what the routines before it in the shard left outside the world,
+  // VRAM, the stack, an overlay image, made results depend on the report's order too)
+  const base = snap();
   for (const r of rows) {
+    R = rng(seedOf(`${r.name}@${r.ovl}`));
+    restore(base);
     const port = m[`_a2cw${r.ovl ? `_ov${r.ovl}` : ''}_${r.addr.toString(16).padStart(8, '0')}`];
     const thumb = !ARM_ROUTINES.has(r.name);
     let n = 0, bad = null, used = '', firstErr = null, tried = 0;
