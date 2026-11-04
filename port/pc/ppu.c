@@ -655,9 +655,11 @@ static const u8 OBJ_H[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}
 
 /* sprites on frame row v (see text_bg). On the GBA's lines OAM y 160-255 is above the screen, as on the GBA; on a
  * margin row a sprite is below the screen up to the frame's last row (OAM y < 160 + gPortZoomB, as Sprite_Draw
- * queues them) and above it from there (the hidden entries' y 192 is never on a margin row: oam_kernel.c) */
+ * queues them) and above it from there. The OAM build fills unused entries with 0x00C000C0 words (y 192, x 192,
+ * tile 0xC0: off the GBA's screen; oam_kernel.c): with a bottom margin over 32 rows y 192 is on it, so margin rows
+ * skip exactly those entries */
 static void sprites(int v, u16 dispcnt) {
-  int below = v >= 0 && v < H ? H : H + gPortZoomB;
+  int real = v >= 0 && v < H, below = real ? H : H + gPortZoomB;
   int i;
   int map1d = (dispcnt >> 6) & 1;
   for (i = 0; i < LW; i++) {
@@ -677,6 +679,8 @@ static void sprites(int v, u16 dispcnt) {
     u32 tile = a2 & 0x3FF;
     if (!affine && dbl)
       continue; /* disabled */
+    if (!real && a0 == 0x00C0 && a1 == 0x00C0 && a2 == 0x00C0)
+      continue; /* a hidden entry (map zoom margin rows only) */
     if (shape == 3 || mode == 3)
       continue;
     w = OBJ_W[shape][sz];
