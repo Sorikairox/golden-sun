@@ -2,6 +2,25 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS28 — 2026-11-04: build-independent saves; live saves migrate (branch gs1-options)
+
+- Read docs/GS27.md section 8 and trap 79. Worktree `~/golden-sun-wt/gs1-opts`, branch `gs1-options` (not merged).
+- **Cause**: the save holds gActorSnapshot (32 actors, 0x70 bytes each): `script` (+0x00) of a relocated actor script
+  was the module's reloc buffer (sol_star_room's statues: 0x88d4c on the live build 687968a7; GBA 0x0200cbd0), `update`
+  (+0x6c) a table index (GBA: code address | 1). Nothing else in the save is build-specific.
+- **Fix** (port/pc/save_compat.c, 3 c_rules on actors.c): Actor_Snapshot writes GBA addresses, Actor_Restore copies
+  each actor from a copy turned back for the loaded overlay. **Migration**: Actor_Restore first maps old values with the
+  live build's tables (port/pc/save_legacy.h), then main-clean (-0x20) and gs1-options (+0x7b70) layouts.
+- Tests: live-build saves (sol_star_room, Vale day one) load on the new build and replay with **unmasked RAM digests
+  equal** to the new build's own saves, re-saves byte-identical; a 24 KB-padded build saves byte-identically; web_opts
+  with the live Vale save ALL PASS. Full regress vs clean HEAD: pictures 61/61 equal, 46/46 saves differ only in the
+  snapshot words (each HEAD value -> its GBA value), masked RAM equal but the save workspace's heap copy after saving;
+  link2 20/20. expected.tsv rewritten from the clean branch build. web_opts (+wide), web_phone (+wide=1), web_offline,
+  web_touch ALL PASS; regress --quick 9/9.
+- link.py refuses stale port/pc objects and any probe/tmp object (trap 78).
+- GS1 game.wasm SHA-1 087d3b7e..., game.js cab9b56b... (site build fadab39f727e70df).
+- **Next:** the user merges and deploys (tools/deploy_web.sh) from a clean build; keep port/pc/save_legacy.h.
+
 ## GS27 — 2026-11-04: in-game "Extra settings" (colours, brightness) and the optional "Wide view" (branch gs1-options)
 
 - Read docs/GS27.md and traps 77-78. Worktree `~/golden-sun-wt/gs1-opts`, branch `gs1-options` (not merged; the user merges).

@@ -14,6 +14,10 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS28 (2026-11-04, branch gs1-options, not merged): **saves are build-independent** (the saved actor snapshot holds
+  GBA addresses, trap 79) and saves of the live build 687968a7 migrate on load (tested: unmasked digests equal);
+  expected.tsv from the clean branch build (087d3b7e / cab9b56b); link.py refuses stale objects (docs/GS27.md 8).
+
 - TLA6b (2026-11-04): **down Venus Lighthouse to the first battle** (the rooms by the vendor's scene tables, the
   entrance, the guards, Alex, Kraden, "Ruffian appeared!", drawn right); the battle is not won (Fight stops in a
   self-patching IWRAM blitter run through a stale decoder alias, docs/TLA6.md 9). Fixes: K&R GameFlag_Test argument
@@ -649,3 +653,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 78. (GS27) **stale objects are linked**: the wasm build links every object left in build/wasm*/obj, also those of deleted or
     renamed port files (main's build/wasm had `probe_tmp.ll.o`, Port_ProbeMsg, in the "GS1 687968a7" build). Hash or
     compare builds only after `rm -rf build/wasm` (or deleting the stale ll/bound/obj files).
+79. (GS28) **the save holds the actor snapshot; keep it in GBA spelling**: gActorSnapshot (0x02001104, in the save
+    buffer) gets DMA copies of live actors, whose `script` may be a reloc buffer (module data) and `update` a table
+    index. port/pc/save_compat.c turns them into GBA addresses at the end of Actor_Snapshot and back in Actor_Restore,
+    and migrates pre-GS28 saves with the live build 687968a7's tables (port/pc/save_legacy.h, never remove). Any other
+    saved structure that gets a relocated pointer or a callback needs the same; find them by diffing the saves of one
+    route on two builds (docs/GS27.md 8). Since GS28, link.py refuses stale port/pc and probe/tmp objects.
