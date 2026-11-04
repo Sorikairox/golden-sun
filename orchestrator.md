@@ -637,7 +637,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 75. A K&R call that passes fewer words than the callee's definition gets 0 for the missing ones in wasm (link.py
     adapter()); on the ARM they are whatever the caller's registers hold, often its own incoming argument passed
     through. TLA6b: is_condition_active.c's `GameFlag_Test()` meant GameFlag_Test(condition) (r0), so every trigger
-    condition tested flag 0 and the Venus Lighthouse statues never moved. 18 such calls are left (docs/TLA6.md 8):
+    condition tested flag 0 and the Venus Lighthouse statues never moved. 16 such calls are open (docs/TLA6.md 8):
     read each call site's r0-r3 and give the call its words (c_rules).
 76. A D20 run that draws all routines' inputs from one random stream is order dependent: adding a routine to the
     report or one routine stopping early moves EQUIV/NOINPUT elsewhere (TLA6b: 251 -> 248 with no translation

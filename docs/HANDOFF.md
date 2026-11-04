@@ -21,7 +21,7 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
 - Checks: build 0 warnings/0 stubs, calls PASS, leak 0; batch 217/0/988; diff_tla 30/30; diff_hw 124/0/64 neg 4/4;
   diff_mixer 300/300; test_arm 79/79; regress_tla 7/7 twice; GS1 687968a7 / 895d45cc, regress --quick 9/9.
 - **Next:** the battle stop (alias drop on heap reuse + a port of the patch template builder), win the Ruffian battle,
-  Felix/Idejima; the 18 short K&R calls; Func_080cf78c's decoder mode; deploy after the user's bar.
+  Felix/Idejima; the 16 open short K&R calls (text.c's window fixed); Func_080cf78c's decoder mode; deploy after the user's bar.
 
 ## TLA6 (part 1) — 2026-11-03: new game to Jenna under control; save -> continue; /tla/ site prep (local)
 

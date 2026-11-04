@@ -120,8 +120,10 @@ ran, the two statues stayed on the stairs and Jenna could not go down.
 1. **GameFlag_IsConditionActive tested flag 0 for every condition** (c_rules, commit 1421ddd). is_condition_active.c
    calls the K&R-declared `GameFlag_Test()` with no argument; on the ARM the flag is the condition GCC left in r0, the
    wasm K&R adapter passed 0 (link.py adapter(): missing arguments are 0). Every trigger, placement and entrance
-   condition was wrong. Two text rules pass `condition`. **18 other K&R calls pass fewer words than their target takes**
-   (list below): each needs the same reading of what r0-r3 hold on the ARM.
+   condition was wrong. Two text rules pass `condition`. **18 other K&R calls passed fewer words than their target takes**
+   (list below): each needs the same reading of what r0-r3 hold on the ARM. Done for one more: text.c's
+   WindowSprite_PrepareForRedraw() gets `win` (the ROM keeps it in r0 up to the bl; commit after 'docs: TLA6b'). Message_Start
+   5/6 is fine as is (the vendor notes the sixth word is the 0 already on the stack, which the adapter passes).
 3. Tools: autowalk.cjs WALK_GAME=tla; diff_hw and the D20 batch seeded per routine (section 10).
 2. **render.c built** (asm_rules, commit 9706b35): Render_SetIdentity's three `stmia` as twelve C stores. render.c was
    the last left-out object; its 7 transform routines were stubs and the battle drew a tiled green screen. 0 objects
@@ -130,7 +132,7 @@ ran, the two statues stayed on the stairs and Jenna could not go down.
 Short K&R adapters left (caller file -> target, words passed/taken): definition_flags.c BattleEffect_GetAnimationValue
 0/1 (BattleEffect_GetFlags passes its own r0 through), cell_mark.c Func_08020310 3/4 (Func_0802d7b0's height in r3),
 add_action.c Func_080afb80 1/2, shop/f1082c4.c Func_0810a2c8 0/4, window/f044a58.c + f044c80.c Message_Start 5/6,
-window/text.c WindowSprite_PrepareForRedraw 0/1, menu/lifecycle.c Window_CloseFar 1/2, and 11 in scene overlays
+window/text.c WindowSprite_PrepareForRedraw 0/1 (fixed), menu/lifecycle.c Window_CloseFar 1/2, and 11 in scene overlays
 (664 airs_rock_inside, 665 alhafra, 671 gabomba_statue x2, 674 islets, 681/68e/692 Actor_GetById, 682 champa,
 6aa mars_lighthouse_entrance, 6b8 debug). To list them: in build/wasm-tla/gen/glue.ll, the `define ... @"NAME$c..."(params)`
 adapters whose body calls the target with more arguments than the adapter's own parameters.
@@ -196,7 +198,7 @@ port_work/tla6b/audio/opening.wav (sha1 cfed3c8a45fb7c90).
 
 1. The battle stop (section 9): drop aliases on heap reuse; port BattleEffect_PatchTemplate's builder (or run RAM code
    in an interpreter); then win the Ruffian battle and go on (Felix, Idejima).
-2. The 18 short K&R adapters (section 8): read each call site's r0-r3 on the ARM and give the call its words.
+2. The 16 open short K&R adapters (section 8; Window_CloseIfOpen's r1 and Func_080af794's r1 come from their callers): read each call site's r0-r3 on the ARM and give the call its words.
 3. Func_080cf78c's captured states (section 10): why the original, on the port's RAM, calls the decoder copy with a
    bad mode.
 4. The heap-slot world profile for the D20 batch (555 EQUIV) after triaging its two FAILs.
