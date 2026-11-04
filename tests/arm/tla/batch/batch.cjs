@@ -67,6 +67,7 @@ async function main() {
   let depth = 0;
   m.a2cCall = (addr) => {
     const r = []; for (let i = 0; i < 16; i++) r.push(dv.getUint32(regs + 4 * i, true));
+    if (process.env.CAPDEBUG) console.log(`a2cCall 0x${(addr >>> 0).toString(16)} r0-3 ${r.slice(0, 4).map((x) => x.toString(16))}`);
     const saved = { r: cpu.r.slice(), cpsr: cpu.cpsr };
     if (depth++ > 0) throw new Error('nested interpreter call');
     try {
@@ -152,6 +153,19 @@ async function main() {
   // every differing byte of a FAIL (up to 40)
   const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null;
   const rows = readReport().filter((r, i) => (ONLY ? ONLY.has(`${r.name}@${r.ovl}`) : i % count === shard));
+  // TLA6b: in captured states, immediate DMA3 copies run (RamCode_Load copies a routine into a heap block with DMA3
+  // and calls it; without the copy the interpreter ran the block's old bytes). Random worlds keep no hardware.
+  const dma3 = () => {
+    const ctl = dv.getUint16(0x040000de, true);
+    if (!(ctl & 0x8000) || ((ctl >> 12) & 3) !== 0) return;
+    let src = dv.getUint32(0x040000d4, true), dst = dv.getUint32(0x040000d8, true), n = dv.getUint16(0x040000dc, true) || 0x10000;
+    const unit = ctl & 0x400 ? 4 : 2, dctl = (ctl >> 5) & 3, sctl = (ctl >> 7) & 3;
+    const ds = dctl === 1 ? -unit : dctl === 2 ? 0 : unit, ss = sctl === 1 ? -unit : sctl === 2 ? 0 : unit;
+    src &= ~(unit - 1); dst &= ~(unit - 1);
+    while (n--) { if (unit === 4) dv.setUint32(dst, dv.getUint32(src, true), true); else dv.setUint16(dst, dv.getUint16(src, true), true); src += ss; dst += ds; }
+    dv.setUint16(0x040000de, ctl & 0x7fff, true);
+  };
+  cpu.onWrite = (a, n) => { if (capMode && a <= 0x040000df && a + n > 0x040000de) dma3(); };
   if (process.env.WATCH) { const w = parseInt(process.env.WATCH, 16); cpu.onWrite = (a, n) => { if (a <= w && w < a + n) console.log(`store 0x${w.toString(16)} = ${mem[w]} pc 0x${(cpu.r[15] >>> 0).toString(16)} lr 0x${(cpu.r[14] >>> 0).toString(16)}`); }; }
   const outp = path.join(ROOT, `build/a2c/batch/shard_${shard}.tsv`);
   fs.writeFileSync(outp, '');
@@ -194,7 +208,7 @@ async function main() {
         let ro;
         yieldsLeft = YIELDS;
         try { ro = cpu.call(r.addr | (thumb ? 1 : 0), args, { stackArgs: stk, maxSteps: 3_000_000 }) >>> 0; } catch (e) {
-          if (e.yieldStop) ro = 'yield'; else { firstErr = firstErr || e.message; if (process.env.CAPDEBUG) console.log(pname, t, e.message); restore(before); continue; }
+          if (e.yieldStop) ro = 'yield'; else { firstErr = firstErr || e.message; if (process.env.CAPDEBUG) { console.log(pname, t, e.message); restore(before); try { yieldsLeft = YIELDS; port(4, ...args, ...stk); console.log('port ran'); } catch (e2) { console.log('port:', e2.message); } } restore(before); continue; }
         }
         const afterO = snap();
         restore(before);
