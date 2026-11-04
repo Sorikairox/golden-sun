@@ -1,0 +1,4 @@
+# TLA7: raw (recon/tla/raw) routines that a PC-layer function answers for (tools/wasm/link.py veneer map, TLA only).
+# The port function may still run the translation (a2cw_<addr>) and add what the port needs around it.
+symbol	port	why
+Func_08196404	Port_TlaBuildBlitter	battle effect blitter builder: runs the translation, then aliases the patched heap block to GS1's C blitter (port/tla/hw/pc_tla.c, trap 29/77)

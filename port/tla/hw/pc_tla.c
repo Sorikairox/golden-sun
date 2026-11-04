@@ -101,3 +101,24 @@ u32 Port_TlaTaskKey(u32 f) {
   fn = Port_TryResolveCode((void *)(uintptr_t)f);
   return fn ? (u32)(uintptr_t)fn : f;
 }
+
+/* TLA7: the battle effect blitters (trap 29, TLA's twin of GS1's BattleEffect_BuildBlitter). Func_08196404 (raw
+ * Thumb, translated by asm2c) allocates heap slot `slot`, copies BattleEffect_PatchTemplate there with ldm/stm and
+ * DMA3, patches the immediates and branch words for the canvas size, clip/mirror flags and mode, and returns 1
+ * (0 if its template walk ended off the table's end). Effects then call the slot as a
+ * DrawRectangle(destination, source, x, y, width, height); asm2c cannot run those patched words. Func_08196404 is
+ * bound here (port/tla/hw/pc_binds.tsv): the translation still runs (same heap use, same words in RAM), then the
+ * slot's address is aliased to GS1's C blitter (port/pc/blitter.c, shared as is) with the same parameters. TLA's
+ * mode numbers are not GS1's: 0 additive (it copies BattleEffect_Mask), 1 lighten (Max4), 2 transparent, any other
+ * copy. Checked against the ROM's builder and its generated ARM by tests/arm/tla/diff_blitter.cjs. */
+u32 a2cw_08196404(u32 ns, u32 a0, u32 a1, u32 a2, u32 a3, u32 s0, u32 s1, u32 s2, u32 s3, u32 s4, u32 s5, u32 s6,
+                  u32 s7);
+void Port_BlitterBuilt(u32 gba, s32 widthShift, s32 heightShift, s32 flags, u32 mode);
+s32 Port_TlaBuildBlitter(s32 slot, s32 widthShift, s32 heightShift, s32 flags, u32 mode) {
+  static const u8 gs1Mode[3] = {3 /* additive */, 2 /* lighten */, 1 /* transparent */};
+  u32 r = a2cw_08196404(1, (u32)slot, (u32)widthShift, (u32)heightShift, (u32)flags, mode, 0, 0, 0, 0, 0, 0, 0);
+  u32 gba = *(volatile u32 *)(uintptr_t)(0x03000000u + (u32)slot); /* Ram_HeapSlots: byte offsets */
+  if (gba)
+    Port_BlitterBuilt(gba, widthShift, heightShift, flags, mode < 3 ? gs1Mode[mode] : 0 /* copy */);
+  return (s32)r;
+}

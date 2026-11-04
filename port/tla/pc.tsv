@@ -8,7 +8,7 @@ apu	yes	DirectSound FIFOs and PSG: hardware
 asm_small	twins	Trig_Cos, umul3232H32, RelocatedQ16DotProduct (GS1 twins, bindings.tsv gs1)
 battle_asm	no	tbs battle ARM routines
 bios	yes	BIOS calls from GBATEK: hardware
-blitter	no	tbs battle effect blitters (code generation, trap 29)
+blitter	yes	battle effect blitters (code generation, trap 29): GS1's C blitter, aliased by TLA's builder hook (port/tla/hw/pc_tla.c Port_TlaBuildBlitter, TLA7)
 blocks	yes	clang blocks runtime for nested functions
 call_via	yes	libgcc _call_via_rX
 codemap	yes	GBA code address -> wasm function

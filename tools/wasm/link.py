@@ -71,6 +71,11 @@ def veneer_map(root):
             f = line.rstrip('\n').split('\t')
             if len(f) > 2 and not line.startswith('#') and f[2] in ('bind', 'gs1') and f[0] != f[1] and f[1] != 'main':
                 out.setdefault(f[0], f[1])
+        # TLA7: raw routines a PC-layer function answers for (port/tla/hw/pc_binds.tsv)
+        for line in open(os.path.join(root, 'port/tla/hw/pc_binds.tsv'), encoding='utf-8'):
+            f = line.rstrip('\n').split('\t')
+            if len(f) > 1 and not line.startswith('#') and f[0] != 'symbol':
+                out.setdefault(f[0], f[1])
         # the mixer's ROM load-address label calls the IWRAM translation (H4: hw2c translates at the run address)
         out.setdefault('Sound_Mixer', 'SoundDriver_Mixer')
     return out
