@@ -218,8 +218,11 @@ trigger 4 (x 21) -> **scene 7 (the mountain path) entrance 4** (31,480). Fight/A
 kept as a case). No Djinn command is offered (Jenna has none). Contact sheet (local): port_work/tla7/contact.png.
 
 Stop point (not a port bug as far as seen): scene 7's next exit is trigger 5 at (38, 57), next to entrance 5 (616, 920,
-facing south): it is entered from the lower ground, and the route down from the 128 px path was not found (going west
-on the path meets trigger 21, "Not that way"). Scene 7's other triggers (vendor suhalla_gate/data.c, map dump): exit 3
+facing south): it lies on the 32 px level (x 30-39, z 57-58). From the 128 px path the walk reaches the 96 px slope
+cells (35, 57) (LEFT@31600-31735, DOWN@31736-31936 after gate.keys) but no step further down; the stairs at
+x 16-17, 22-23, 28-29 (z 55) lead down to that level west of trigger 21 ("Not that way", x 31-32, z 54-55), which
+turns the leader back on the path. Not judged a port bug yet: check the slope cells' kinds (collision byte 0) and
+whether trigger 21 should let the leader pass (its condition) before suspecting collision. Scene 7's other triggers (vendor suhalla_gate/data.c, map dump): exit 3
 (1, 56-57) -> the north part (exits 1 at x 1 and 2 at x 25), exit 1 there -> scene 6's west plateau; exit 5 -> scene 8.
 Maps: a TLA map dump needs gHeapSlots.mapWork (0x03000020) -> layers[L] (+0x108, 56 bytes each): cells (+0x30, byte 2 =
 behaviour / trigger id) and terrainIds (+0x34, one byte per cell) -> gMapCollision (0x0202c000) + 4 * id: byte 0 & 15
