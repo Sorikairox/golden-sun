@@ -274,6 +274,11 @@ def main():
         print((so or se).strip())
         if rc:
             sys.exit(1)
+        # TLA7 (trap 75): K&R calls that pass fewer words than their target takes, each allowed with a reason
+        rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/short_knr.py'), '--out', OUT])
+        print((so or se).strip())
+        if rc:
+            sys.exit(1)
     if 'leak' in stages:
         import leak_check
         if not leak_check.run(os.path.join(OUT, 'game.wasm'), ROOT):
