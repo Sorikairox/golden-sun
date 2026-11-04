@@ -642,3 +642,10 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 76. A D20 run that draws all routines' inputs from one random stream is order dependent: adding a routine to the
     report or one routine stopping early moves EQUIV/NOINPUT elsewhere (TLA6b: 251 -> 248 with no translation
     changed). The batch and diff_hw seed each routine by name, and the batch restores the same memory before each.
+77. (GS27) **regress RAM digests are build-specific**: the game keeps wasm table indices and pointers into the module's own
+    data (relocated buffers) in its RAM, and even writes such a pointer into its save. Any change to code or data layout
+    changes them; pictures do not. Compare two builds with `MASK_CODE=1` (tests/probes/digest.cjs: words in 0x10000-0x1ffffff
+    count as 0), `--update` with one build and compare with the other (docs/GS27.md 4).
+78. (GS27) **stale objects are linked**: the wasm build links every object left in build/wasm*/obj, also those of deleted or
+    renamed port files (main's build/wasm had `probe_tmp.ll.o`, Port_ProbeMsg, in the "GS1 687968a7" build). Hash or
+    compare builds only after `rm -rf build/wasm` (or deleting the stale ll/bound/obj files).

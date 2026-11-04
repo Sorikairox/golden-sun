@@ -2,6 +2,25 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS27 — 2026-11-04: in-game "Extra settings" (colours, brightness) and the optional "Wide view" (branch gs1-options)
+
+- Read docs/GS27.md and traps 77-78. Worktree `~/golden-sun-wt/gs1-opts`, branch `gs1-options` (not merged; the user merges).
+- **Feature 1** (commit 6a5ad51): START on the field, then **R** (on the Pause menu, or in Change settings, which now shows
+  an "R: More" window) opens **Extra settings**, drawn with the game's windows, font, hand and Setup heading
+  (port/pc/options.c + c_rules hooks): Screen colours Original/GBA LCD (gs-lcd), Brightness Normal/Bright/Brighter (new,
+  gs-bright), Wide view Off/On (gs-wide). The page menu and the game stay in sync (Port_OptSet / Port_OptGeneration).
+- **Feature 2** (the next commit): **Wide view** 288 x 160 for the field sequence's maps only (margins from the map grid's
+  cells; centre exactly as before; black past the map's bounds; actor culling widened by c_rules); battles, World Map,
+  title/naming/File screens stay 240 with black bars; applied without reload; canvas, CSS and touch layout follow the width.
+  TLA's ppu.c branch is the old renderer: TLA byte-identical.
+- Checks: web_opts (new) ALL PASS with/without wide; web_phone ALL PASS off and `--query wide=1`; web_offline, web_touch
+  ALL PASS; regress with options off vs a clean HEAD build, MASK_CODE=1: all 61 cases' RAM and picture digests equal, 28 save
+  rows differ only by a module-data pointer the game saves (trap 77); link2 20/20 both. GS1 game.wasm SHA-1 f0a86799...,
+  game.js f606f720... (clean HEAD fdd0e5e2... / 7dd28c21...; main's build/wasm 687968a7 links a stale probe_tmp, trap 78).
+- **Next:** decide on the saved module pointer (docs/GS27.md 4: which structure, relocate on load); gamepad input on the
+  page (none yet); update tests/regress/expected.tsv after the merge with a clean build (RAM rows are build-specific);
+  deploy after the user's merge.
+
 ## TLA6b — 2026-11-04: the way down, the first battle reached (not won); D20 batch order explained; audio
 
 - Read docs/TLA6.md sections 7-13 and traps 75-76.

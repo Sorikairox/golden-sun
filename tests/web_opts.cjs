@@ -22,6 +22,17 @@ const DEBUG_PORT = 9537 + (process.pid % 200);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const K = { A: 1, B: 2, SELECT: 4, START: 8, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128, R: 256, L: 512 };
 
+function png(rgba, w, h) {   // RGBA8, filter 0 (tools/contact.cjs reads these)
+  const zlib = require('zlib');
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4);
+  const tab = new Int32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c; });
+  const crc = (b) => { let c = -1; for (const x of b) c = tab[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ -1) >>> 0; };
+  const chunk = (t, d) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+  const ih = Buffer.alloc(13); ih.writeUInt32BE(w, 0); ih.writeUInt32BE(h, 4); ih[8] = 8; ih[9] = 6;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+
 function otherHeadlessChrome() {
   const out = execSync('ps -axo pid=,command=').toString();
   return out.split('\n').filter((l) => /Google Chrome/.test(l) && /--headless/.test(l) && !/Helper/.test(l));
@@ -99,9 +110,10 @@ async function main() {
     await ev(`window.__gsScript = ${JSON.stringify(script)}; 1`);
     const frames = () => ev('window.__gsFrames || 0');
     const until = async (f) => { let n; while ((n = await frames()) < f) { if (Date.now() - t0 > 240000) throw new Error(`only ${n} frames`); if (errors.length) throw new Error(errors[0]); await sleep(25); } return n; };
-    const shot = async (name) => {
-      const url = await ev(`document.getElementById('screen').toDataURL('image/png')`);
-      fs.writeFileSync(path.join(OUT, name + '.png'), Buffer.from(url.split(',')[1], 'base64'));
+    const shot = async (name) => {   // the canvas as the player sees it (colours applied), as a plain RGBA PNG
+      const r = await ev(`(() => { const c = document.getElementById('screen'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let s = ''; for (let i = 0; i < d.length; i += 8192) s += String.fromCharCode.apply(null, d.subarray(i, i + 8192)); return [c.width, c.height, btoa(s)]; })()`);
+      fs.writeFileSync(path.join(OUT, name + '.png'), png(Buffer.from(r[2], 'base64'), r[0], r[1]));
     };
     const st = () => ev(`JSON.stringify({ lcd: GSLcd.on, bright: GSLcd.bright, wide: window.GSWide ? GSWide.on : null,
       box: document.getElementById('opt-lcd').checked, sel: document.getElementById('opt-bright').value,
