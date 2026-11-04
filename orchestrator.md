@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS31 (2026-11-04, worktree branch, not merged): Map zoom's picture no longer jitters at map edges (docs/GS31.md): the
+  frame is placed with the camera of the last VBlank (ppu.c). GS1 e5758f47 / 13f7526d; TLA unchanged; not deployed.
+
 - GS29 (2026-11-04, main): **Map zoom** replaces Wide view (docs/GS29.md): field maps at 288 x 192 / 336 x 224 (3:2),
   scaled into the same box, nothing on the page moves (canvas + touch boxes checked across levels, a battle, an
   interior); the GBA's view placed inside the map's camera bounds (no black at map edges; camera unchanged); our Extra
@@ -750,3 +753,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     previous field frame's map layers matched the map grid's cells on at least 80 lines (ppu.c ZOOM_MIN_LINES).
 91. (GS29) **a class's `display` beats the `hidden` attribute**: `.opt-big { display: inline-flex }` keeps a `hidden`
     label visible (the TLA page's zoom row); hide such rows with `style.display = 'none'` or a `[hidden]` rule.
+92. (GS31) **game RAM at line 0 is one frame ahead of the BG registers**: the VBlank loads BGxHOFS/VOFS from gBgScroll,
+    then the game's logic (at once, in the port) moves gMapGridWork's camera for the next frame. Anything that places
+    or masks the picture from the camera (Map zoom's frame placement) must take it at Port_PpuVBlank, not at line 0,
+    or a frame held at an edge jitters by the camera's last step. tests/probes/zoomjitter.cjs measures it.
+93. (GS31) **a worktree TLA build also needs build/a2c/report.tsv** (copy main's build/a2c): without it hw2c skips the
+    extra listings, the call-target check FAILs (0x081c0168 new, 2 stale) and game.wasm differs (c1bdbbd2, not df7c39fb).
