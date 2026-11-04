@@ -25,6 +25,8 @@
 #             (33180 Psynergy: Fume, 34700 won), scene 8's cave (35700), a Punch Ant won and Kraden (37300), scene 9 37900
 #   idejima   (TLA8) from cave: Alex, the beam, the island adrift (40000, 46000), Felix and Sheba (50000), Felix's check
 #             for injuries (54300), Felix under control on Idejima 55300
+#   party     (TLA8) from idejima: Kraden wakes and joins (55700, 56200), Jenna (56800, 57200), Sheba (58100, 58500), the
+#             field with the party of three 58700
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -49,6 +51,7 @@ CASES=(
   "gate|31800|30100,30600,31000,31300,31500,31800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys|"
   "cave|37900|32300,33180,34700,35700,37300,37900|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys|"
   "idejima|55300|40000,46000,50000,54300,55300|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys|"
+  "party|58700|55700,56200,56800,57200,58100,58500,58700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys,$R/party.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv

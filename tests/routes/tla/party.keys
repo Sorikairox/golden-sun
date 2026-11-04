@@ -1,0 +1,9 @@
+# TLA8: after idejima.keys, Felix on Idejima's beach: UP beside Kraden (24,42), RIGHT, A: Kraden wakes ("We've hit solid
+# land! Let's go, Felix!"), "Kraden has joined your party"; south-west to (19,46), LEFT, A: Jenna wakes ("Have you
+# checked everyone else?"), "Jenna joined your party"; north-west to (15,41), UP, A: Sheba wakes ("We should take a look
+# around!"), "Sheba joined your party" closed ~58520: the party of three (and Kraden). Inputs only.
+UP@55300-55342,RIGHT@55360-55363,A@55400-56200/40
+DOWN@56300-56319,LEFT@56321-56388,DOWN@56390-56422
+LEFT@56440-56442,A@56480-57240/40,A@57400-57401
+UP@57480-57529,LEFT@57531-57596,UP@57598-57609
+UP@57620-57622,A@57660-58500/40
