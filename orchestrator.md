@@ -14,6 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS34 (2026-11-05, main): **bug fix: full-screen menus showed borrowed tiles as the map in the zoomed margins**
+  (docs/GS34.md, trap 97): the Status screen (and, less visibly, Djinn/Item and the World Map's Status/Djinn) borrows BG
+  palettes 0-1 and char block 1 under its full-screen windows; the margins drew the grid with them. Renderer only: a
+  frame whose window layer covers the GBA screen (checked at line 0 from VRAM) draws the margins' map from the last
+  uncovered frame's BG VRAM + palette; parked off-screen menu sprites not drawn; Status's Djinn figures follow their
+  window. Regress masked 577/588 (link2 + zoom_menus_field f2180/2400/2600 pictures + new zoom_menus_status* rows), new
+  probe margins.cjs; GS1 65515102 / ba95b828 (site c2b70da683895670); TLA df7c39fb / d184cc2a unchanged; not deployed.
+
 - GS33 (2026-11-05, main): **"Menus: Edges"** (docs/GS33.md; option, default Edges as the user asked; Extra settings row
   "Menus" + page select gs-menus): at Map zoom More/Most (field maps, World Map) every window and its sprites move to the
   frame edge they are near (per-axis groups of touching windows; one edge touched -> that edge, both -> centre, else by
@@ -794,3 +802,10 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     port the garbage comes from whatever ran deeper on the wasm stack before, e.g. the frame driver (ppu.c called from
     the BIOS halt): adding stack arrays there changed masked regress RAM rows at Normal (pictures and saves equal). Keep
     work arrays of per-frame port code static; check a masked RAM diff with a full-RAM dump before blaming the game.
+97. (GS34) **full-screen menus borrow the map's VRAM under their windows**: StatusScreen_Run covers the screen with a
+    30 x 20 border, then overwrites BG palettes 0-1 and 8 KB of char block 1 (the ground's tiles) and restores them
+    before the border goes; BG registers and tilemaps stay, so "this BG is the map" checks still pass. Anything that
+    draws map pixels the GBA does not show (Map zoom's margins, pixels uncovered by moved windows) must not use the live
+    tiles/palette while the window layer covers the screen: ppu.c keeps the last uncovered zoomed frame's BG VRAM and
+    palette (cover_frame). Window corner tiles leave one transparent pixel each, so "covered" allows a few holes.
+    tests/probes/margins.cjs checks it.

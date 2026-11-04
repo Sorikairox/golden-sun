@@ -2,6 +2,25 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS34 — 2026-11-05: bug fix: full-screen menus showed borrowed tiles as the map in the zoomed margins
+
+- Read docs/GS34.md and trap 97. On `main` (8442a83 margins, ae64e65 parked sprites, 374ff7f Djinn figures, then
+  expected.tsv + docs), **not deployed, not pushed**.
+- Cause: the Status screen (also Djinn/Item, World Map Status/Djinn) covers the GBA screen with windows and overwrites
+  BG palettes 0-1 + 8 KB of char block 1 under them (registers and tilemaps unchanged, so GS29's map-layer check
+  passed); the margins drew the map grid with those borrowed bytes.
+- Fix (ppu.c GS1 half): covered frames (window layer opaque over the GBA screen, checked at line 0 from VRAM) draw the
+  margins' map layers from the last uncovered zoomed frame's BG VRAM + palette (black if none); GBA view unchanged
+  unless Edges lays windows out. Also: menu sprites parked off the GBA screen are not drawn in the margins; the Status
+  screen's Djinn figures (depth 255) move with their window. Normal never runs it.
+- Tests: regress masked vs 2e11d4d0 577/588 (link2's own row; zoom_menus_field f2180/f2400/f2600 pictures: the fix;
+  new cases' rows); new probe tests/probes/margins.cjs + cases zoom_menus_status (Most, Edges) / zoom_menus_status_more
+  (More, Centre): fail on the base build, pass now; expected.tsv rewritten (533 RAM rows + link2, 3 pictures = the
+  fix, 0 saves, 8 new rows), --quick OK; web_opts --worldmap ALL PASS (51), web_phone
+  zoom 0/1/2 + plain ALL PASS, web_offline/web_touch/web_link/web_transfer PASS.
+- Builds: GS1 65515102 / ba95b828 (site c2b70da683895670); TLA df7c39fb / d184cc2a unchanged.
+- Contact sheet: port_work/gs34/sheet/sheet.png (local). Next: deploy when the user says so.
+
 ## GS33 — 2026-11-05: "Menus: Edges": windows pinned to the zoomed picture's edges
 
 - Read docs/GS33.md and traps 95-96. On `main` (d92eb27 feature, a719675 expected.tsv + docs), **not deployed, not pushed**.
