@@ -25,6 +25,7 @@ mixer	no	tbs PCM mixer asm
 oam_kernel	no	tbs OAM/palette kernels
 ppu	yes	scanline renderer
 relocate	yes	relocated data at run time (D19)
+save_compat	yes	the saved object snapshot (gSnapshotObjects) in GBA spelling: script/update words build-independent (TLA9a; the GS1 legacy tables stay out, PORT_GAME_TLA)
 sound_asm	twins	SoundMainBTM, RealClearChain (GS1 twins, bindings.tsv gs1)
 stubs	yes	logged stubs runtime
 text_asm	twins	Message_FindArm (GS1 twin, bindings.tsv gs1)

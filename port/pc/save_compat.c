@@ -17,7 +17,9 @@
  * as a buffer of the live site's build 687968a7 (port/pc/save_legacy.h), else of main's clean be42a96 build (the same
  * layout 0x20 lower: 687968a7 also linked a stale probe object, trap 84), else of gs1-options 1a0c602 (0x7b70
  * higher), each limited to the main image and the overlay now loaded; a table index as 687968a7's (the same as every
- * later build's so far, but not guaranteed). */
+ * later build's so far, but not guaranteed).
+ *
+ * The Lost Age (TLA9a, PORT_GAME_TLA): the same for TLA's gSnapshotObjects (the functions at the end). */
 #include <stdio.h>
 #include <string.h>
 
@@ -53,6 +55,7 @@ struct LegacyCode {
   u16 index; /* - PORT_TABLE_BASE */
   u16 overlay;
 };
+#ifndef PORT_GAME_TLA
 #include "save_legacy.h"
 
 /* Where the older builds kept the same buffers, relative to 687968a7; tried in this order. */
@@ -62,21 +65,34 @@ static const s32 kLegacyDelta[] = {
     0x7b70,  /* f0a86799: gs1-options 1a0c602 (GS27, not deployed) */
 };
 
+#endif
+
 #define SNAPSHOT_CAPACITY 32
 #define SNAPSHOT_EMPTY 0xff
-#define ACTORS_OFFSET 0x20 /* struct ActorSnapshot: slots[32], then the actors */
-#define ACTOR_BYTES 0x70
 #define ACTOR_SCRIPT 0x00
 #define ACTOR_UPDATE 0x6c
 #define OVERLAY_AREA 0x02008000u
 #define OVERLAY_END 0x02010000u
+#ifdef PORT_GAME_TLA
+/* TLA (TLA9a): gSnapshotObjects (0x02001024, ewram.s) holds 32 struct Actor of 0x80 bytes; its slot bytes (object
+ * ids, 0xff ends the list) are the 32 bytes before it. TLA saves 0x02000000-0x02002ff0, so the snapshot goes to
+ * flash as in GS1. No TLA build was deployed: no migration. */
+#define ACTOR_BYTES 0x80
+#define TLA_SNAPSHOT_SLOTS ((u8 *)(uintptr_t)0x02001004u)
+#define TLA_SNAPSHOT_ACTORS ((u8 *)(uintptr_t)0x02001024u)
+u32 Port_CodeMapCurrentOverlay(void);
+#define overlayNow Port_CodeMapCurrentOverlay() /* the scene overlay loaded (port/pc/codemap.c) */
+#else
+#define ACTORS_OFFSET 0x20 /* struct ActorSnapshot: slots[32], then the actors */
+#define ACTOR_BYTES 0x70
 
 extern u8 gActorSnapshot[];
 
 static u32 overlayNow; /* the scene overlay in gOverlayArea (port/pc/decompress.c) */
-static int unknownReported;
 
 void Port_SaveCompatOverlay(u32 id) { overlayNow = id; }
+#endif
+static int unknownReported;
 
 static int inModuleData(u32 v) { return v >= PORT_TABLE_END && v < 0x02000000u; }
 
@@ -119,6 +135,7 @@ static u32 gbaToData(u32 v) {
   return v;
 }
 
+#ifndef PORT_GAME_TLA
 /* An older build's buffer address (a save made before GS28) -> the GBA address. anyOverlay: also other overlays'
  * symbols (an entry past the snapshot's list, which nothing reads: only its spelling must not depend on the build). */
 static u32 legacyToGba(u32 v, int anyOverlay) {
@@ -137,6 +154,8 @@ static u32 legacyToGba(u32 v, int anyOverlay) {
   return v;
 }
 
+#endif
+
 /* A function table index -> its function's GBA address (| 1: the game's C is Thumb; IWRAM ARM routines even). */
 static u32 codeToGba(u32 v) {
   int i;
@@ -150,6 +169,7 @@ static u32 codeToGba(u32 v) {
   return v;
 }
 
+#ifndef PORT_GAME_TLA
 /* A table index of build 687968a7 (an older save's callback) -> its function's GBA address | 1. */
 static u32 legacyCodeToGba(u32 v) {
   int lo = 0, hi = (int)(sizeof(kLegacyCode687968a7) / sizeof(kLegacyCode687968a7[0]));
@@ -170,6 +190,8 @@ static u32 legacyCodeToGba(u32 v) {
   return codeToGba(v);
 }
 
+#endif
+
 /* A function's GBA address -> its table index (the overlay now loaded first, then the main image). */
 static u32 gbaToCode(u32 v) {
   int i;
@@ -186,6 +208,7 @@ static u32 gbaToCode(u32 v) {
   return v;
 }
 
+#ifndef PORT_GAME_TLA
 /* End of Actor_Snapshot: the saved actors' script and update in their GBA spelling. The entries past the list
  * (ACTOR_SNAPSHOT_EMPTY) are older snapshots' actors, saved too but never read: theirs are GBA already, or an
  * older build's when a save made before GS28 was loaded. */
@@ -229,3 +252,43 @@ void *Port_ActorFromSnapshot(void *snapshot) {
   wr((u8 *)actor + ACTOR_UPDATE, gbaToCode(rd((u8 *)actor + ACTOR_UPDATE)));
   return actor;
 }
+#else
+/* End of ObjectTable_Snapshot (port/tla/c_rules.tsv): the snapshot's script and update words in their GBA
+ * spelling, for every entry (the list's and the older ones past it alike: all are saved). */
+void Port_TlaObjectsSnapshotToGba(void) {
+  int i;
+  for (i = 0; i < SNAPSHOT_CAPACITY; i++) {
+    u8 *a = TLA_SNAPSHOT_ACTORS + i * ACTOR_BYTES;
+    wr(a + ACTOR_SCRIPT, dataToGba(rd(a + ACTOR_SCRIPT)));
+    wr(a + ACTOR_UPDATE, codeToGba(rd(a + ACTOR_UPDATE)));
+  }
+}
+
+/* Around Func_080cae5c, TLA's restore (raw asm, translated; it DMA-copies each listed snapshot entry onto its
+ * object, port/tla/a2c_hooks.tsv): on entry the listed entries get this build's buffer and table index, on exit
+ * the snapshot's own words come back exactly, so the snapshot (and the next save) stays in GBA spelling. */
+static u32 heldWords[SNAPSHOT_CAPACITY][2];
+static int heldCount;
+
+void Port_TlaObjectsRestoreEnter(void) {
+  int i;
+  for (i = 0; i < SNAPSHOT_CAPACITY && TLA_SNAPSHOT_SLOTS[i] != SNAPSHOT_EMPTY; i++) {
+    u8 *a = TLA_SNAPSHOT_ACTORS + i * ACTOR_BYTES;
+    heldWords[i][0] = rd(a + ACTOR_SCRIPT);
+    heldWords[i][1] = rd(a + ACTOR_UPDATE);
+    wr(a + ACTOR_SCRIPT, gbaToData(heldWords[i][0]));
+    wr(a + ACTOR_UPDATE, gbaToCode(heldWords[i][1]));
+  }
+  heldCount = i;
+}
+
+void Port_TlaObjectsRestoreLeave(void) {
+  int i;
+  for (i = 0; i < heldCount; i++) {
+    u8 *a = TLA_SNAPSHOT_ACTORS + i * ACTOR_BYTES;
+    wr(a + ACTOR_SCRIPT, heldWords[i][0]);
+    wr(a + ACTOR_UPDATE, heldWords[i][1]);
+  }
+  heldCount = 0;
+}
+#endif

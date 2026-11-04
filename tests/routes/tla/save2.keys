@@ -1,0 +1,2 @@
+# TLA9a: after save.keys: B closes the field menu, then a second save (pause menu, Save your quest, file 1, "OK to save over this file?": Left to Yes, A)
+B@15260-15262,START@15400-15402,A@15490-15492,A@15590-15592,LEFT@15670-15672,A@15690-15692

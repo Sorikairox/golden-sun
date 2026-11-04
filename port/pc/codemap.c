@@ -87,6 +87,11 @@ int Port_CodeIsOverlay(u32 fn) {
   return 0;
 }
 
+#ifdef PORT_GAME_TLA
+/* TLA9a: the overlay now loaded, for port/pc/save_compat.c (GS1 gets it from port/pc/decompress.c) */
+u32 Port_CodeMapCurrentOverlay(void) { return currentOverlay; }
+#endif
+
 /* Overlay `id` is now in gOverlayArea: its functions answer for the overlay area's addresses. */
 void Port_CodeMapOverlay(u32 id) {
   int i;

@@ -1,0 +1,5 @@
+# TLA9a: port functions that run around a translated routine (tools/wasm/asm2c.py port_hooks): entry right after the
+# routine's registers are loaded, exit just before its single exit (A2C_LEAVE). void(void), registers untouched. Only the
+# game build runs them (build.py defines A2C_PORT_HOOKS); the D20 test builds translate the routines without them.
+routine	enter	leave	why
+Func_080cae5c	Port_TlaObjectsRestoreEnter	Port_TlaObjectsRestoreLeave	TLA's object restore (DMA-copies each listed gSnapshotObjects entry onto its object): the saved snapshot holds GBA spellings, the live objects get this build's buffer and table index; the snapshot is put back unchanged on exit (port/pc/save_compat.c, trap 85)

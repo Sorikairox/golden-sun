@@ -1053,12 +1053,18 @@ class Fn:
         return L
 
     def emit(self):
+        hook = port_hooks().get(self.name)
+        if hook:  # TLA9a: port functions on entry and before the one exit (A2C_LEAVE) of this routine
+            self.hook_leave = hook[1]
         cases = ' '.join(f'case 0x{x:x}u: goto L_{x:08x};' for x in sorted(self.localrets) if x in self.code)
         head = [f'/* {self.name} 0x{self.addr:08x} ({self.mode}){" overlay " + self.L.ovl if self.L.ovl else ""} */',
                 '#undef A2C_LOCALRET',
                 f'#define A2C_LOCALRET(k) switch ((k) & ~1u) {{ {cases} default: break; }}' if cases else
                 '#define A2C_LOCALRET(k) ((void)0)',
                 f'void {self.cname}(void) {{', '  A2C_ENTER();']
+        if hook:
+            head[3:3] = ['#ifdef A2C_PORT_HOOKS', f'void {hook[0]}(void);', f'void {hook[1]}(void);', '#endif']
+            head.append(f'  A2C_PORT_HOOK({hook[0]});')
         return self.fix_fallthrough(head)
 
     def fix_fallthrough(self, head):
@@ -1075,8 +1081,28 @@ class Fn:
         # TLA4b: the one place a call's or tail call's unexpected return lands (A2C_CONT): the routine's own return,
         # one of its local return points, or a return past it (unwinding goes on in the caller)
         res += ['unw:', '  if (((a2c_k ^ lr0) & ~1u) == 0) goto ret;', '  A2C_LOCALRET(a2c_k);', '  goto ret;',
-                'ret:', '  A2C_LEAVE();', '}', '']
+                'ret:'] + ([f'  A2C_PORT_HOOK({self.hook_leave});'] if getattr(self, 'hook_leave', None) else []) + [
+                '  A2C_LEAVE();', '}', '']
         return res
+
+
+_port_hooks = None
+
+
+def port_hooks():
+    """TLA9a: port/tla/a2c_hooks.tsv: routine name -> (entry function, exit function), void(void) port functions
+    that run around the translated routine (registers untouched); emitted as A2C_PORT_HOOK, a no-op unless the
+    game build defines A2C_PORT_HOOKS."""
+    global _port_hooks
+    if _port_hooks is None:
+        _port_hooks = {}
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../port/tla/a2c_hooks.tsv')
+        if os.path.exists(p):
+            for line in open(p, encoding='utf-8'):
+                f = line.rstrip('\n').split('\t')
+                if len(f) >= 3 and not line.startswith('#') and f[0] != 'routine':
+                    _port_hooks[f[0]] = (f[1], f[2])
+    return _port_hooks
 
 
 def expand(regs):
@@ -1113,6 +1139,12 @@ void a2c_trace(u32 addr);
 #endif
 #ifndef A2C_T /* per-instruction hook: the D20 trace build defines it (tests/arm/tla/build_test.sh TRACE=1) */
 #define A2C_T(a) ((void)0)
+#endif
+#ifdef A2C_PORT_HOOKS /* the game build (build.py): port functions run on entry and exit of a routine (TLA9a,
+   port/tla/a2c_hooks.tsv); the D20 test builds run the routines without them */
+#define A2C_PORT_HOOK(f) f()
+#else
+#define A2C_PORT_HOOK(f) ((void)0)
 #endif
 #ifndef A2C_STACK_TOP
 #define A2C_STACK_TOP (a2c_r.r[13] ? a2c_r.r[13] : 0x03007f00u)

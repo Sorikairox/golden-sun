@@ -91,7 +91,11 @@ def stage_asm2c():
                       '--names', os.path.join(d, 'names.tsv'), '--export', '*'])
     print(so.strip() or se[-3000:])
     if rc == 0:
-        split_asm2c(os.path.join(d, 'tla_asm.c'), 16)
+        # TLA9a: the game build runs the port hooks of port/tla/a2c_hooks.tsv (the D20 test builds do not)
+        p = os.path.join(d, 'tla_asm.c')
+        src = open(p, encoding='utf-8').read()
+        open(p, 'w', encoding='utf-8').write('#define A2C_PORT_HOOKS 1\n' + src)
+        split_asm2c(p, 16)
     return rc == 0
 
 
