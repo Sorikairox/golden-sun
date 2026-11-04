@@ -1,0 +1,8 @@
+# TLA8: after party.keys: west round the pond to (10,46) (trigger 9: nothing once the three have woken), on west and up
+# to trigger 8 (5-6, 44-47): Alex's departure ("By the way... Where has Alex gone?"), A through the talk (Yes twice:
+# the lighthouses, Sheba) to "I think, for now, that we should simply trust Sheba." (~63600), then north-west to exit 4
+# (x 0, z 42): **the World Map** (scene 2) ~63860. Inputs only.
+LEFT@58600-58667,DOWN@58669-58728,LEFT@58730-58746
+LEFT@58800-58865,UP@58867-58957
+A@59000-63620/40
+UP@63700-63709,LEFT@63711-63752,UP@63754-63770,LEFT@63772-63788,UP@63790-63807,LEFT@63809-63843

@@ -27,6 +27,8 @@
 #             for injuries (54300), Felix under control on Idejima 55300
 #   party     (TLA8) from idejima: Kraden wakes and joins (55700, 56200), Jenna (56800, 57200), Sheba (58100, 58500), the
 #             field with the party of three 58700
+#   worldmap  (TLA8) from party: Alex's departure (59100, 61100, 62700), the field after the talk 63700, west to exit 4:
+#             the World Map 64000, 64200
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -52,6 +54,7 @@ CASES=(
   "cave|37900|32300,33180,34700,35700,37300,37900|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys|"
   "idejima|55300|40000,46000,50000,54300,55300|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys|"
   "party|58700|55700,56200,56800,57200,58100,58500,58700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys,$R/party.keys|"
+  "worldmap|64200|59100,61100,62700,63700,64000,64200|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys,$R/party.keys,$R/worldmap.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv
