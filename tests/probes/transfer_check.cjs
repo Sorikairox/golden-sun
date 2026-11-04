@@ -24,7 +24,8 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const MODE = { gold: 0, silver: 1, bronze: 2 }[process.env.TC_MODE || 'gold'];
+const MODE = { gold: 0, silver: 1, bronze: 2, cable: 3 }[process.env.TC_MODE || 'gold'];
+const PRE = +(process.env.TC_PRE || 0);
 const AT = +(process.env.TC_AT || 0), VERBOSE = !!process.env.TC_VERBOSE;
 const sym = {};
 for (const l of fs.readFileSync(path.resolve(__dirname, '../../port/tla/symbols/tla-en.tsv'), 'utf8').split('\n')) {
@@ -44,8 +45,65 @@ function unit(b, base, i) {
     djinn: [0, 1, 2, 3].map((e) => u32(b, o + 0xf8 + 4 * e)), owned: [0, 1, 2, 3].map((e) => b[o + 0x118 + e]),
     exp: u32(b, o + 0x124), cls: b[o + 0x128], maxHp: s16(b, o + 0x34) };
 }
+// Cable (TC_MODE=cable, tests/transfer_a.cjs): Func_02000b24 receives GS1's 4100-byte save part at 0x02013000, copies
+// its flag bytes and first work bytes (0x214 from +0x40: GS1's coins land on TLA's) and GS1's gMainRoutineWork with the
+// eight units (0xd20 from +0x240) to TLA's 0x260 (TLA's work is 0x20 longer, so GS1's units meet TLA's at 0x520),
+// recomputes units 0-3 and copies TLA's state back to the buffer; the flow restores the state saved before the
+// receive (TC_PRE: a frame before it) and runs Func_080ae410 on the buffer with keepSettings 0: units 0-3 copied in
+// keeping their names and with u16 +0x14a = byte +0x128, story items removed, recomputed (Func_080ae16c refills
+// only the active party's HP/PP); five settings bytes copied; flags 0x800+ from GS1's Djinn flags 0x30 + e*20 + n, 0x820+ from
+// Data_080b1284 (0x822 toggled), 44 and 47; GS1's coins to gMainRoutineWork+0x28c.
+let preState = null;
+function cableCheck(m, frame, check) {
+  const H = m.HEAPU8, T = Buffer.from(H.subarray(0x02000000, 0x02040000)), G = fs.readFileSync(process.env.TC_GS1), P = preState;
+  const story = (id) => id !== 0 && (H[(m._Port_CallCode4(sym.Item_GetDirect, id, 0, 0, 0) >>> 0) + 3] & 0x20) !== 0;
+  for (let i = 0; i < 4; i++) {
+    const t = TLA_UNITS + i * UNIT, g = GS1_UNITS + i * UNIT;
+    const eq = (a, b, n) => T.subarray(a, a + n).equals(G.subarray(b, b + n));
+    check(`unit ${i} name kept (TLA's)`, P && T.subarray(t, t + 15).equals(P.subarray(t, t + 15)), T.toString('latin1', t, t + 6));
+    check(`unit ${i} level = GS1's`, T[t + 0x0f] === G[g + 0x0f], `${T[t + 0x0f]} vs ${G[g + 0x0f]}`);
+    check(`unit ${i} base HP/PP = GS1's`, eq(t + 0x10, g + 0x10, 4), '');
+    check(`unit ${i} base Attack/Defense/Agility/Luck = GS1's`, eq(t + 0x18, g + 0x18, 7), '');
+    check(`unit ${i} experience = GS1's`, eq(t + 0x124, g + 0x124, 4), `${u32(T, t + 0x124)} vs ${u32(G, g + 0x124)}`);
+    check(`unit ${i} Djinn held/set and counts = GS1's`, eq(t + 0xf8, g + 0xf8, 0x28), '');
+    const want = Array.from({ length: 15 }, (_, n) => u16(G, g + 0xd8 + 2 * n)).filter((it) => !story(it & 0x1ff));
+    while (want.length < 15) want.push(0);
+    const got = Array.from({ length: 15 }, (_, n) => u16(T, t + 0xd8 + 2 * n));
+    check(`unit ${i} inventory = GS1's (ids, counts, equipped) less story items`, got.join() === want.join(), `${got.join()} vs ${want.join()}`);
+    // Func_080ae16c refills HP/PP of the active party only, and the restored state (before the new game) has
+    // none of units 0-3 in it: their HP/PP stay GS1's (a member down in GS1 arrives down)
+    check(`unit ${i} HP/PP = GS1's (not in the active party)`, eq(t + 0x38, g + 0x38, 4) && s16(T, t + 0x34) > 0, `${s16(T, t + 0x38)}/${s16(T, t + 0x34)} (GS1 ${s16(G, g + 0x38)})`);
+    check(`unit ${i} u16 +0x14a = byte +0x128 (keepSettings 0)`, u16(T, t + 0x14a) === T[t + 0x128], `${u16(T, t + 0x14a)} vs ${T[t + 0x128]}`);
+  }
+  for (const off of [0x225, 0x226, 0x22c, 0x22a, 0x24a])
+    check(`setting gMainRoutineWork+0x${off.toString(16)} = GS1's +0x${(off - 0x20).toString(16)}`, T[0x240 + off] === G[0x240 + off - 0x20], `${T[0x240 + off]} vs ${G[0x240 + off - 0x20]}`);
+  for (let e = 0; e < 4; e++) for (let n = 0; n < 7; n++)
+    if (flag(T, TLA_FLAGS, 0x800 + e * 7 + n) !== flag(G, GS1_FLAGS, 0x30 + e * 20 + n)) { check(`flag 0x${(0x800 + e * 7 + n).toString(16)} = GS1 Djinn flag`, false, ''); }
+  check('flags 0x800-0x81b = GS1\'s Djinn flags 0x30 + e*20 + n', true, '');
+  const d1284 = Array.from({ length: 6 }, (_, k) => H[0x080b1284 + 2 * k] | H[0x080b1285 + 2 * k] << 8);
+  for (let k = 0; k < 6; k++) {
+    const want = flag(G, GS1_FLAGS, d1284[k]) ^ (k === 2 ? 1 : 0);
+    check(`flag 0x${(0x820 + k).toString(16)} = GS1 flag 0x${d1284[k].toString(16)}${k === 2 ? ' inverted' : ''}`, flag(T, TLA_FLAGS, 0x820 + k) === want, `${flag(T, TLA_FLAGS, 0x820 + k)} vs ${want}`);
+  }
+  check('flags 44 and 47 set (keepSettings 0)', flag(T, TLA_FLAGS, 44) === 1 && flag(T, TLA_FLAGS, 47) === 1, '');
+  check('TLA\'s own Djinn flags 48+ restored', P && T.subarray(TLA_FLAGS + 6, TLA_FLAGS + 16).equals(P.subarray(TLA_FLAGS + 6, TLA_FLAGS + 16)), '');
+  check('GS1\'s coins at gMainRoutineWork+0x28c', u32(T, 0x240 + 0x28c) === u32(G, GS1_COINS), `${u32(T, 0x240 + 0x28c)} vs ${u32(G, GS1_COINS)}`);
+  check('live coins restored (TLA\'s)', P && u32(T, TLA_COINS) === u32(P, TLA_COINS), `${u32(T, TLA_COINS)}`);
+  return T;
+}
 module.exports = (m, frame) => {
+  if (PRE && frame === PRE) preState = Buffer.from(m.HEAPU8.subarray(0x02000000, 0x02040000));
   if (frame !== AT) return;
+  if (MODE === 3) {
+    const res = [];
+    const check = (name, ok, detail) => { res.push(!!ok); console.log(`check ${ok ? 'PASS' : 'FAIL'} ${name}${VERBOSE || !ok ? ' ' + detail : ''}`); };
+    const T = cableCheck(m, frame, check);
+    const crypto = require('crypto');
+    const units = crypto.createHash('sha1').update(T.subarray(TLA_UNITS, TLA_UNITS + 8 * UNIT)).digest('hex').slice(0, 12);
+    const flags = crypto.createHash('sha1').update(T.subarray(TLA_FLAGS, TLA_FLAGS + 0x200)).digest('hex').slice(0, 12);
+    console.log(`transfer_check f${frame} mode cable: ${res.filter(Boolean).length}/${res.length} PASS; units sha1 ${units} flags sha1 ${flags}`);
+    return;
+  }
   const H = m.HEAPU8, T = Buffer.from(H.subarray(0x02000000, 0x02040000)), G = fs.readFileSync(process.env.TC_GS1);
   const B = Buffer.from(H.subarray(0x02013000, 0x02016000)); // the buffer Func_080ae410 took (TLA's layout)
   const res = [];

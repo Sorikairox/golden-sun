@@ -10,7 +10,11 @@
 #  4. tests/probes/transfer_check.cjs: TLA's party against the vendor's rules (levels, experience, base stats, Djinn,
 #     story flags, items and counts, coins, Func_080ae410's flags), printed PASS/FAIL with digests
 # Everything the games produce (save, passwords, keys, dumps, captures) stays in port_work/tla8 (save-derived data).
-# Usage: tools/transfer_pw.sh [--update] [--twice] [gold|silver|bronze ...]   (--twice: each TLA route twice, digests
+# Cases cable and route_a (tests/transfer_a.cjs): route_a links a real GS1 instance (hidden Send -> Cable) with TLA
+# (Yes -> Cable) through port/pc/link.c: the greetings meet, but GS1's link.c sends its 4100-byte save part as 0 bytes
+# (BULK_MAX 4096: a GS1 change, not made in TLA8); cable runs TLA's receive against a stand-in that plays GS1's side
+# with the 4100 bytes GS1's Save_ChooseAndLoadFile loaded, and checks TLA's party (transfer_check.cjs cable).
+# Usage: tools/transfer_pw.sh [--update] [--twice] [gold|silver|bronze|cable|route_a ...]   (--twice: each TLA route twice, digests
 # compared). The digests (cleared save SHA-1, TLA's units/flags SHA-1, RAM and picture digests after the import) are
 # compared with tests/regress/expected_transfer.tsv; --update rewrites it.
 set -uo pipefail
@@ -20,7 +24,7 @@ GS1="build/wasm/game.js $HOME/roms/Golden_Sun_USA_Europe.gba"
 update=0; [ "${1:-}" = --update ] && { update=1; shift; }
 twice=0; [ "${1:-}" = --twice ] && { twice=1; shift; }
 EXP=tests/regress/expected_transfer.tsv; got=$W/got.tsv; : > $got
-LEVELS=("$@"); [ ${#LEVELS[@]} -eq 0 ] && LEVELS=(gold silver bronze)
+LEVELS=("$@"); [ ${#LEVELS[@]} -eq 0 ] && LEVELS=(gold silver bronze cable route_a)
 src=port_work/regress/ml_saturos_win.sav
 [ -f $src ] || { echo "missing $src (tools/regress.sh ml_saturos_win)"; exit 2; }
 fail=0
@@ -31,11 +35,12 @@ sha=$(shasum $W/gs1_clear.sav | cut -c1-12)
 echo "cleared save: sha1 $sha (file 2, sendFlag set by Save_ToChosenFile)"
 printf 'clear\tsave\t%s\n' "$sha" >> $got
 # 2. the passwords (Gold first: its 26 check groups locate the buffer; Silver/Bronze are read at the same place)
-sel() { case $1 in gold) echo "A@2400-2402 260";; silver) echo "RIGHT@2300-2302,A@2400-2402 61";;
-  bronze) echo "RIGHT@2300-2302,RIGHT@2340-2342,A@2420-2422 16";; esac; }
+sel() { case $1 in gold) echo "A@2080-2082,A@2400-2402 260";; silver) echo "A@2080-2082,RIGHT@2300-2302,A@2400-2402 61";;
+  bronze) echo "A@2080-2082,RIGHT@2300-2302,RIGHT@2340-2342,A@2420-2422 16";; esac; }
 addr=
 for L in gold "${LEVELS[@]}"; do
   [ "$L" = gold ] && [ -n "$addr" ] && continue
+  case $L in cable|route_a) continue;; esac
   set -- $(sel $L)
   DUMP_AT=2550 DUMP_OUT=$W/gs1_ram_send.bin PW_ADDR=$addr PW_N=$2 PW_AT=2600 PW_OUT=$W/pw_$L.json \
     node tests/boot.cjs $GS1 2610 --quiet --keys-file tests/routes/gs1_send.keys --keys "$1" \
@@ -59,7 +64,28 @@ run() {
   [ -z "$tag" ] && { grep '^transfer_check' $W/tla_$L.log | awk -v l=$L '{print l "\tunits_flags\t" $(NF-3) " " $NF}' >> $got;
     grep '^digest' $W/tla_$L.log | awk -v l=$L '{print l "\tram_pic\t" $4 " " $6}' >> $got; }
 }
+# GS1's state with the cleared file loaded, on the Transfer Method screen (the bytes its cable send would carry)
+DUMP_AT=2000 DUMP_OUT=$W/gs1_ram_cable.bin node tests/boot.cjs $GS1 2001 --quiet --keys-file tests/routes/gs1_send.keys \
+  --probe tests/probes/ramdump.cjs --flash-in $W/gs1_clear.sav --out $W/shots/gs1_cable > /dev/null 2>&1
+cable() {
+  local L=$1 tag=$2
+  if [ $L = cable ]; then
+    TC_MODE=cable TC_GS1=$W/gs1_ram_cable.bin TC_PRE=700 TC_AT=1100 node tests/transfer_a.cjs --virtual $W/gs1_ram_cable.bin \
+      --frames 1102 --keys1 B@1000-1002 --probe1 tests/probes/transfer_check.cjs --shot 790,900,1100 --out $W/shots/cable$tag > $W/tla_cable$tag.log 2>&1
+  else
+    node tests/transfer_a.cjs --frames 2400 --shot 2050,2110,2300 --out $W/shots/route_a$tag > $W/tla_route_a$tag.log 2>&1
+  fi
+  grep -q 'FAIL' $W/tla_$L$tag.log && { grep 'FAIL' $W/tla_$L$tag.log; fail=1; }
+  grep '^transfer_check\|bulk on the wire\|^route_a' $W/tla_$L$tag.log | sed 's/^transfer_check //'
+  [ -z "$tag" ] && grep '^route_a' $W/tla_$L.log | awk -v l=$L '{print l "\tram_units\t" $(NF-2) " " $NF}' >> $got
+}
 for L in "${LEVELS[@]}"; do
+  case $L in cable|route_a)
+    cable $L ""
+    if [ $twice = 1 ]; then cable $L _2
+      [ "$(grep -v '^boot' $W/tla_$L.log)" = "$(grep -v '^boot' $W/tla_${L}_2.log)" ] && echo "$L: second run identical" || { echo "$L: runs DIFFER"; fail=1; }
+    fi
+    continue;; esac
   run $L ""
   if [ $twice = 1 ]; then
     run $L _2

@@ -1,6 +1,7 @@
 # TLA8: power-on with the cleared save (gs1_clear.keys): title, Start; R+Left held while the File Screen's menu is
 # built (Save_ScanFileSummaries offers the hidden Send only then), Right x4 from Continue to Send, A: the Link list
-# (only cleared files: file 2), A, "Transfer Method" (Password first), A: "Password Selection" (Gold first) ~f2100.
-# Then Gold: A@2400; Silver: RIGHT@2300, A@2400; Bronze: RIGHT@2300, RIGHT@2340, A@2420 (tools/transfer_pw.sh).
+# (only cleared files: file 2), A: "Transfer Method" (Password first) ~f1960. Then Password: A@2080 ("Password
+# Selection", Gold first) and Gold: A@2400; Silver: RIGHT@2300, A@2400; Bronze: RIGHT@2300, RIGHT@2340, A@2420
+# (tools/transfer_pw.sh); or Cable: gs1_send_cable.keys.
 START@1500-1502,R+LEFT@1560-1640,RIGHT@1700-1702,RIGHT@1730-1732,RIGHT@1760-1762,RIGHT@1790-1792
-A@1850-1852,A@1950-1952,A@2080-2082
+A@1850-1852,A@1950-1952

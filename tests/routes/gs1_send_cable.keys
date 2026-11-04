@@ -1,0 +1,3 @@
+# TLA8 route (a): after gs1_send.keys ("Transfer Method", Password first ~f1960): Right to Cable, A: the link window
+# (Serial_Initialize, payload "0000", waiting for the partner's "UVTS" greeting) ~f2100.
+RIGHT@2030-2032,A@2080-2082
