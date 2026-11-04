@@ -10,11 +10,8 @@
  * and the page's own menu writes it back (Port_OptSet). Rows:
  *   0 Screen colours  Original / GBA LCD          (page: gs-lcd, the GS10 LCD curve)
  *   1 Brightness      Normal / Bright / Brighter   (page: gs-bright, a gamma lift on the canvas copy)
- *   2 Wide view       Off / On                     (page: gs-wide; GS27 feature 2, present when PORT_WIDE_ROW) */
+ *   2 Wide view       Off / On                     (page: gs-wide; GS27 feature 2: ppu.c, the c_rules margins) */
 #include "gba.h"
-#ifdef PORT_DEBUG_HINT
-#include <stdio.h>
-#endif
 
 struct Window;
 struct WindowSprite;
@@ -62,15 +59,17 @@ extern u8 gPointingHandTiles[];
 enum { OPT_LCD, OPT_BRIGHT, OPT_WIDE, OPT_COUNT };
 static u8 sOpt[OPT_COUNT];
 static u32 sOptGeneration;
+/* Wide view (feature 2): the field's actor culling widens by this many pixels a side
+ * (port/c_rules.tsv; ppu.c WIDE_M); 0 when off, which leaves every one of those tests as the original */
+s32 gPortWideMargin;
+static void opt_changed(void) { gPortWideMargin = sOpt[OPT_WIDE] ? 24 : 0; }
 s32 Port_OptGet(s32 i) { return i >= 0 && i < OPT_COUNT ? sOpt[i] : 0; }
-void Port_OptSet(s32 i, s32 v) { if (i >= 0 && i < OPT_COUNT) sOpt[i] = (u8)v; }   /* from the page: no generation bump */
+void Port_OptSet(s32 i, s32 v) { if (i >= 0 && i < OPT_COUNT) sOpt[i] = (u8)v; opt_changed(); }   /* from the page: no generation bump */
 u32 Port_OptGeneration(void) { return sOptGeneration; }
+int Port_WideOn(void) { return sOpt[OPT_WIDE] != 0; }
 
 /* ---- the screen ---- */
-#ifndef PORT_WIDE_ROW
-#define PORT_WIDE_ROW 0
-#endif
-#define ROWS (2 + PORT_WIDE_ROW)
+#define ROWS 3
 #define WIN_X 2
 #define WIN_Y 5
 #define WIN_W 26
@@ -87,7 +86,7 @@ static const char *const sValue[3][3] = {{"Original", "GBA LCD", 0}, {"Normal", 
 static const char *const sHelp[3] = {
     "Like a real GBA screen.",
     "Lighten the picture.",
-    "See more of the map around you.",
+    "See more of the map.",
 };
 static struct PortMenuCursor sCursor;
 
@@ -161,6 +160,7 @@ void Port_ExtraSettings_Run(s32 seMove, s32 seConfirm, s32 seCancel) {
       Sound_PlayFar((gKeysPressed & K_A) ? sSeConfirm : sSeMove);
       sOpt[row] = (u8)(v % n);
       sOptGeneration++;
+      opt_changed();
       draw_value(w, row);
     }
   }

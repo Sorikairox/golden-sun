@@ -101,8 +101,17 @@ async function start(rom) {
   status('Starting...');
   const canvas = $('screen');
   const ctx = canvas.getContext('2d');
-  const image = ctx.createImageData(240, 160);
-  const pixels = new Uint32Array(image.data.buffer);
+  let image = ctx.createImageData(240, 160);
+  let pixels = new Uint32Array(image.data.buffer);
+  // GS27 Wide view: the frame is 288 wide while the option is on (Port_FrameWidth); the canvas follows it
+  const fitWidth = (fw) => {
+    image = ctx.createImageData(fw, 160);
+    pixels = new Uint32Array(image.data.buffer);
+    canvas.width = fw;
+    canvas.style.aspectRatio = fw + ' / 160';
+    canvas.classList.toggle('wide', fw > 240);
+    if (window.GSTouch && GSTouch.layout) GSTouch.layout();
+  };
   let m;
   let frames = 0;
   let next = performance.now();
@@ -114,8 +123,9 @@ async function start(rom) {
   // rate; the game is suspended there (ASYNCIFY) until the promise resolves
   const onFrame = () => {
     frames++;
-    const p = m._Port_FrameBuffer();
-    image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
+    const p = m._Port_FrameBuffer(), fw = m._Port_FrameWidth ? m._Port_FrameWidth() : 240;
+    if (fw !== image.width) fitWidth(fw);
+    image.data.set(m.HEAPU8.subarray(p, p + fw * 160 * 4));
     GSOpts.poll();   // GS27: options changed in the game's Extra settings screen
     if (lcd.lut) lcd.apply(pixels);   // optional "GBA screen colours" / brightness: presentation only, game memory untouched
     ctx.putImageData(image, 0, 0);
@@ -291,6 +301,29 @@ const lcd = {
   if (sel) { sel.value = String(lcd.bright); sel.addEventListener('change', () => lcd.setBright(+sel.value)); }
 }
 window.GSLcd = lcd;
+
+// ---- optional "Wide view" (GS27 feature 2, default off, gs-wide): field maps fill a 288 x 160 picture (the GBA's 240
+// in the middle; port/pc/ppu.c), other screens stay 240 wide with black side bars. Applied at once, no reload: the
+// renderer reads the option each frame and the canvas follows the frame's width. Also in the game's Extra settings.
+const GSWide = {
+  on: false,
+  set(on, fromGame) {
+    this.on = !!on;
+    try { if (this.on) localStorage.setItem(K_OPT + 'wide', '1'); else localStorage.removeItem(K_OPT + 'wide'); } catch (e) { /* storage blocked */ }
+    const box = $('opt-wide');
+    if (box) box.checked = this.on;
+    if (!fromGame) GSOpts.push();
+  },
+};
+{
+  let on = false;
+  try { on = localStorage.getItem(K_OPT + 'wide') === '1'; } catch (e) { /* storage blocked: default off */ }
+  if (params.get('wide') !== null) on = params.get('wide') === '1';   // tests: ?wide=1 / ?wide=0 (not stored)
+  GSWide.on = on;
+  const box = $('opt-wide');
+  if (box) { box.checked = on; box.addEventListener('change', () => GSWide.set(box.checked)); }
+}
+window.GSWide = GSWide;
 
 // GS27: the option values the game's Extra settings screen shows and edits (port/pc/options.c). The page owns them
 // (storage, presentation); push() copies them into the running module, poll() picks up edits made in the game.

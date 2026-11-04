@@ -50,7 +50,15 @@ void Port_SystemEntry(void) {
   port_soft_reset();
 }
 
+#ifndef PORT_GAME_TLA
+void Port_WideFieldSequence(int on); /* ppu.c (GS27 wide view): a reset leaves the field sequence */
+void Port_Restart(void) {
+  Port_WideFieldSequence(0);
+  system_entry();
+}
+#else
 void Port_Restart(void) { system_entry(); }
+#endif
 
 int main(void) {
   int relocated;

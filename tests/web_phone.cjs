@@ -145,10 +145,10 @@ async function main() {
     const menuChecks = async (label, w, h) => {
       await tap('#tk-menu');
       check(await ev('document.body.classList.contains("tmenu")'), `${label}: menu open`);
-      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-offline', '#opt-title', '#net > summary']) {
+      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-bright', '#opt-wide', '#opt-offline', '#opt-title', '#net > summary']) {
         await ev(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({ block: 'center' }); true`);
         await sleep(50);
-        const target = sel.startsWith('#opt-') && sel !== '#opt-title' && sel !== '#opt-touch' ? `label:has(> ${sel})` : sel;
+        const target = sel.startsWith('#opt-') && sel !== '#opt-title' && sel !== '#opt-touch' ? `label:has(> ${sel})` : sel;   // GS27: + Brightness, Wide view
         const r = await rect(target);
         check(r && r[0] >= -1 && r[0] + r[2] <= w + 1 && r[1] >= -1 && r[1] + r[3] <= h + 1 && r[3] >= 32 && (sel === '#opt-touch' || r[3] >= 44),
           `${label}: ${target} reachable and touch-sized (${r && r.map(Math.round)})`);
@@ -186,7 +186,9 @@ async function main() {
     await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html` });   // the ROM picker: baseline
     await sleep(2500);
     console.log(`memory: renderer resident on the ROM picker (no game) ${rss().toFixed(0)} MiB (${rss.last}; largest ${rss.max.toFixed(0)})`);
-    await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba` });
+    // --query K=V (GS27): extra page parameters, e.g. wide=1 (Wide view: a 288 x 160 picture in every layout)
+    const q = process.argv.indexOf('--query') > 0 ? '&' + process.argv[process.argv.indexOf('--query') + 1] : '';
+    await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba${q}` });
     while ((await frames()) < 620) {
       if (Date.now() - t0 > 240000) throw new Error(`only ${await frames()} frames`);
       if (errors.length) throw new Error('page error: ' + errors[0]);

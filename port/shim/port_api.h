@@ -29,6 +29,11 @@ struct Window;
 void Port_ExtraSettings_Run(int seMove, int seConfirm, int seCancel);
 void Port_ExtraSettings_Hint(struct Window *help, int message, int windowWidth);
 void Port_ExtraSettings_HintClose(void);
+/* GS27 Wide view: pixels the field's actor culling widens by a side (0 when off), and the field-map stamps for the
+ * renderer (port/pc/ppu.c) */
+extern int gPortWideMargin;
+void Port_WideFieldStamp(void);
+void Port_WideFieldSequence(int on);
 int Port_SettingsMenuResult(int result, int seMove, int seConfirm, int seCancel);
 
 #endif
