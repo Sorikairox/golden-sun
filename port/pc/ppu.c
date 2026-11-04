@@ -385,6 +385,8 @@ u32 *Port_FrameBuffer(void) { return gPortFrame; }
  * darken, semi-transparent sprites), forced blank, backdrop. Not yet: mosaic, modes 3-5 (unused by the
  * title). Output: 240x160 RGBA8 in gPortFrame, read by the page. Called once per visible line by the frame
  * driver (hw.c) with the registers as they are at that line. */
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "gba.h"
@@ -529,7 +531,16 @@ void Port_PpuIoWritten(u32 addr) {
   }
 }
 
-static inline u16 rd16(u32 off) { return IO16(off); }
+/* GS30: a World Map frame's top margin rows are drawn after line 159 (they need the frame's lines, docs/GS30.md) with
+ * line 0's display registers, kept here */
+#define IO_SNAP_BYTES 0x60
+static u8 sIoSnap[IO_SNAP_BYTES];
+static int sUseIoSnap;
+static inline u16 rd16(u32 off) {
+  if (sUseIoSnap && off < IO_SNAP_BYTES)
+    return *(const u16 *)(sIoSnap + off);
+  return IO16(off);
+}
 
 void Port_PpuVBlank(void) {
   int i;
@@ -543,6 +554,237 @@ void Port_PpuVBlank(void) {
   }
 }
 
+/* GS30 "Map zoom" on the World Map (docs/GS30.md). The World Map is DISPCNT mode 2: BG3 (screen block 8, char block 2)
+ * the ground, BG2 (screen block 10, char block 3) the mountains and woods, both 512 x 512 px affine and wrapping, each
+ * line given its own PA/PC/X/Y by an HBlank DMA (WorldMap_ApplyAffinePage: DMA 0, repeat, 8 words to BG2PA..BG3Y), the
+ * reference point absolute (unwrapped BG px = world units / 2). At More/Most such a frame is LW x LH with the GBA's
+ * lines centred:
+ * - a GBA line's extra columns continue the hardware's stepping (X + n * PA);
+ * - the extra rows take each term as a + b / (line - h) (h the horizon), fitted on the frame's own lines 0, 80 and 159
+ *   (exact at 0 and 159); rows past the horizon are transparent;
+ * - a margin sample is drawn only where the game holds that place: inside the 1024 x 1024-unit block of world tiles
+ *   in RAM (Ram_CellPictures, 256 units left of and 320 above the followed point), its quarter decoded
+ *   (quarterTiles == tileIds, +320 for the upper layer), and the BG map's cell equal to the RAM cell's picture
+ *   (checked for all 32 x 32 cells of both layers each frame); anything else is transparent (the backdrop);
+ * - the GBA's own pixels are drawn as before, never checked.
+ * While a menu or an event shows the view as a still picture (BG1CNT 0x682, mode 0, BG2/BG3 still on), the margins
+ * show the last moving frame's ground (a copy of its BG maps, tiles, lines and checks) as layer BG1, with the live
+ * palette, windows, blending and sprites. R's world picture (BG2/BG3 off) and every other screen stay 240 x 160. */
+#define WM_VIEW_PTR (*(volatile u32 *)(uintptr_t)0x03001e70u) /* gMapGridWork[0]: struct WorldMapView on the World Map */
+#define WM_CELLS ((const u8 *)(uintptr_t)0x02020000u)         /* Ram_CellPictures: 2 layers x 32 x 32 cells, u32 each */
+#define WM_CELL_PICTURES ((const u8 *)(uintptr_t)0x02010000u) /* Ram_MapGridCellBuffer: cell picture = top, bottom u16 */
+struct WmLine { s32 x, y, pa, pc; };
+struct WmFit { int ok, linear, la, lc; double h, a[4], b[4]; };
+struct WmView {
+  struct WmLine lines[2][H]; /* BG2, BG3 as the GBA's lines used them */
+  struct WmFit fit[2];
+  int skyTop;               /* the first ground line (0 in normal play) */
+  u8 valid[2][32][32];      /* layer 0 (BG3, screen block 8) / 1 (BG2, screen block 10): the BG map cell is the RAM's */
+  u8 qok[2][2][2];          /* [layer][quarter z & 1][quarter x & 1]: the RAM quarter holds its tile */
+  s32 bx0, bz0;             /* the RAM block's top left, world units */
+  u16 cnt[2];               /* BG2CNT, BG3CNT */
+};
+static struct WmView sWm, sWmSnap;
+static u8 sSnapVram[0x2000 + 0x8000]; /* screen blocks 8-11, then char blocks 2-3, of the last moving frame */
+static u8 sSnapCells[0x2000];         /* its Ram_CellPictures */
+static int sSnapOk, worldZoom, worldStill, sZoomOn;
+
+static int wm_ram_ok(u32 a, u32 n) {
+  return (a >= EWRAM_BASE && a + n <= EWRAM_BASE + 0x40000) || (a >= IWRAM_BASE && a + n <= IWRAM_BASE + 0x8000);
+}
+static inline u16 wm_u16(const u8 *p) { return *(const u16 *)p; }
+
+/* the World Map's moving view is being fed: its BG settings and the HBlank DMA into BG2PA..BG3Y */
+static int wm_config(void) {
+  u16 c2 = IO16(0x00C), c3 = IO16(0x00E), ctl = IO16(R_DMA0SAD + 10);
+  u32 g = WM_VIEW_PTR;
+  return (c2 & ~3u) == 0xaa0c && (c3 & ~3u) == 0xa808 && IO32(R_DMA0SAD + 4) == IO_BASE + R_BG2PA &&
+         (ctl & 0xB660) == 0xA660 && wm_ram_ok(g, 0x35c);
+}
+
+/* a frame's checks: the RAM block, its quarters, and each BG map cell against its RAM cell (docs/GS30.md) */
+static void wm_scan(struct WmView *w) {
+  u32 g = WM_VIEW_PTR, org = *(const u32 *)(uintptr_t)g;
+  s32 ox = 0, oz = 0, fqx, fqz;
+  int L, r, c, row, col;
+  const u16 *tileIds = (const u16 *)(uintptr_t)(g + 0x138), *quarterTiles = (const u16 *)(uintptr_t)(g + 0x338);
+  if (wm_ram_ok(org, 12)) {
+    ox = *(const s32 *)(uintptr_t)org;
+    oz = *(const s32 *)(uintptr_t)(org + 8);
+  }
+  fqx = (ox - (256 << 16)) >> 25;
+  fqz = (oz - (320 << 16)) >> 25;
+  w->bx0 = fqx * 512;
+  w->bz0 = fqz * 512;
+  for (row = 0; row < 2; row++)
+    for (col = 0; col < 2; col++) {
+      s32 qx = fqx + col, qz = fqz + row;
+      u16 tile = tileIds[((qz & 15) << 4) + (qx & 15)];
+      for (L = 0; L < 2; L++)
+        w->qok[L][qz & 1][qx & 1] = quarterTiles[(L * 2 + (qz & 1)) * 2 + (qx & 1)] == (u16)(tile + 320 * L);
+    }
+  w->cnt[0] = IO16(0x00C);
+  w->cnt[1] = IO16(0x00E);
+  /* the cell checks need Ram_MapGridCellBuffer's cell pictures, which the still picture borrows (it is drawn there
+   * the frame before it shows, and the table comes back a frame after it): while the BG maps and the RAM cells are
+   * those of the last moving frame, its checks stand */
+  if (sSnapOk && !memcmp(VRAM + 0x4000, sSnapVram, 0x2000) && !memcmp(WM_CELLS, sSnapCells, 0x2000)) {
+    memcpy(w->valid, sWmSnap.valid, sizeof w->valid);
+    return;
+  }
+  for (L = 0; L < 2; L++) {
+    const u8 *map = VRAM + 0x4000 + L * 0x1000;
+    for (r = 0; r < 32; r++)
+      for (c = 0; c < 32; c++) {
+        u32 id = wm_u16(WM_CELLS + L * 4096 + r * 128 + c * 4) & 0x3FFF;
+        const u8 *pic = WM_CELL_PICTURES + id * 4;
+        w->valid[L][r][c] = wm_u16(pic) == wm_u16(map + 2 * r * 64 + 2 * c) &&
+                            wm_u16(pic + 2) == wm_u16(map + (2 * r + 1) * 64 + 2 * c);
+      }
+  }
+}
+
+/* the frame's per-line terms as a + b / (line - h), from lines la, (la + 159) / 2 and 159 */
+static void wm_fit(struct WmView *w) {
+  int i, j, g;
+  for (g = 0; g < H && !w->lines[0][g].pa && !w->lines[0][g].pc; g++)
+    ;
+  w->skyTop = g;
+  for (i = 0; i < 2; i++) {
+    struct WmFit *f = &w->fit[i];
+    const struct WmLine *L = w->lines[i];
+    int a = g, c = H - 1, b = (a + c) / 2, k;
+    double fa, fb, fc, R, den;
+    f->ok = 0;
+    if (g >= 100)
+      continue;
+    f->la = a;
+    f->lc = c;
+    f->ok = 1;
+    k = abs(L[a].x - L[c].x) > abs(L[a].y - L[c].y);
+    fa = k ? L[a].x : L[a].y;
+    fb = k ? L[b].x : L[b].y;
+    fc = k ? L[c].x : L[c].y;
+    f->linear = 1;
+    if (fabs(fa - fc) >= 256 * 4 && fb != fc) {
+      R = (fa - fb) / (fb - fc);
+      den = (b - a) - R * (c - b);
+      if (fabs(den) > 1e-9) {
+        f->h = ((b - a) * (double)c - R * (c - b) * a) / den;
+        if (f->h < a - 1 || f->h > c + 1)
+          f->linear = 0;
+      }
+    }
+    for (j = 0; j < 4; j++) {
+      double va = j == 0 ? L[a].x : j == 1 ? L[a].y : j == 2 ? L[a].pa : L[a].pc;
+      double vc = j == 0 ? L[c].x : j == 1 ? L[c].y : j == 2 ? L[c].pa : L[c].pc;
+      if (f->linear) {
+        f->a[j] = va;
+        f->b[j] = (vc - va) / (c - a);
+      } else {
+        double ga = 1 / (a - f->h), gc = 1 / (c - f->h);
+        f->b[j] = (va - vc) / (ga - gc);
+        f->a[j] = va - f->b[j] * ga;
+      }
+    }
+  }
+}
+
+/* frame row v's terms for BG2 (i 0) or BG3 (i 1): X, Y, PA, PC (the registers' units); 0 when the row shows nothing */
+static int wm_row(const struct WmView *w, int i, int v, double t[4]) {
+  const struct WmFit *f = &w->fit[i];
+  int j;
+  if ((v >= 0 && v < H) || (v < 0 && w->skyTop > 0)) {
+    const struct WmLine *L = &w->lines[i][v < 0 ? 0 : v];
+    t[0] = L->x;
+    t[1] = L->y;
+    t[2] = L->pa;
+    t[3] = L->pc;
+    return 1;
+  }
+  if (!f->ok)
+    return 0;
+  if (f->linear) {
+    for (j = 0; j < 4; j++)
+      t[j] = f->a[j] + f->b[j] * (v - f->la);
+    return 1;
+  }
+  if ((v - f->h) * (f->la - f->h) <= 0 || fabs(v - f->h) < 1)
+    return 0; /* past the horizon */
+  for (j = 0; j < 4; j++)
+    t[j] = f->a[j] + f->b[j] / (v - f->h);
+  return 1;
+}
+
+/* a margin sample at unwrapped BG pixel (px, py) of layer L is the game's ground there */
+static inline int wm_ok(const struct WmView *w, int L, s32 px, s32 py) {
+  s32 wx = px * 2, wz = py * 2;
+  if (wx < w->bx0 || wx >= w->bx0 + 1024 || wz < w->bz0 || wz >= w->bz0 + 1024)
+    return 0;
+  if (!w->qok[L][(wz >> 9) & 1][(wx >> 9) & 1])
+    return 0;
+  return w->valid[L][(py >> 4) & 31][(px >> 4) & 31];
+}
+
+/* one affine sample (256 colours, 512 px, wrapping) from VRAM laid out at `vram` (the live VRAM or the copy) */
+static inline u16 wm_sample(const u8 *map, const u8 *chr, s32 px, s32 py) {
+  u32 tile, ci;
+  px &= 511;
+  py &= 511;
+  tile = map[(py >> 3) * 64 + (px >> 3)];
+  ci = chr[(tile * 64 + (py & 7) * 8 + (px & 7)) & 0x3FFF];
+  return ci ? PAL[ci] & 0x7FFF : TRANSPARENT;
+}
+
+/* frame row v of a World Map BG (bg 2 or 3) from view w and VRAM copy (vram, or NULL for the live VRAM); on a GBA line
+ * (real) the GBA's columns are drawn as the hardware does and the extra columns continue its stepping */
+static void wm_layer(u16 *out, int bg, int v, int real, const struct WmView *w, const u8 *snap, int marginsOnly) {
+  int i = bg - 2, x;
+  u16 cnt = snap ? w->cnt[i] : rd16(R_BG0CNT + 2 * bg);
+  u32 charBase = ((cnt >> 2) & 3) * 0x4000, screenBase = ((cnt >> 8) & 31) * 0x800;
+  int L = screenBase == 0x5000;
+  const u8 *map = snap ? snap + (screenBase - 0x4000) : VRAM + screenBase;
+  const u8 *chr = snap ? snap + 0x2000 + (charBase - 0x8000) : VRAM + charBase;
+  if (real) {
+    const struct WmLine *ln = &w->lines[i][v];
+    s32 pa = ln->pa, pc = ln->pc, x0 = ln->x - pa * XO, y0 = ln->y - pc * XO;
+    for (x = 0; x < LW; x++, x0 += pa, y0 += pc) {
+      int gx = x - XO;
+      s32 px = x0 >> 8, py = y0 >> 8;
+      if (gx >= 0 && gx < W) {
+        if (!marginsOnly)
+          out[x] = wm_sample(map, chr, px, py);
+        continue;
+      }
+      out[x] = wm_ok(w, L, px, py) ? wm_sample(map, chr, px, py) : TRANSPARENT;
+    }
+  } else {
+    double t[4];
+    if (!wm_row(w, i, v, t)) {
+      for (x = 0; x < LW; x++)
+        out[x] = TRANSPARENT;
+      return;
+    }
+    for (x = 0; x < LW; x++) {
+      int gx = x - XO;
+      s32 px = (s32)floor((t[0] + t[2] * gx) / 256.0), py = (s32)floor((t[1] + t[3] * gx) / 256.0);
+      out[x] = wm_ok(w, L, px, py) ? wm_sample(map, chr, px, py) : TRANSPARENT;
+    }
+  }
+}
+
+/* a still-picture frame: the margins of row v as layer BG1, the last moving frame's BG2 over BG3 (by their priority) */
+static u16 sStillRow[WMAX], sStillTmp[2][WMAX];
+static void wm_still_row(int v, int real) {
+  int x, front = (sWmSnap.cnt[1] & 3) < (sWmSnap.cnt[0] & 3); /* BG3 in front only with a lower priority number */
+  wm_layer(sStillTmp[0], 2, v, real, &sWmSnap, sSnapVram, 1);
+  wm_layer(sStillTmp[1], 3, v, real, &sWmSnap, sSnapVram, 1);
+  for (x = 0; x < LW; x++) {
+    u16 a = sStillTmp[front][x], b = sStillTmp[!front][x];
+    sStillRow[x] = a != TRANSPARENT ? a : b;
+  }
+}
+
 /* row v of the frame (v = line on the GBA's lines; v < 0 or >= 160 a zoom margin row, drawn with line 0's or line
  * 159's registers) */
 static void text_bg(int bg, int line, int v) {
@@ -551,7 +793,10 @@ static void text_bg(int bg, int line, int v) {
   u32 charBase = ((cnt >> 2) & 3) * 0x4000, screenBase = ((cnt >> 8) & 31) * 0x800;
   int color256 = (cnt >> 7) & 1, size = cnt >> 14;
   u32 wmask = (size & 1) ? 511 : 255, hmask = (size & 2) ? 511 : 255;
-  u32 y = (line + vofs) & hmask;
+  /* GS30: on a World Map frame the plain layers but BG0 (BG1's fill on the lines a transition switches to mode 0, as
+   * the encounter's centre line does) go on past the GBA's screen as the hardware wraps them; BG0 holds windows */
+  int wrapOn = worldZoom && bg != 0;
+  u32 y = ((wrapOn ? v : line) + vofs) & hmask;
   u16 *out = bgLine[bg];
   int x;
   int real = v == line;
@@ -581,11 +826,13 @@ static void text_bg(int bg, int line, int v) {
       mapLayer = 0;
     fullY += v - line;
   }
+  if (worldStill && bg == 1) /* GS30: the still picture's margins: the last moving frame's ground */
+    wm_still_row(v, real);
   for (x = 0; x < LW; x++) {
     int gx = x - XO;
     u32 px, tile, tx, ty, ci;
     u16 entry;
-    if (real && gx >= 0 && gx < W) {
+    if ((real && gx >= 0 && gx < W) || wrapOn) {
       u32 block;
       px = (gx + hofs) & wmask;
       block = (px >> 8) + ((y >> 8) * ((size & 1) ? 2 : 1));
@@ -598,7 +845,7 @@ static void text_bg(int bg, int line, int v) {
       px = (u32)fx;
       ty = (u32)fullY & 7;
     } else {
-      out[x] = TRANSPARENT;
+      out[x] = worldStill && bg == 1 ? sStillRow[x] : TRANSPARENT;
       continue;
     }
     tile = entry & 0x3FF;
@@ -619,7 +866,7 @@ static void text_bg(int bg, int line, int v) {
   }
 }
 
-static void affine_bg(int bg, int real) {
+static void affine_bg(int bg, int real, int v) {
   int i = bg - 2;
   u16 cnt = rd16(R_BG0CNT + 2 * bg);
   s32 pa = (s16)rd16(R_BG2PA + 0x10 * i), pc = (s16)rd16(R_BG2PA + 4 + 0x10 * i);
@@ -629,6 +876,10 @@ static void affine_bg(int bg, int real) {
   s32 x0 = refX[i] - pa * XO, y0 = refY[i] - pc * XO;
   u16 *out = bgLine[bg];
   int x;
+  if (worldZoom) { /* GS30: the World Map's moving view */
+    wm_layer(out, bg, v, real, &sWm, NULL, 0);
+    return;
+  }
   if (!real) { /* map zoom: a margin row */
     for (x = 0; x < LW; x++)
       out[x] = TRANSPARENT;
@@ -819,7 +1070,7 @@ static void render_row(int line, int v) {
     if (mode == 0 || (mode == 1 && bg < 2))
       text_bg(bg, line, v);
     else
-      affine_bg(bg, real);
+      affine_bg(bg, real, v);
   }
   sprites(v, dispcnt);
 
@@ -849,7 +1100,7 @@ static void render_row(int line, int v) {
     int semi = 0;
     int wx = x - XO; /* map zoom: the margins take the windows of the GBA screen's edge column (and edge line) */
     if (!real || wx < 0 || wx >= W) {
-      if (!fieldZoom || wx < sBoundL || wx >= sBoundR || v < sBoundT || v >= sBoundB) { /* past the map's edge: black */
+      if (!sZoomOn || wx < sBoundL || wx >= sBoundR || v < sBoundT || v >= sBoundB) { /* past the map's edge: black */
         out[x] = 0xFF000000u;
         continue;
       }
@@ -910,10 +1161,34 @@ void Port_PpuLine(int line) {
     sMatchPrev = fieldCandidate ? sMatchLines : 0;
     sMatchLines = 0;
     fieldCandidate = level > 0 && level < ZOOM_LEVELS && sStamped && Port_FrameCount() - sFieldStamp <= 2;
+    /* GS30: the World Map: its moving view, or its still picture with the last moving frame kept */
+    worldZoom = worldStill = 0;
+    if (level > 0 && level < ZOOM_LEVELS && sInField && wm_config()) {
+      u16 dispcnt = IO16(R_DISPCNT);
+      if (IO16(0x00A) != 0x682)
+        worldZoom = 1;
+      else if (sSnapOk && (dispcnt & 7) == 0 && (dispcnt & 0x0C00) == 0x0C00)
+        worldStill = 1;
+    }
+    if (!worldZoom && !worldStill)
+      sSnapOk = 0;
+    if (worldZoom || worldStill)
+      fieldCandidate = 0;
     fieldZoom = fieldCandidate && sMatchPrev >= ZOOM_MIN_LINES;
+    sZoomOn = fieldZoom || worldZoom || worldStill;
     if (fieldZoom)
       zoom_frame(level);
-    else {
+    else if (worldZoom || worldStill) {
+      LW = ZOOM_W[level];
+      LH = ZOOM_H[level];
+      XO = (LW - W) / 2;
+      YO = (LH - H) / 2;
+      sBoundL = sBoundT = -WMAX;
+      sBoundR = sBoundB = WMAX + W;
+      memcpy(sIoSnap, (const void *)(uintptr_t)IO_BASE, IO_SNAP_BYTES);
+      if (worldZoom)
+        wm_scan(&sWm);
+    } else {
       LW = W;
       LH = H;
       XO = YO = 0;
@@ -935,16 +1210,39 @@ void Port_PpuLine(int line) {
       lastY[i] = yr;
     }
     wroteX[i] = wroteY[i] = 0;
+    if (worldZoom) { /* GS30: the line's terms, for its extra columns and the fit */
+      struct WmLine *ln = &sWm.lines[i][line];
+      ln->x = refX[i];
+      ln->y = refY[i];
+      ln->pa = (s16)rd16(R_BG2PA + 0x10 * i);
+      ln->pc = (s16)rd16(R_BG2PA + 4 + 0x10 * i);
+    }
   }
-  if (line == 0)
+  if (line == 0 && !worldZoom && !worldStill)
     for (v = -YO; v < 0; v++)
       render_row(0, v);
   sLineMatched = 0;
   render_row(line, line);
   sMatchLines += sLineMatched;
-  if (line == H - 1)
+  if (line == H - 1) {
+    if (worldZoom)
+      wm_fit(&sWm);
     for (v = H; v < LH - YO; v++)
       render_row(H - 1, v);
+    if (worldZoom || worldStill) { /* the top rows, with line 0's registers */
+      sUseIoSnap = 1;
+      for (v = -YO; v < 0; v++)
+        render_row(0, v);
+      sUseIoSnap = 0;
+    }
+    if (worldZoom) { /* kept for a still picture's margins */
+      sWmSnap = sWm;
+      memcpy(sSnapVram, VRAM + 0x4000, 0x2000);
+      memcpy(sSnapVram + 0x2000, VRAM + 0x8000, 0x8000);
+      memcpy(sSnapCells, WM_CELLS, 0x2000);
+      sSnapOk = 1;
+    }
+  }
   /* affine reference points step by PB/PD for the next line */
   for (i = 0; i < 2; i++) {
     refX[i] += (s16)rd16(R_BG2PA + 2 + 0x10 * i);
