@@ -2,6 +2,19 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS32 — 2026-11-04: merge GS31 (Map zoom edge jitter fix) with GS30 (World Map zoom)
+
+- Read docs/GS32.md. On `main` (merge 80b89c7, expected.tsv dce7d1d + docs), **not deployed, not pushed**.
+- ppu.c merged without conflict (GS30's wm_* block + GS31's VBlank camera snapshot); the World Map path does no
+  camera-based placement at line 0 (wm_scan's line-0 reads are validity checks, consistent with the RAM they check).
+  GS31's traps renumbered to 93-94.
+- Tests: regress full masked vs GS30's b13e7532 563/565 (link2's own row; zoom_edges_most f2700, GS30 lacks the fix);
+  expected.tsv RAM rows rewritten (0 pictures, 0 saves changed), --quick OK; zoom_edges_most/more 0 reversals; jitter
+  probe on World Map routes at More/Most 0 reversals (one probe match across a map cut on bilibin, same on GS31's
+  build); web_opts --worldmap, web_phone zoom 0/1/2 + plain, web_offline, web_touch, web_link, web_transfer PASS.
+- Builds: GS1 1dd5c2e8 / 13f7526d (site c413992211ebfe9b); TLA df7c39fb / d184cc2a unchanged.
+- GS31 worktree removed, branch deleted. Next: deploy when the user says so.
+
 ## GS31 — 2026-11-04: Map zoom's picture jittered at map edges (bug fix, worktree branch)
 
 - Read docs/GS31.md and traps 93-94 (renumbered by GS32). Branch `worktree-agent-a4be33ad62c902936` (aac4389 + docs),

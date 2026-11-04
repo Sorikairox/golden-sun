@@ -14,6 +14,11 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS32 (2026-11-04, main): **merge of GS31 into main with GS30** (docs/GS32.md): Map zoom on field maps (VBlank camera,
+  no edge jitter) and on the World Map together; GS31's traps renumbered 93-94. Regress masked = GS30's b13e7532 but
+  for zoom_edges_most f2700 (the fix) and link2's own row; expected.tsv RAM rows rewritten; GS1 1dd5c2e8 / 13f7526d
+  (site c413992211ebfe9b); TLA df7c39fb / d184cc2a unchanged; not deployed.
+
 - GS30 (2026-11-04, main): **Map zoom on GS1's World Map** (docs/GS30.md): the moving view at 288 x 192 / 336 x 224,
   renderer only: extra columns continue the hardware's affine stepping, extra rows fit a + b / (line - h) on the frame's
   own lines; margin samples only where the game holds that place (RAM tile block, decoded quarter, BG cell == RAM cell),
