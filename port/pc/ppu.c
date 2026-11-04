@@ -485,23 +485,36 @@ static int zoom_offset(int frame, int gba, int lo, int hi) {
     o = frame - gba;
   return o;
 }
-static void zoom_frame(int level) {
+/* GS31: the camera as it was at the last VBlank (Port_PpuVBlank). The VBlank copies gBgScroll into the BG registers
+ * the coming frame shows, and the game's logic then runs on and moves viewX/viewY for the frame after it; read at line
+ * 0, the camera was one frame ahead of the picture, so wherever the frame was held at a map's edge the picture moved
+ * by the camera's last step and back (a 1-px jitter at the edge while the GBA's camera eased in). Taken here, the
+ * frame's place and the BG registers come from the same moment. */
+static s32 sCamView[2], sCamMin[2], sCamMax[2];
+static int sCamValid;
+static void zoom_camera_snapshot(void) {
   u32 g = MAP_GRID_WORK_PTR;
+  sCamValid = g >= EWRAM_BASE && g + 0x194 <= EWRAM_BASE + 0x40000;
+  if (sCamValid) {
+    sCamView[0] = *(s32 *)(uintptr_t)(g + 0xe4) >> 16;
+    sCamView[1] = *(s32 *)(uintptr_t)(g + 0xe8) >> 16;
+    sCamMin[0] = *(s32 *)(uintptr_t)(g + 0xec) >> 16;
+    sCamMin[1] = *(s32 *)(uintptr_t)(g + 0xf0) >> 16;
+    sCamMax[0] = *(s32 *)(uintptr_t)(g + 0xf4) >> 16;
+    sCamMax[1] = *(s32 *)(uintptr_t)(g + 0xf8) >> 16;
+  }
+}
+static void zoom_frame(int level) {
   int fw = ZOOM_W[level], fh = ZOOM_H[level];
   sBoundL = -fw;
   sBoundR = W + fw;
   sBoundT = -fh;
   sBoundB = H + fh;
-  if (g >= EWRAM_BASE && g + 0x194 <= EWRAM_BASE + 0x40000) {
-    s32 viewX = *(s32 *)(uintptr_t)(g + 0xe4) >> 16, viewY = *(s32 *)(uintptr_t)(g + 0xe8) >> 16;
-    s32 minX = *(s32 *)(uintptr_t)(g + 0xec) >> 16, minY = *(s32 *)(uintptr_t)(g + 0xf0) >> 16;
-    s32 maxX = *(s32 *)(uintptr_t)(g + 0xf4) >> 16, maxY = *(s32 *)(uintptr_t)(g + 0xf8) >> 16;
-    if (minX < maxX && minY < maxY) {
-      sBoundL = minX - viewX;
-      sBoundR = maxX - viewX;
-      sBoundT = minY - viewY;
-      sBoundB = maxY - viewY;
-    }
+  if (sCamValid && sCamMin[0] < sCamMax[0] && sCamMin[1] < sCamMax[1]) {
+    sBoundL = sCamMin[0] - sCamView[0];
+    sBoundR = sCamMax[0] - sCamView[0];
+    sBoundT = sCamMin[1] - sCamView[1];
+    sBoundB = sCamMax[1] - sCamView[1];
   }
   LW = fw;
   LH = fh;
@@ -541,6 +554,7 @@ void Port_PpuVBlank(void) {
     lastY[i] = y;
     wroteX[i] = wroteY[i] = 0;
   }
+  zoom_camera_snapshot(); /* GS31 */
 }
 
 /* row v of the frame (v = line on the GBA's lines; v < 0 or >= 160 a zoom margin row, drawn with line 0's or line

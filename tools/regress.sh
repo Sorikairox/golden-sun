@@ -64,6 +64,8 @@
 # battle_fight,
 # battle_party, battle_summon, battle_lost, field_psynergy, worldmap, credits (test-only probes), link2 (two
 # instances, its own RAM digests).
+# zoom_edges_most, zoom_edges_more (GS31: kolima_glade's route at Map zoom Most, bilibin_ice's at More; zoomjitter.cjs
+# fails the case when the zoomed picture jitters at a map's edge: the frame's place must follow the camera the BGs show).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
@@ -139,6 +141,8 @@ CASES=(
   "ml_upper_return|13100|2600,2953,3484,4355,8936,9028,9890,12092,13000||$R/vale_day1_continue.keys,$R/ml_upper_return.keys,$R/ml_upper_return_save.keys||--flash-in $W/imil_grind2.sav --flash-out $W/ml_upper_return.sav"
   "ml_aerie_lv15|28200|4000,8000,12238,14589,16652,17497,19783,20948,21490,25767,27116,28100||$R/vale_day1_continue.keys,$R/ml_aerie_lv15.keys,$R/ml_aerie_lv15_save.keys||--flash-in $W/ml_upper_return.sav --flash-out $W/ml_aerie_lv15.sav"
   "ml_saturos_win|58100|12446,14000,17000,20000,30000,42169,42412,46000,50000,54000,58000||$R/vale_day1_continue.keys,$R/ml_saturos_win.keys,$R/ml_saturos_win_save.keys||--flash-in $W/ml_aerie_lv15.sav --flash-out $W/ml_saturos_win.sav"
+  "zoom_edges_most|10800|2700,3800,5132,5400,9100,10000,10650,10800|JIT_FROM=1990 JIT_TO=10800|$R/vale_day1_continue.keys,$R/kolima_glade.keys|$P/zoomjitter.cjs|--flash-in $W/kolima_grind.sav --opt 2=2@0"
+  "zoom_edges_more|5100|2571,3000,3568,4080,4300,4800,5100|JIT_FROM=1990 JIT_TO=5100|$R/vale_day1_continue.keys,$R/bilibin_ice.keys|$P/zoomjitter.cjs|--flash-in $W/bilibin_cave.sav --opt 2=1@0"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
 maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; $W/kolima_forest.sav) echo kolima_forest;; $W/kolima_grind.sav) echo kolima_grind;; $W/kolima_glade.sav) echo kolima_glade;; $W/kolima_cliff.sav) echo kolima_cliff;; $W/kolima_floodgate.sav) echo kolima_floodgate;; $W/tret_tree.sav) echo tret_tree;; $W/tret_battle.sav) echo tret_battle;; $W/tret_grind.sav) echo tret_grind;; $W/tret_win.sav) echo tret_win;; $W/bilibin_cave.sav) echo bilibin_cave;; $W/bilibin_ice.sav) echo bilibin_ice;; $W/bilibin_exit.sav) echo bilibin_exit;; $W/imil.sav) echo imil;; $W/lizard_man.sav) echo lizard_man;; $W/ml_lower.sav) echo ml_lower;; $W/mia_joins.sav) echo mia_joins;; $W/ml_ply.sav) echo ml_ply;; $W/ml_pipes.sav) echo ml_pipes;; $W/ml_upper.sav) echo ml_upper;; $W/ml_sleet.sav) echo ml_sleet;; $W/ml_aerie.sav) echo ml_aerie;; $W/imil_rest.sav) echo imil_rest;; $W/imil_grind1.sav) echo imil_grind1;; $W/imil_grind2.sav) echo imil_grind2;; $W/ml_upper_return.sav) echo ml_upper_return;; $W/ml_aerie_lv15.sav) echo ml_aerie_lv15;; esac; } # bash 3.2: no associative arrays
@@ -158,7 +162,7 @@ SEL=("$@")
 if [ $quick = 1 ]; then # --quick (GS17): the core probe cases + the newest QUICK_N (3) story cases, saves reused
   export REUSE=1
   SEL=(prologue_save soft_reset battle_fight battle_summon field_psynergy worldmap)
-  story=(); for c in "${CASES[@]}"; do [[ "$c" == *--flash-in* ]] && story+=("${c%%|*}"); done
+  story=(); for c in "${CASES[@]}"; do [[ "$c" == *--flash-in* && "$c" != zoom_* ]] && story+=("${c%%|*}"); done
   n=${#story[@]}; for ((i = n - ${QUICK_N:-3}; i < n; i++)); do [ $i -ge 0 ] && SEL+=("${story[$i]}"); done
 fi
 out=$W/actual.tsv; : > $out
@@ -176,6 +180,7 @@ for c in "${CASES[@]}"; do
     printf '%s\tsave\t%s\t-\n' "$name" "$(shasum "$fo" | cut -c1-16)" >> $out
   fi
   grep -q 'game stopped\|Aborted\|killed after' "$log" && { echo "$name: STOPPED (see $log)"; fail=1; }
+  grep '^CHECK FAIL' "$log" && { echo "$name: CHECK FAIL (see $log)"; fail=1; } # a probe's own test (GS31: zoomjitter.cjs)
 done
 if [ ${#SEL[@]} -eq 0 ] || want link2; then
   LOG=$W/link2.log GAME=$BIN/game.js OUT=$W/link2 tools/link2.sh > $W/link2.summary
