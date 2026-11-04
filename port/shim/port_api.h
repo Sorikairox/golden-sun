@@ -29,11 +29,12 @@ struct Window;
 void Port_ExtraSettings_Run(int seMove, int seConfirm, int seCancel);
 void Port_ExtraSettings_Hint(struct Window *help, int message, int windowWidth);
 void Port_ExtraSettings_HintClose(void);
-/* GS27 Wide view: pixels the field's actor culling widens by a side (0 when off), and the field-map stamps for the
- * renderer (port/pc/ppu.c) */
-extern int gPortWideMargin;
-void Port_WideFieldStamp(void);
-void Port_WideFieldSequence(int on);
+/* GS29 Map zoom (replaces GS27's Wide view): pixels the frame shows past each side of the GBA screen this frame
+ * (0 at Normal and off the field; the field's actor culling and Sprite_Draw use them), and the field-map stamps for
+ * the renderer (port/pc/ppu.c) */
+extern int gPortZoomL, gPortZoomR, gPortZoomT, gPortZoomB;
+void Port_ZoomFieldStamp(void);
+void Port_ZoomFieldSequence(int on);
 int Port_SettingsMenuResult(int result, int seMove, int seConfirm, int seCancel);
 
 /* GS28 port/pc/save_compat.c: the actor snapshot (saved with the game) holds GBA addresses, not wasm ones

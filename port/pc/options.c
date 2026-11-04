@@ -11,7 +11,8 @@
  * and the page's own menu writes it back (Port_OptSet). Rows:
  *   0 Screen colours  Original / GBA LCD          (page: gs-lcd, the GS10 LCD curve)
  *   1 Brightness      Normal / Bright / Brighter   (page: gs-bright, a gamma lift on the canvas copy)
- *   2 Wide view       Off / On                     (page: gs-wide; GS27 feature 2: ppu.c, the c_rules margins) */
+ *   2 Map zoom        Normal / More / Most         (page: gs-zoom; GS29, replaces GS27's Wide view: the field map at
+ *                     240 x 160, 288 x 192 or 336 x 224, scaled by the page into the same box; ppu.c, c_rules) */
 #include "gba.h"
 
 struct Window;
@@ -55,17 +56,18 @@ extern u8 gPointingHandTiles[];
 #define VRAM_CACHE_ENTRIES 96
 
 /* ---- the option values (shared with the page) ---- */
-enum { OPT_LCD, OPT_BRIGHT, OPT_WIDE, OPT_COUNT };
+enum { OPT_LCD, OPT_BRIGHT, OPT_ZOOM, OPT_COUNT };
+static const u8 sCount[OPT_COUNT] = {2, 3, 3};
 static u8 sOpt[OPT_COUNT];
 static u32 sOptGeneration;
-/* Wide view (feature 2): the field's actor culling widens by this many pixels a side
- * (port/c_rules.tsv; ppu.c WIDE_M); 0 when off, which leaves every one of those tests as the original */
-s32 gPortWideMargin;
-static void opt_changed(void) { gPortWideMargin = sOpt[OPT_WIDE] ? 24 : 0; }
 s32 Port_OptGet(s32 i) { return i >= 0 && i < OPT_COUNT ? sOpt[i] : 0; }
-void Port_OptSet(s32 i, s32 v) { if (i >= 0 && i < OPT_COUNT) sOpt[i] = (u8)v; opt_changed(); }   /* from the page: no generation bump */
+void Port_OptSet(s32 i, s32 v) {   /* from the page: no generation bump */
+  if (i >= 0 && i < OPT_COUNT && v >= 0 && v < sCount[i])
+    sOpt[i] = (u8)v;
+}
 u32 Port_OptGeneration(void) { return sOptGeneration; }
-int Port_WideOn(void) { return sOpt[OPT_WIDE] != 0; }
+/* Map zoom (ppu.c reads it at each frame's first line; the field's culling follows the frame, gPortZoom*) */
+int Port_ZoomLevel(void) { return sOpt[OPT_ZOOM]; }
 
 /* ---- the screen ---- */
 #define ROWS 3
@@ -79,9 +81,8 @@ int Port_WideOn(void) { return sOpt[OPT_WIDE] != 0; }
 #ifndef HINT_Y
 #define HINT_Y 0
 #endif
-static const char *const sLabel[3] = {"Screen colours", "Brightness", "Wide view"};
-static const u8 sCount[3] = {2, 3, 2};
-static const char *const sValue[3][3] = {{"Original", "GBA LCD", 0}, {"Normal", "Bright", "Brighter"}, {"Off", "On", 0}};
+static const char *const sLabel[3] = {"Screen colours", "Brightness", "Map zoom"};
+static const char *const sValue[3][3] = {{"Original", "GBA LCD", 0}, {"Normal", "Bright", "Brighter"}, {"Normal", "More", "Most"}};
 static const char *const sHelp[3] = {
     "Like a real GBA screen.",
     "Lighten the picture.",
@@ -155,7 +156,6 @@ void Port_ExtraSettings_Run(s32 seMove, s32 seConfirm, s32 seCancel) {
       Sound_PlayFar((gKeysPressed & K_A) ? sSeConfirm : sSeMove);
       sOpt[row] = (u8)(v % n);
       sOptGeneration++;
-      opt_changed();
       draw_value(w, row);
     }
   }

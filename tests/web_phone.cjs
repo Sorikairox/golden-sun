@@ -4,9 +4,12 @@
 // setting, Mute, Volume, GBA screen colours, Return to title and the link panel (Host / code / Join) reachable and touch
 // sized, toggles work by touch. Then three "Return to title" restarts: the old game runs must be freed (renderer
 // resident memory). Reports wasm / JS / renderer memory. 0 console errors. Screenshots: port_work/phone/*.png.
-// Usage: node tests/web_phone.cjs   (needs build/site). One headless Chrome at a time.
+// Usage: node tests/web_phone.cjs [--query K=V] [--flash SAVE]   (needs build/site). One headless Chrome at a time.
+// GS29: --flash SAVE (the regress run's vale_day1.sav) continues file 1 onto the field first, so --query zoom=1/2
+// checks the layouts with a zoomed field frame; each layout's picture box and pad boxes are printed ("boxes") and must
+// be the same at every zoom level (compare the runs' lines).
 'use strict';
-const LCDK = /tla/.test(process.env.SITE_DIR || '') ? 'tla-lcd' : 'gs-lcd'; // TLA6: per-game option keys
+const LCDK = /tla/.test(process.env.SITE_DIR || '') ? 'tla-lcd' : 'gs-lcd'; // TLA6: per-game option keys (GS29: Map zoom is GS1's only)
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -36,6 +39,8 @@ async function main() {
   const SRC = path.join(ROOT, process.env.SITE_DIR || 'build/site'); // TLA6: SITE_DIR=build/site/tla (ROM=its ROM)
   for (const f of fs.readdirSync(SRC)) fs.symlinkSync(path.join(SRC, f), path.join(dir, f));
   fs.symlinkSync(ROM, path.join(dir, 'rom.gba'));
+  const FLASH = process.argv.indexOf('--flash') > 0 ? process.argv[process.argv.indexOf('--flash') + 1] : '';
+  if (FLASH) fs.symlinkSync(path.resolve(FLASH), path.join(dir, 'flash.sav'));
   const out = path.join(ROOT, 'port_work/phone');
   fs.mkdirSync(out, { recursive: true });
 
@@ -131,6 +136,10 @@ async function main() {
       check(!over.length, `${label}: no pad control over the picture (${pads.length} controls${over.length ? '; over: ' + over.join(',') : ''})`);
       const out = pads.filter((p) => p[1] < -1 || p[2] < -1 || p[1] + p[3] > w + 1 || p[2] + p[4] > h + 1).map((p) => p[0]);
       check(!out.length, `${label}: every pad control inside the ${w}x${h} viewport${out.length ? ' (outside: ' + out.join(',') + ')' : ''}`);
+      // GS29: the picture's box is 3:2 whatever the frame's size; the boxes, for comparing runs at each zoom level
+      const fsz = await ev('[__gs._Port_FrameWidth ? __gs._Port_FrameWidth() : 240, __gs._Port_FrameHeight ? __gs._Port_FrameHeight() : 160]');
+      check(Math.abs(scr[2] / scr[3] - 1.5) < 0.01, `${label}: picture box 3:2 (${scr.map((v) => Math.round(v))}; frame ${fsz.join('x')})`);
+      console.log(`boxes ${label}: screen ${scr.map((v) => v.toFixed(1)).join(',')} pads ${pads.map((p) => p[0] + ':' + p.slice(1).map((v) => v.toFixed(1)).join(',')).join(' ')}`);
       // the link notice (net.js writes it to #status when the partner leaves): on top of what?
       await ev(`(() => { const s = document.getElementById('status'); s.textContent = 'Link partner left. Menu: Link battle online'; s.dataset.net = '1'; return 1; })()`);
       await sleep(100);
@@ -145,10 +154,10 @@ async function main() {
     const menuChecks = async (label, w, h) => {
       await tap('#tk-menu');
       check(await ev('document.body.classList.contains("tmenu")'), `${label}: menu open`);
-      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-bright', '#opt-wide', '#opt-offline', '#opt-title', '#net > summary']) {
+      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-bright', ...(LCDK === 'gs-lcd' ? ['#opt-zoom'] : []), '#opt-offline', '#opt-title', '#net > summary']) {
         await ev(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({ block: 'center' }); true`);
         await sleep(50);
-        const target = sel.startsWith('#opt-') && sel !== '#opt-title' && sel !== '#opt-touch' ? `label:has(> ${sel})` : sel;   // GS27: + Brightness, Wide view
+        const target = sel.startsWith('#opt-') && sel !== '#opt-title' && sel !== '#opt-touch' ? `label:has(> ${sel})` : sel;   // GS27: + Brightness; GS29: Map zoom
         const r = await rect(target);
         check(r && r[0] >= -1 && r[0] + r[2] <= w + 1 && r[1] >= -1 && r[1] + r[3] <= h + 1 && r[3] >= 32 && (sel === '#opt-touch' || r[3] >= 44),
           `${label}: ${target} reachable and touch-sized (${r && r.map(Math.round)})`);
@@ -186,10 +195,20 @@ async function main() {
     await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html` });   // the ROM picker: baseline
     await sleep(2500);
     console.log(`memory: renderer resident on the ROM picker (no game) ${rss().toFixed(0)} MiB (${rss.last}; largest ${rss.max.toFixed(0)})`);
-    // --query K=V (GS27): extra page parameters, e.g. wide=1 (Wide view: a 288 x 160 picture in every layout)
+    // --query K=V (GS27): extra page parameters, e.g. zoom=2 (GS29 Map zoom: a 336 x 224 field frame in the same box)
     const q = process.argv.indexOf('--query') > 0 ? '&' + process.argv[process.argv.indexOf('--query') + 1] : '';
+    const evp = async (expression) => (await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result.result.value;
+    if (FLASH) console.log('flash: ' + await evp(`(async () => {
+      const bytes = new Uint8Array(await (await fetch('flash.sav')).arrayBuffer());
+      const d = await new Promise((ok, no) => { const q = indexedDB.open('golden-sun', 1); q.onupgradeneeded = () => q.result.createObjectStore('files'); q.onsuccess = () => ok(q.result); q.onerror = no; });
+      await new Promise((ok, no) => { const t = d.transaction('files', 'readwrite'); t.objectStore('files').put(bytes, 'flash'); t.oncomplete = ok; t.onerror = no; });
+      d.close(); return bytes.length + ' bytes put in IndexedDB'; })()`));
     await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba${q}` });
-    while ((await frames()) < 620) {
+    if (FLASH) {   // Continue, file 1: on the field at ~f1960
+      for (let i = 0; i < 100 && !(await ev('!!window.__gs')); i++) await sleep(100);
+      await ev(`window.__gsScript = ${JSON.stringify([[8, 1500], [1, 1800], [1, 1850]].map(([mask, a]) => ({ mask, a, b: a + 2 })))}; 1`);
+    }
+    while ((await frames()) < (FLASH ? 2050 : 620)) {
       if (Date.now() - t0 > 240000) throw new Error(`only ${await frames()} frames`);
       if (errors.length) throw new Error('page error: ' + errors[0]);
       await sleep(100);

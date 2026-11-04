@@ -85,7 +85,7 @@
     if (t.portrait !== null && t.portrait !== portrait) release();   // rotated mid-press: nothing stays held
     t.portrait = portrait;
     let pic;
-    const ar = cv.width / cv.height || 1.5;   // GS27: 3:2, or 288:160 in Wide view
+    const ar = 1.5;   // GS29: the picture's box is always 3:2 (Map zoom frames are 3:2 too), so nothing moves
     if (portrait) {
       let w = W - sa.l - sa.r, h = w / ar;
       if (h > (H - sa.t) * 0.5) { h = (H - sa.t) * 0.5; w = h * ar; }

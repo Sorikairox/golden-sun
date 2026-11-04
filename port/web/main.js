@@ -101,17 +101,34 @@ async function start(rom) {
   status('Starting...');
   const canvas = $('screen');
   const ctx = canvas.getContext('2d');
-  let image = ctx.createImageData(240, 160);
+  // GS29 Map zoom: the frame is 240 x 160, or on a field map at a zoom level 288 x 192 / 336 x 224 (always 3:2;
+  // Port_FrameWidth/Height). It goes to `src` at its own size, then into the page's canvas, whose box (CSS: size,
+  // place, the touch layout) never changes. The canvas holds the frame times the smallest whole factor that covers
+  // the box's device pixels (nearest: every GBA pixel the same size) and the browser smooths that slightly larger
+  // picture down into the box ("sharp bilinear": crisp edges, no uneven pixel widths at 336 -> 720 and the like).
+  const src = document.createElement('canvas');
+  src.width = 240; src.height = 160;
+  const sctx = src.getContext('2d');
+  let image = sctx.createImageData(240, 160);
   let pixels = new Uint32Array(image.data.buffer);
-  // GS27 Wide view: the frame is 288 wide while the option is on (Port_FrameWidth); the canvas follows it
-  const fitWidth = (fw) => {
-    image = ctx.createImageData(fw, 160);
-    pixels = new Uint32Array(image.data.buffer);
-    canvas.width = fw;
-    canvas.style.aspectRatio = fw + ' / 160';
-    canvas.classList.toggle('wide', fw > 240);
-    if (window.GSTouch && GSTouch.layout) GSTouch.layout();
+  const fitCanvas = () => {
+    const r = canvas.getBoundingClientRect(), dev = r.width * (window.devicePixelRatio || 1);
+    const k = dev >= 1 ? Math.max(1, Math.min(8, Math.ceil(dev / image.width - 1e-3))) : Math.max(1, Math.round(canvas.width / image.width));
+    if (canvas.width !== image.width * k || canvas.height !== image.height * k) {
+      canvas.width = image.width * k; canvas.height = image.height * k;
+    }
+    ctx.imageSmoothingEnabled = false;
   };
+  const fitFrame = (fw, fh) => {
+    image = sctx.createImageData(fw, fh);
+    pixels = new Uint32Array(image.data.buffer);
+    src.width = fw; src.height = fh;
+    fitCanvas();
+  };
+  addEventListener('resize', fitCanvas);
+  if (window.ResizeObserver) new ResizeObserver(fitCanvas).observe(canvas);
+  window.GSScreen = { src, fit: fitCanvas };   // tests: the frame as shown (colours applied), before scaling
+  fitCanvas();
   let m;
   let frames = 0;
   let next = performance.now();
@@ -124,11 +141,13 @@ async function start(rom) {
   const onFrame = () => {
     frames++;
     const p = m._Port_FrameBuffer(), fw = m._Port_FrameWidth ? m._Port_FrameWidth() : 240;
-    if (fw !== image.width) fitWidth(fw);
-    image.data.set(m.HEAPU8.subarray(p, p + fw * 160 * 4));
+    const fh = m._Port_FrameHeight ? m._Port_FrameHeight() : 160;
+    if (fw !== image.width || fh !== image.height) fitFrame(fw, fh);
+    image.data.set(m.HEAPU8.subarray(p, p + fw * fh * 4));
     GSOpts.poll();   // GS27: options changed in the game's Extra settings screen
     if (lcd.lut) lcd.apply(pixels);   // optional "GBA screen colours" / brightness: presentation only, game memory untouched
-    ctx.putImageData(image, 0, 0);
+    sctx.putImageData(image, 0, 0);
+    ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
     m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0) | scriptKeys(frames));   // keyboard + touch pad: one key state
     if (window.GSAudio) GSAudio.feed(m);   // this frame's samples to the audio worklet (never waits)
     const gen = m._Port_FlashGeneration();
@@ -238,7 +257,7 @@ async function start(rom) {
 // GS27: "Brightness" (Normal / Bright / Brighter, gs-bright, default Normal) lifts the picture with an output gamma
 // (1 / 1.25, 1 / 1.5) in the same LUT. Both are also set in the game itself: START, then R ("Extra settings",
 // port/pc/options.c): the page and the game share the values (Port_OptGet/Port_OptSet/Port_OptGeneration).
-const OPT_LCD = 0, OPT_BRIGHT = 1, OPT_WIDE = 2;
+const OPT_LCD = 0, OPT_BRIGHT = 1, OPT_ZOOM = 2;
 const lcd = {
   on: false,
   bright: 0,
@@ -306,28 +325,37 @@ const lcd = {
 }
 window.GSLcd = lcd;
 
-// ---- optional "Wide view" (GS27 feature 2, default off, gs-wide): field maps fill a 288 x 160 picture (the GBA's 240
-// in the middle; port/pc/ppu.c), other screens stay 240 wide with black side bars. Applied at once, no reload: the
-// renderer reads the option each frame and the canvas follows the frame's width. Also in the game's Extra settings.
-const GSWide = {
-  on: false,
-  set(on, fromGame) {
-    this.on = !!on;
-    try { if (this.on) localStorage.setItem(K_OPT + 'wide', '1'); else localStorage.removeItem(K_OPT + 'wide'); } catch (e) { /* storage blocked */ }
-    const box = $('opt-wide');
-    if (box) box.checked = this.on;
+// ---- optional "Map zoom" (GS29, replaces GS27's Wide view; default Normal, gs-zoom = 1 or 2): field maps show more
+// of the map at the GBA's 3:2, 288 x 192 or 336 x 224 (port/pc/ppu.c), scaled into the same box; every other screen
+// stays 240 x 160 and fills the box too, so nothing on the page moves. Applied at once, no reload: the renderer reads
+// the level each frame. Also in the game's Extra settings (START, then R). A stored gs-wide=1 (GS27) becomes level 1
+// (288 x 192: Wide view's 288 columns).
+const GSZoom = {
+  level: 0,
+  set(v, fromGame) {
+    this.level = Math.max(0, Math.min(2, v | 0));
+    try { if (this.level) localStorage.setItem(K_OPT + 'zoom', String(this.level)); else localStorage.removeItem(K_OPT + 'zoom'); } catch (e) { /* storage blocked */ }
+    const sel = $('opt-zoom');
+    if (sel) sel.value = String(this.level);
     if (!fromGame) GSOpts.push();
   },
 };
 {
-  let on = false;
-  try { on = localStorage.getItem(K_OPT + 'wide') === '1'; } catch (e) { /* storage blocked: default off */ }
-  if (params.get('wide') !== null) on = params.get('wide') === '1';   // tests: ?wide=1 / ?wide=0 (not stored)
-  GSWide.on = on;
-  const box = $('opt-wide');
-  if (box) { box.checked = on; box.addEventListener('change', () => GSWide.set(box.checked)); }
+  let level = 0;
+  try {
+    level = +(localStorage.getItem(K_OPT + 'zoom') || 0);
+    if (localStorage.getItem(K_OPT + 'wide') === '1') {   // GS27's Wide view on: the matching zoom level, once
+      localStorage.removeItem(K_OPT + 'wide');
+      if (!level) { level = 1; localStorage.setItem(K_OPT + 'zoom', '1'); }
+    }
+  } catch (e) { /* storage blocked: default Normal */ }
+  if (params.get('zoom') !== null) level = +params.get('zoom');   // tests: ?zoom=0/1/2 (not stored)
+  GSZoom.level = level >= 0 && level <= 2 ? level | 0 : 0;
+  const sel = $('opt-zoom');
+  if (sel) { sel.value = String(GSZoom.level); sel.addEventListener('change', () => GSZoom.set(+sel.value)); }
+  if (GAME_TLA && $('opt-zoom-row')) $('opt-zoom-row').style.display = 'none';   // GS1's renderer only
 }
-window.GSWide = GSWide;
+window.GSZoom = GSZoom;
 
 // GS27: the option values the game's Extra settings screen shows and edits (port/pc/options.c). The page owns them
 // (storage, presentation); push() copies them into the running module, poll() picks up edits made in the game.
@@ -344,7 +372,7 @@ const GSOpts = {
     if (!m || !m._Port_OptSet) return;
     m._Port_OptSet(OPT_LCD, lcd.on ? 1 : 0);
     m._Port_OptSet(OPT_BRIGHT, lcd.bright);
-    if (window.GSWide) m._Port_OptSet(OPT_WIDE, GSWide.on ? 1 : 0);
+    m._Port_OptSet(OPT_ZOOM, GSZoom.level);
   },
   poll() {
     const m = this.m;
@@ -354,7 +382,8 @@ const GSOpts = {
     this.gen = g;
     const on = !!m._Port_OptGet(OPT_LCD), br = m._Port_OptGet(OPT_BRIGHT);
     if (on !== lcd.on || br !== lcd.bright) { lcd.on = on; lcd.setBright(br, true); }
-    if (window.GSWide) { const w = !!m._Port_OptGet(OPT_WIDE); if (w !== GSWide.on) GSWide.set(w, true); }
+    const z = m._Port_OptGet(OPT_ZOOM);
+    if (z !== GSZoom.level) GSZoom.set(z, true);
   },
 };
 window.GSOpts = GSOpts;

@@ -51,9 +51,9 @@ void Port_SystemEntry(void) {
 }
 
 #ifndef PORT_GAME_TLA
-void Port_WideFieldSequence(int on); /* ppu.c (GS27 wide view): a reset leaves the field sequence */
+void Port_ZoomFieldSequence(int on); /* ppu.c (GS27/GS29 map zoom): a reset leaves the field sequence */
 void Port_Restart(void) {
-  Port_WideFieldSequence(0);
+  Port_ZoomFieldSequence(0);
   system_entry();
 }
 #else

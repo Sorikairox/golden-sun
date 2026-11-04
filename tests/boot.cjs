@@ -62,7 +62,7 @@ async function main() {
   const every = +opt('--every', 0);
   const regFrames = new Set((opt('--regs', '') || '').split(',').filter(Boolean).map(Number));
   const flashIn = opt('--flash-in', ''), flashOut = opt('--flash-out', '');
-  // --opt I=V@F[,...] (GS27): set port option I (0 Screen colours, 1 Brightness, 2 Wide view) to V at frame F (0: at power-on)
+  // --opt I=V@F[,...] (GS27): set port option I (0 Screen colours, 1 Brightness, 2 Map zoom 0-2, GS29) to V at frame F (0: at power-on)
   const optAt = (opt('--opt', '') || '').split(',').filter(Boolean).map((x) => { const [iv, f] = x.split('@'); const [i, v] = iv.split('='); return { i: +i, v: +v, f: +(f || 0) }; });
   let flashGen = 0;
   // --probe FILE[,FILE]: test-only hooks, each a module exporting (m, frame, keys) => void, run every frame.
@@ -89,10 +89,11 @@ async function main() {
         fs.writeFileSync(path.join(out, `palette_${frame}.bin`), Buffer.from(m.HEAPU8.subarray(0x05000000, 0x05000400)));
       }
       if (shots.has(frame) || (every && frame % every === 0)) {
-        const p = m._Port_FrameBuffer(), fw = m._Port_FrameWidth ? m._Port_FrameWidth() : 240;   // GS27: 288 in Wide view
-        const buf = Buffer.from(m.HEAPU8.buffer, p, fw * 160 * 4);
+        const p = m._Port_FrameBuffer(), fw = m._Port_FrameWidth ? m._Port_FrameWidth() : 240;   // GS29: up to 336 x 224 with Map zoom
+        const fh = m._Port_FrameHeight ? m._Port_FrameHeight() : 160;
+        const buf = Buffer.from(m.HEAPU8.buffer, p, fw * fh * 4);
         const file = path.join(out, `frame_${String(frame).padStart(5, '0')}.png`);
-        fs.writeFileSync(file, png(Buffer.from(buf), fw, 160));
+        fs.writeFileSync(file, png(Buffer.from(buf), fw, fh));
       }
       let keys = 0;
       for (const s of keySpans) if (frame >= s.a && frame <= s.b && (!s.per || (frame - s.a) % s.per < 3)) keys |= s.mask;

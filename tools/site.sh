@@ -23,7 +23,7 @@ assemble() {
     python3 - "$D"/index.html <<'EOF2'
 import sys
 p = sys.argv[1]; s = open(p).read()
-anchor = ' Wide view</label>\n'
+anchor = '<option value="2">Most (336 x 224)</option></select></label>\n'
 row = ('    <label class="opt-big" id="opt-gs1party-row" hidden title="When the game asks &quot;Transfer data from Golden Sun?&quot;, '
        'Yes brings the party of your cleared Golden Sun file on this site (no link cable or password menus)">'
        '<input id="opt-gs1party" type="checkbox" checked> Bring party from Golden Sun</label> <span id="opt-gs1party-state"></span>\n')
