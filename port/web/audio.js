@@ -1,6 +1,8 @@
 // Sound (session GS-audio): the game's samples (port/pc/apu.c, 32768 Hz stereo, drained once a frame) go to an
-// AudioWorklet through a small queue (about 60-250 ms), resampled there to the device rate; ScriptProcessor where
-// AudioWorklet is missing. Audio starts on the first user gesture (key, click, touch: the touch pad counts, the
+// AudioWorklet through a small queue, resampled there to the device rate; ScriptProcessor where AudioWorklet is
+// missing. The queue is held near 70-100 ms by nudging the resampling rate (at most 0.6 %): the frame loop follows the
+// display's refresh, so a 60 Hz screen runs the game 0.45 % faster than the GBA and its samples pile up, which made
+// the sound lag further and further behind (up to the old 250 ms cap, plus Bluetooth's own delay). Audio starts on the first user gesture (key, click, touch: the touch pad counts, the
 // listeners are on window in the capture phase). It never paces or stalls the game: when audio is not running the
 // samples are drained and dropped, and the worklet drops its oldest data past 250 ms. Mute and volume live in the
 // page menu, stored per browser (localStorage `gs-audio`, try/catch).
@@ -11,17 +13,19 @@
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (_) { return {}; } };
   const save = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) { /* private mode */ } };
   const st = Object.assign({ muted: false, volume: 0.8 }, load());
-  const stats = { state: 'off', kind: '', posted: 0, postedNonZero: 0, workletFrames: 0, workletNonZero: 0, dropped: 0 };
+  const stats = { state: 'off', kind: '', posted: 0, postedNonZero: 0, workletFrames: 0, workletNonZero: 0, dropped: 0, queueMs: 0 };
   let ctx = null, gain = null, node = null, starting = false;
 
   // the queue and resampler, shared by the worklet (as source text) and the ScriptProcessor fallback
   const QUEUE = `
     class GsQueue {
-      constructor(rate, outRate) { this.q = []; this.len = 0; this.pos = 0; this.step = rate / outRate; this.max = rate / 4;
-        this.frames = 0; this.nonZero = 0; this.dropped = 0; }
+      constructor(rate, outRate) { this.q = []; this.len = 0; this.pos = 0; this.base = rate / outRate; this.step = this.base;
+        this.target = rate * 0.07; this.max = rate * 0.2; this.frames = 0; this.nonZero = 0; this.dropped = 0; }
       push(c) { this.q.push(c); this.len += c.length / 2;
         while (this.len > this.max && this.q.length > 1) { const d = this.q.shift(); this.len -= d.length / 2; this.dropped += d.length / 2; this.pos = 0; } }
       fill(L, R) {
+        const err = (this.len - this.target) / this.target;   // > 0: too much queued, play a little faster
+        this.step = this.base * (1 + Math.max(-0.006, Math.min(0.006, err * 0.02)));
         for (let i = 0; i < L.length; i++) {
           if (!this.q.length) { L[i] = 0; R[i] = 0; continue; }
           const c = this.q[0], n = c.length / 2, k = this.pos | 0, f = this.pos - k, k1 = k + 1 < n ? k + 1 : k;
@@ -39,7 +43,7 @@
         this.port.onmessage = (e) => this.g.push(e.data); }
       process(inputs, outputs) {
         const o = outputs[0]; this.g.fill(o[0], o[1] || o[0]);
-        if (++this.t % 50 === 0) this.port.postMessage({ frames: this.g.frames, nonZero: this.g.nonZero, dropped: this.g.dropped });
+        if (++this.t % 50 === 0) this.port.postMessage({ frames: this.g.frames, nonZero: this.g.nonZero, dropped: this.g.dropped, queued: this.g.len });
         return true;
       }
     }
@@ -59,14 +63,14 @@
         const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }));
         await ctx.audioWorklet.addModule(url);
         node = new AudioWorkletNode(ctx, 'gs-audio', { numberOfInputs: 0, outputChannelCount: [2] });
-        node.port.onmessage = (e) => { stats.workletFrames = e.data.frames; stats.workletNonZero = e.data.nonZero; stats.dropped = e.data.dropped; };
+        node.port.onmessage = (e) => { stats.workletFrames = e.data.frames; stats.workletNonZero = e.data.nonZero; stats.dropped = e.data.dropped; stats.queueMs = Math.round(e.data.queued * 1000 / RATE); };
         stats.kind = 'worklet';
       } else {
         const g = new (new Function(QUEUE + '; return GsQueue;')())(RATE, ctx.sampleRate);
         node = ctx.createScriptProcessor(2048, 0, 2);
         node.onaudioprocess = (e) => {
           g.fill(e.outputBuffer.getChannelData(0), e.outputBuffer.getChannelData(1));
-          stats.workletFrames = g.frames; stats.workletNonZero = g.nonZero; stats.dropped = g.dropped;
+          stats.workletFrames = g.frames; stats.workletNonZero = g.nonZero; stats.dropped = g.dropped; stats.queueMs = Math.round(g.len * 1000 / RATE);
         };
         node.port = { postMessage: (c) => g.push(c) };
         stats.kind = 'scriptprocessor';
@@ -117,5 +121,6 @@
     apply();
   });
 
-  window.GSAudio = { feed, stats: () => Object.assign({}, stats, { muted: st.muted, volume: st.volume, rate: ctx ? ctx.sampleRate : 0 }) };
+  window.GSAudio = { feed, stats: () => Object.assign({}, stats, { muted: st.muted, volume: st.volume, rate: ctx ? ctx.sampleRate : 0,
+    deviceMs: ctx ? Math.round(((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000) : 0 }) };
 })();
