@@ -49,7 +49,9 @@ async function main() {
   // code runs only from the ROM, the resident IWRAM block and the loaded overlay: a jump into data (a random word
   // used as a code pointer) is an input the original cannot run, not a case (it executed garbage)
   let ovlLoaded = false;
-  const notCode = (pc) => !(pc >= 0x08000000 && pc < 0x0a000000) && !(pc >= 0x03000000 && pc < 0x03001100) && !(pc >= 0x0d000000 && pc < 0x0d100000) &&
+  // (a captured state's RAM is the game's own: code copied into IWRAM/EWRAM there is real code)
+  let capMode = false;
+  const notCode = (pc) => !(capMode && pc >= 0x02000000 && pc < 0x03008000) && !(pc >= 0x08000000 && pc < 0x0a000000) && !(pc >= 0x03000000 && pc < 0x03001100) && !(pc >= 0x0d000000 && pc < 0x0d100000) &&
     !(ovlLoaded && pc >= 0x02008000 && pc < 0x02010000);
   const stepA = cpu.stepArm.bind(cpu);
   cpu.stepArm = () => { if (notCode(cpu.r[15])) throw new Error(`executes data at 0x${cpu.r[15].toString(16)}`); stepA(); };
@@ -136,6 +138,15 @@ async function main() {
     }
     return null;
   };
+  const CAPDIR = process.env.CAPTURES || path.join(ROOT, 'port_work/tla6b/captures');
+  const capsFor = (r) => {
+    if (!fs.existsSync(CAPDIR)) return [];
+    return fs.readdirSync(CAPDIR).filter((f) => f.startsWith(`${r.addr.toString(16)}_`) && f.endsWith('.bin')).sort().map((f) => {
+      const b = fs.readFileSync(path.join(CAPDIR, f)), hl = b.readUInt32LE(0), h = JSON.parse(b.subarray(4, 4 + hl).toString());
+      let o = 4 + hl; h.data = h.regions.map(([, l]) => { const d = b.subarray(o, o + l); o += l; return d; });
+      return h;
+    }).filter((h) => !r.ovl || h.ovl === parseInt(r.ovl, 16));
+  };
   const N = +(process.env.CASES || 8), TRIES = +(process.env.TRIES || 12), TMAX = +(process.env.TMAX || 15000);
   // ONLY=name@ovl,...: just those routines (debugging one FAIL); WATCH=addr: print each interpreter store there; DIFFALL=1:
   // every differing byte of a FAIL (up to 40)
@@ -154,19 +165,36 @@ async function main() {
     const thumb = !ARM_ROUTINES.has(r.name);
     let n = 0, bad = null, used = '', firstErr = null, tried = 0;
     const t0 = Date.now();
-    for (const [pname, P] of Object.entries(PROFILES)) {
+    // TLA6b: CAPTURES=dir (default port_work/tla6b/captures, local only: game RAM): entry states of the routine taken in
+    // real play (a capture build's A2C_T hook, docs/TLA6.md 7), tried before the random profiles: the whole RAM, r0-r3
+    // and the stack words at sp as the game had them
+    const caps = capsFor(r);
+    const profiles = caps.length ? [['capture', { capture: caps }], ...Object.entries(PROFILES)] : Object.entries(PROFILES);
+    for (const [pname, P] of profiles) {
       if (n || bad) break;
-      for (let t = 0; t < TRIES + N && n < N && !bad && Date.now() - t0 < TMAX; t++) {
-        if (n === 0 && t >= TRIES) break;
+      for (let t = 0; t < (P.capture ? P.capture.length : TRIES + N) && n < N && !bad && Date.now() - t0 < TMAX; t++) {
+        if (n === 0 && t >= TRIES && !P.capture) break;
         tried++;
-        try { world(r.ovl, P); } catch (e) { firstErr = firstErr || e.message; break; }
-        const args = P.args(P.word, t);
-        const stk = [P.word(), P.word(), P.word(), P.word()];
+        let args, stk;
+        capMode = !!P.capture;
+        if (P.capture) {
+          const c = P.capture[t];
+          c.regions.forEach(([a], i) => mem.set(c.data[i], a));
+          ovlLoaded = true;
+          if (m._a2c_set_overlay) m._a2c_set_overlay(c.ovl);
+          args = c.r.slice(0, 4);
+          stk = [0, 4, 8, 12].map((k) => dv.getUint32(c.r[13] + k, true));
+        } else {
+          if (caps.length) restore(base); // nothing of a capture leaks into the random worlds
+          try { world(r.ovl, P); } catch (e) { firstErr = firstErr || e.message; break; }
+          args = P.args(P.word, t);
+          stk = [P.word(), P.word(), P.word(), P.word()];
+        }
         const before = snap();
         let ro;
         yieldsLeft = YIELDS;
         try { ro = cpu.call(r.addr | (thumb ? 1 : 0), args, { stackArgs: stk, maxSteps: 3_000_000 }) >>> 0; } catch (e) {
-          if (e.yieldStop) ro = 'yield'; else { firstErr = firstErr || e.message; restore(before); continue; }
+          if (e.yieldStop) ro = 'yield'; else { firstErr = firstErr || e.message; if (process.env.CAPDEBUG) console.log(pname, t, e.message); restore(before); continue; }
         }
         const afterO = snap();
         restore(before);
