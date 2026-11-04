@@ -1,0 +1,4 @@
+# TLA8: empty save, Felix named (END, A), "Transfer data from Golden Sun?" Yes, "Transfer Method" Password (first),
+# A: "Password Entry" level (Gold first) ~f800; the level's A at f850 (Silver: RIGHT@800 first; Bronze: RIGHT@790,
+# RIGHT@815), the entry grid from ~f1000. The password's own keys come from tools/pw2keys.cjs (port_work/ only).
+START@450-452,A@480-482,A@650-652,A@750-752

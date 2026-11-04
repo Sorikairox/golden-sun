@@ -1,0 +1,8 @@
+# tools/transfer_pw.sh digests (TLA8): case, what, digest (no game data)
+clear	save	565fd2ec6264
+gold	units_flags	d828e28a8c03 50f4af80632f
+gold	ram_pic	1c227e83944081bf e6f66ae2ee670fd3
+silver	units_flags	046f6ce4b51b 50f4af80632f
+silver	ram_pic	217664c1b159e07e 11078798f59f34ba
+bronze	units_flags	e7c17d8b469d 50f4af80632f
+bronze	ram_pic	4c360e1dd58f596c e6f66ae2ee670fd3

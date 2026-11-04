@@ -1,0 +1,7 @@
+# TLA8 (test-only cleared GS1 save, TLA_PLAN 3.3 / 6.1): with --flash-in ml_saturos_win.sav (GS26) and the test-only
+# warp probe (WARP_AT=2100 WARP_SCENE=1 WARP_ENTRANCE=2: Event_SetDestination(SceneId_FileScreen,
+# FILE_SCREEN_FROM_TITLE), the File Screen the credits lead to): Continue file 1 (vale_day1_continue.keys), then
+# "Save your adventure?" Yes, "You cannot resume...", "Carefully choose a place...", file 2 (empty), A:
+# Save_ToChosenFile writes the file with sendFlag = 1 ("Your game was saved." ~f2850).
+START@1500-1502,A@1800-1802,A@1850-1852
+A@2300-2303,A@2450-2453,A@2550-2553,DOWN@2650-2653,A@2720-2723
