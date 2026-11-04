@@ -2,6 +2,24 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA7 — 2026-11-04: the battle blitters; the first two battles won; short K&R calls
+
+- Read docs/TLA6.md sections 14-17 and traps 75, 77.
+- Real play (node, tools/regress_tla.sh 9 cases): the first battle **won** with Fight -> Psynergy -> Fume (and with
+  Fight/Attack) -> Suhalla Gate (scene 6) -> its ledges -> "Waahhh! It's them!" -> **second Ruffian battle won** ->
+  scene 7's mountain path (31,480). Stop: scene 7's trigger 5 (38, 57) is entered from the lower ground; the way down
+  from the 128 px path was not found (TLA6.md 14 has the map layout to read it).
+- Fixed: heap blocks drop code aliases when handed out fresh (TLA c_rules on HeapSlot_Alloc/AllocEwram; trap 20);
+  battle effect blitters: Func_08196404 bound to Port_TlaBuildBlitter (translation, then GS1's C blitter aliased,
+  TLA mode map; port/tla/hw/pc_binds.tsv), proven by tests/arm/tla/diff_blitter.cjs (ROM builder + its ARM in the
+  interpreter: 160 builds + 4,800 draws EQUIV, negative 80/80); 11 short K&R calls given their words (c_rules, each read
+  in the reference ELF); 5 kept with reasons in port/tla/short_knr_allow.tsv; build check tools/wasm/short_knr.py.
+- Checks: D20 batch 218/0/987; diff_tla 30/30 (neg 4/4); diff_hw 124/0/64 (neg 4/4); diff_mixer 300/300; diff_blitter
+  EQUIV (neg 80/80); test_arm 79/79; regress_tla 9/9; GS1 687968a7 / 895d45cc, regress --quick 9/9.
+- RAM digests of the older regress cases changed (wasm table indices in game RAM), pictures and save SHA-1 did not.
+- Local only: port_work/tla7/contact.png (both battles, Suhalla Gate, scene 7).
+- Next: scene 7 -> scene 8 (trigger 5), then on (Felix, Idejima); Func_08173aac captures (Psynergy effects run now).
+
 ## TLA6b — 2026-11-04: the way down, the first battle reached (not won); D20 batch order explained; audio
 
 - Read docs/TLA6.md sections 7-13 and traps 75-76.

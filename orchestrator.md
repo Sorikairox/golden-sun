@@ -14,6 +14,12 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA7 (2026-11-04): **the first battle won** (Fight/Psynergy Fume, effects drawn), Suhalla Gate, **the second Ruffian
+  battle won**, on to scene 7's mountain path (stop: the way down to its trigger 5). Fixes: heap blocks drop code
+  aliases when handed out fresh (trap 20), battle blitters through GS1's C blitter (trap 77, diff_blitter.cjs
+  160 builds + 4,800 draws EQUIV), 11 short K&R calls given their words + build check tools/wasm/short_knr.py (trap 75).
+  regress_tla 9 cases. docs/TLA6.md 14-17.
+
 - TLA6b (2026-11-04): **down Venus Lighthouse to the first battle** (the rooms by the vendor's scene tables, the
   entrance, the guards, Alex, Kraden, "Ruffian appeared!", drawn right); the battle is not won (Fight stops in a
   self-patching IWRAM blitter run through a stale decoder alias, docs/TLA6.md 9). Fixes: K&R GameFlag_Test argument
@@ -637,8 +643,15 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 75. A K&R call that passes fewer words than the callee's definition gets 0 for the missing ones in wasm (link.py
     adapter()); on the ARM they are whatever the caller's registers hold, often its own incoming argument passed
     through. TLA6b: is_condition_active.c's `GameFlag_Test()` meant GameFlag_Test(condition) (r0), so every trigger
-    condition tested flag 0 and the Venus Lighthouse statues never moved. 16 such calls are open (docs/TLA6.md 8):
-    read each call site's r0-r3 and give the call its words (c_rules).
+    condition tested flag 0 and the Venus Lighthouse statues never moved. TLA7: 11 more given their words (c_rules,
+    docs/TLA6.md 15); the build's `calls` stage runs tools/wasm/short_knr.py, which fails on any adapter that drops words
+    unless port/tla/short_knr_allow.tsv says why that is right (5 rows). Read the caller in port_work/tla1/*.elf (Thumb).
 76. A D20 run that draws all routines' inputs from one random stream is order dependent: adding a routine to the
     report or one routine stopping early moves EQUIV/NOINPUT elsewhere (TLA6b: 251 -> 248 with no translation
     changed). The batch and diff_hw seed each routine by name, and the batch restores the same memory before each.
+77. TLA's battle effect blitters are built by raw asm (Func_08196404: BattleEffect_PatchTemplate copied with ldm/stm,
+    fragments by DMA3, immediates and branch words patched), the twin of GS1's vendor C BattleEffect_BuildBlitter (trap
+    29). It is bound to Port_TlaBuildBlitter (port/tla/hw/pc_binds.tsv, link.py): the translation runs, then the slot is
+    aliased to GS1's port/pc/blitter.c with TLA's mode numbers (0 additive, 1 lighten, 2 transparent, else copy).
+    tests/arm/tla/diff_blitter.cjs checks it against the ROM's builder and its ARM in the interpreter. The same block
+    held the field's picture decoder alias (trap 20): HeapSlot_Alloc/AllocEwram drop aliases in a block handed out fresh.

@@ -203,3 +203,82 @@ port_work/tla6b/audio/opening.wav (sha1 cfed3c8a45fb7c90).
 2. The 16 open short K&R adapters (section 8; Window_CloseIfOpen's r1 and Func_080af794's r1 come from their callers): read each call site's r0-r3 on the ARM and give the call its words.
 3. Captures for Func_08173aac (a battle with Psynergy effects, after item 1) and Func_02002f64@681 (Gaia Rock).
 4. The heap-slot world profile for the D20 batch (555 EQUIV) after triaging its two FAILs.
+
+# TLA7 (2026-11-04): the battle blitters, the first battles won, short K&R calls
+
+## 14. Furthest real play
+
+`tools/regress_tla.sh` cases `win` and `gate` (routes tests/routes/tla/win.keys, gate.keys; inputs only), 9 cases:
+the first battle (28,300) -> Fight -> **Psynergy -> Fume** on the Ruffian (flames drawn; 53 damage) -> **"You felled
+Ruffian!"**, 5 experience, 5 coins, an Herb (29,120) -> the field (29,240) -> west past the beaten Ruffian (lying at
+40,248 by scene 4's prepare routine once flag 0x893 is set) to trigger 1 -> **Suhalla Gate (scene 6)** entrance 5
+(29,390) -> the stairs and ledges (64, 96, 128 px) to trigger 20 (30, 22) -> "Waahhh! It's them!" -> **second Ruffian
+battle, won with Attack** (~31,100) -> "Oooog. Maybe I shouldn't have underestimated her..." -> west along z 18 to
+trigger 4 (x 21) -> **scene 7 (the mountain path) entrance 4** (31,480). Fight/Attack also wins the first battle (not
+kept as a case). No Djinn command is offered (Jenna has none). Contact sheet (local): port_work/tla7/contact.png.
+
+Stop point (not a port bug as far as seen): scene 7's next exit is trigger 5 at (38, 57), next to entrance 5 (616, 920,
+facing south): it is entered from the lower ground, and the route down from the 128 px path was not found (going west
+on the path meets trigger 21, "Not that way"). Scene 7's other triggers (vendor suhalla_gate/data.c, map dump): exit 3
+(1, 56-57) -> the north part (exits 1 at x 1 and 2 at x 25), exit 1 there -> scene 6's west plateau; exit 5 -> scene 8.
+Maps: a TLA map dump needs gHeapSlots.mapWork (0x03000020) -> layers[L] (+0x108, 56 bytes each): cells (+0x30, byte 2 =
+behaviour / trigger id) and terrainIds (+0x34, one byte per cell) -> gMapCollision (0x0202c000) + 4 * id: byte 0 & 15
+kind, byte 1 height in 8 px. GS1's mapdump.cjs reads byte 3 of the cell as the shape, which is 0 in TLA (all heights 0).
+
+## 15. Port bugs fixed
+
+1. **Code aliases dropped when a heap block is handed out fresh** (TLA c_rules on HeapSlot_Alloc / HeapSlot_AllocEwram,
+   commit 6661b17; trap 20): the field's RamCode_Load left an alias of the picture decoder at 0x03005380; the battle's
+   blitter builder got the same block and the call ran the decoder. A slot already held (cached) keeps its aliases.
+2. **Battle effect blitters** (commit be42a96; trap 77): Func_08196404 (raw Thumb, TLA's twin of GS1's
+   BattleEffect_BuildBlitter) is bound to Port_TlaBuildBlitter (port/tla/hw/pc_tla.c, through the new
+   port/tla/hw/pc_binds.tsv that link.py reads for TLA). It runs the asm2c translation (same heap use, same words in
+   RAM: ldm/stm of BattleEffect_PatchTemplate, DMA3 fragment copies, patched immediates and branch words), then aliases
+   the slot (`*(u32 *)(0x03000000 + slot)`) to GS1's C blitter (port/pc/blitter.c, now linked for TLA, unchanged) with
+   TLA's mode numbers mapped: 0 additive (it copies BattleEffect_Mask), 1 lighten, 2 transparent, other copy (GS1: 0
+   copy, 1 transparent, 2 lighten, 3 additive). Proof: **tests/arm/tla/diff_blitter.cjs** runs the ROM's builder in the
+   interpreter (arm7.js; the DMA3 copies modelled on the I/O write) and then the ARM it wrote, against the port's build
+   and the aliased C: 160 builds (width shift 7/8, flags 0-15, modes 0-4; half fresh in IWRAM after a decoder alias,
+   half reusing an EWRAM slot): built words and all RAM equal; 4,800 draws EQUIV; negative 80/80 (a wrong flag in the
+   alias). Asm or overlay code that calls Func_08196404 through a code pointer (a2c dispatch) would miss the hook: none
+   found (the C callers and the table_47 veneer all reach the binding).
+3. **11 short K&R calls get their words** (commit 7ca2579; trap 75), each read in the reference ELF
+   (port_work/tla1/*.elf, Thumb disassembly of the caller):
+   - BattleEffect_GetFlags(void) keeps r0 to its bl: BattleEffect_FilterObjectIdByFlags(id)'s id reaches
+     BattleEffect_GetAnimationValue -> ObjectTable_Get (was 0);
+   - Window_CloseIfOpen leaves its callers' r1 (mode 1) to the bl Window_CloseFar (the vendor's note);
+   - Func_080ea8a8(x, z, layer) keeps r3 = the asm caller's (Func_080ea8d4) object height for Func_0802d71c's base;
+   - Func_080af794(owner) passes r1, the LevelUpResult pointer Owner_LevelUp writes (was a NULL write);
+   - Actor_GetById() in ov68e s08f0, ov681 s2b58 / s2ac8, ov692 s0800 and ObjectTable_ReadActiveValue() in ov682 s0e04:
+     the routine's a0 is still in r0;
+   - event/callback wrappers whose body is only the bl (ov664 Func_020048bc, ov665 Func_02000a98, ov6aa Func_0200040c)
+     and ov671 Func_02001a6c: r0/r1 from the dispatcher pass through.
+   Kept, each with the reason in **port/tla/short_knr_allow.tsv**: Message_Start 5/6 (the sixth word is the caller's 0
+   on the stack), Func_0810a2c8 0/4 (its asm target writes r0-r3 first), ov674 Func_020020ec 3/4 (r3 is 0 on the ARM
+   too), ov671 Func_020056b4 0/1 (the veneer of Event_Start(void): the word is never read), ov6b8 debug scene.
+4. **Build check** (commit 7c272bd): tools/wasm/short_knr.py, in the TLA build's `calls` stage, lists every link.py
+   adapter that drops words its target takes and fails on one without an allow row (negative: removing a row fails).
+
+RAM digests of the 7 older regress cases changed with these builds (C function pointers stored in game RAM are wasm
+table indices, which move when functions are added); all 42 pictures and the save's SHA-1 are unchanged.
+
+## 16. Checks (end of session)
+
+| check | result |
+|---|---|
+| TLA build | 0 linker warnings, 0 objects left out, 0 logged stubs, calls PASS (9 allowed), short K&R PASS (5 allowed), leak 0, no _bitcast_invalid |
+| D20 batch | 218 EQUIV / 0 FAIL / 987 NOINPUT of 1,205 (with the local captures; unchanged) |
+| diff_tla | 30/30, negative 4/4 |
+| diff_hw | 124 EQUIV / 0 FAIL / 64 NOINPUT, negative 4/4 |
+| diff_mixer | 300/300 |
+| diff_blitter (new) | 160 builds + 4,800 draws EQUIV, negative 80/80 |
+| test_arm (GS1) | 79/79, negative controls detected |
+| regress_tla | 9/9 OK (new: win, gate) |
+| GS1 | game.wasm 687968a7, game.js 895d45cc; regress --quick 9/9 OK |
+
+## 17. Next
+
+1. Scene 7: the way down from the 128 px path to trigger 5 (38, 57) and scene 8 (read the scene's map with the
+   layout in 14; the slopes are the '4'/'8' cells), then on to the next scenes (Felix, Idejima).
+2. Func_08173aac captures (a battle with Psynergy effects now runs: Fume) and Func_02002f64@681.
+3. The heap-slot world profile for the D20 batch (TLA6.md 10).
