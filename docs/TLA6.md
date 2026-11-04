@@ -285,3 +285,76 @@ table indices, which move when functions are added); all 42 pictures and the sav
    layout in 14; the slopes are the '4'/'8' cells), then on to the next scenes (Felix, Idejima).
 2. Func_08173aac captures (a battle with Psynergy effects now runs: Fume) and Func_02002f64@681.
 3. The heap-slot world profile for the D20 batch (TLA6.md 10).
+
+# TLA8 (2026-11-04): scene 7's vines, Idejima, the World Map; Func_08173aac's inputs; the combined deploy script
+
+## 18. Scene 7: not a port bug
+
+Read in the vendor's scene (src/scene/suhalla_gate/data.c, prepare/events files) and in RAM (a map dump of both layers:
+terrain kind and height per cell, cell byte 2 = trigger, byte 3 = attributes):
+- Trigger 21 ("Not that way", x 31-32, z 54-55) is CONDITION_ALWAYS: it always turns the leader back. It is the story's
+  wall, not a gate to open; the way is elsewhere.
+- Scene 7 has no slope cells between the 128 px path and the 32 px level: kinds 3/4 are diagonal height splits, 7 a
+  pixel mask. The 96 px "slope" cells (35, 57) where TLA7 stopped are a ledge.
+- Cell byte 3 = 0x40 (0 everywhere else) marks **vines**: (34, 54-55) from the 128 px path to the 96 px ledge and
+  (33, 56-57) from the ledge to the 32 px level (they are drawn: green vines down the cliff). Holding DOWN on them
+  climbs (height 128 -> 96 -> 32 px, cell unchanged while climbing).
+- Trigger 5 (38, 57) and the cave mouth: the layer-switch cells (37-39, 57-58) lead into layer 1, whose cell (38, 56)
+  holds trigger 5 (scene 7's prepare copies it there with Map_CopyCellAttributeRect(108, 38, 1, 1, 102, 56): layer 1
+  is columns 64-127 of the same buffers, trap 79). Walking UP into the mouth starts the scene: three Ruffians ("Ha! That
+  was a good idea, waiting here for 'em!"), the third battle; after it (entrance 99, flag 0x895) UP again goes to scene 8.
+
+## 19. Furthest real play
+
+tools/regress_tla.sh, 13 cases (new: cave, idejima, party, worldmap; tests/routes/tla/*.keys, inputs only):
+gate -> scene 7's two vines -> the three Ruffians -> **third battle won** (Fight, Psynergy, Fume, then Attack; 15
+experience) -> scene 8 (cave): the hole to its lower room, a **Punch Ant won** (Attack), Kraden ("I never knew
+fighting could be so fun!"), trigger 4 (41, 39) -> scene 9: "This is the place, isn't it?" (Yes), Alex, the beam, the
+island torn loose and adrift, **Felix and Sheba** washed up ("Isaac."), "We'll be washed away!", **Idejima: Felix under
+control** (55,250; "Do you want to check yourself for injuries?" Yes) -> Kraden, Jenna, Sheba woken and **joined**
+(party of three + Kraden, 58,520) -> trigger 8: **Alex's departure** (two Yes answers) -> exit 4 (x 0, z 42) -> **the
+World Map** (scene 2, 63,860; walking checked). No port bug seen on the way (screens, battles, messages, menus).
+Contact sheet (local): port_work/tla8/contact.png. Note for routes: A with nothing in front opens the field menu, so
+each A run ends right after the last message.
+
+## 20. Func_08173aac D20 inputs
+
+Func_08173aac is not a Psynergy we have: its callers are BattleEffect_RunGasp/Reflux/DjinnCounter/CounterRush
+(variant_i.c: variants 0, 2, 3, 7; effect kinds 242, 248, 249, 396 in gData_08197aa0, indexed by kind - 1). Entry
+states were taken in a temporary capture build (not committed; tla_asm_7.c given `#define A2C_T(a)` -> on 0x8173aac
+`A2C_SPILL(); a2c_capture(a)` -> EM_ASM -> a boot.cjs probe writing batch.cjs's capture format, plus a constructor
+handing reloc_gData_08197aa0's address to JS) during the first battle's Fume, with Fume's table slot (kind 72, index
+71) pointed at each of the four kinds by the probe at frame 28,500: 4 captures (port_work/tla8/captures, also copied to
+port_work/tla6b/captures, local only). `ONLY=Func_08173aac@ node tests/arm/tla/batch/batch.cjs 0/1`: **EQUIV, 4 cases
+(capture)**. Caveat: r0 (0x1945b8) is a wasm data address (the C caller's effect context), outside the captured GBA
+regions, so the routine reads the test module's bytes there on both sides; the comparison holds, the inputs there are
+not the game's. The build was restored and rebuilt: game.wasm eade7bef / game.js 3a44f9e0 as before.
+
+## 21. Deploy prep (not deployed)
+
+tools/deploy_web.sh now ships the combined site by default (TLA=0: GS1 alone as before): leak checks of GS1's and
+TLA's game.wasm/game.js against their own ROM (PORT_GAME=tbs/tla, trap 78), `BOTH=1 tools/site.sh`, the allowlist for
+the top level and for tla/ (same pattern), `cp -R build/site/.`, BUILD.txt at / and /tla/, _headers rows for
+/tla/manifest.webmanifest and /tla/sw.js, a size report, and after the upload live checks for / and /tla/ (BUILD.txt,
+game.wasm type and served length vs the local file, manifest type, sw.js BUILD/SITE/PREFIX) and /api/room.
+`--dry-run` does all but the function's npm install, the upload and the live checks. Dry run (commit 6fe1d43):
+leak checks PASS (GS1 and TLA), 31 files, 25 MB staged in ~/golden-sun-site/publish, **DEPLOY_DRY_RUN: OK**.
+File size: Netlify documents no per-file limit; staff recommend at most 10 MB per deploy file
+(answers.netlify.com/t/what-is-the-maximum-allowed-object-size/145182). TLA's game.wasm is 21.8 MB: the script notes
+it; if the upload fails or the live length differs, the fallback is splitting/compressing the wasm (not done).
+To deploy (the user): `tools/web_build.sh && tools/web_build.sh --game tla && tools/deploy_web.sh` (the builds are
+current now, so `tools/deploy_web.sh` alone ships this tree).
+
+## 22. Checks (end of session) and next
+
+| check | result |
+|---|---|
+| TLA build | unchanged (eade7bef / 3a44f9e0 after the capture build was undone); link 0 warnings, calls PASS, short K&R PASS, leak 0 |
+| D20 Func_08173aac | EQUIV 4 capture cases (no translated routine changed: batch/diff_tla/diff_hw/diff_mixer/diff_blitter/test_arm not rerun) |
+| regress_tla | 13/13 OK (new: cave, idejima, party, worldmap) |
+| GS1 | game.wasm 687968a7, game.js 895d45cc; regress --quick 9/9 OK; web_offline ALL PASS; web_phone ALL PASS |
+| TLA page | web_offline (SITE_DIR=build/site/tla) ALL PASS |
+| deploy | --dry-run OK; not deployed |
+
+Next: the World Map from Idejima's shore to Daila (the next town), random battles with the party of three (grind if
+needed), Djinn; a full D20 batch with the new captures (expect 219 EQUIV); the user's deploy and a live check of /tla/.

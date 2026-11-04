@@ -2,6 +2,24 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA8 — 2026-11-04: scene 7's vines; Felix on Idejima; the World Map; combined deploy script (dry run)
+
+- Read docs/TLA6.md sections 18-22 and traps 78-79.
+- Scene 7 was not a port bug: trigger 21 always turns back; the way down is two vines (cell byte 3 = 0x40) at (34,54)
+  and (33,56), then UP into the cave mouth (layer 1, trigger 5).
+- Real play (regress_tla 13 cases, new cave/idejima/party/worldmap): third Ruffian battle won, scene 8's cave (Punch
+  Ant won), the island adrift, **Felix under control on Idejima**, Kraden/Jenna/Sheba join, Alex's departure, **the
+  World Map** (scene 2, ~63,860).
+- Func_08173aac: 4 capture inputs (Gasp/Reflux/DjinnCounter/CounterRush variants forced into Fume's slot in a temporary
+  capture build) -> D20 EQUIV 4 cases (r0 is a wasm data address: TLA6.md 20).
+- tools/deploy_web.sh: combined site (GS1 /, TLA /tla/), TLA leak check (PORT_GAME=tla), tla/ allowlist, /tla/ headers,
+  live checks, `--dry-run` -> DEPLOY_DRY_RUN: OK. NOT deployed. User: `tools/deploy_web.sh`. TLA's 21.8 MB game.wasm is
+  above Netlify's recommended 10 MB per file (no documented hard limit).
+- Checks: regress_tla 13/13; GS1 687968a7 / 895d45cc, regress --quick 9/9, web_offline + web_phone ALL PASS; TLA page
+  offline ALL PASS; TLA build unchanged (eade7bef / 3a44f9e0).
+- Local only: port_work/tla8/contact.png, port_work/tla8/captures.
+- Next: World Map to Daila; full D20 batch with the new captures; the user's deploy + live /tla/ check.
+
 ## TLA7 — 2026-11-04: the battle blitters; the first two battles won; short K&R calls
 
 - Read docs/TLA6.md sections 14-17 and traps 75, 77.

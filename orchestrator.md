@@ -14,6 +14,12 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA8 (2026-11-04): **real play to Felix on Idejima and the World Map**: scene 7's way down is two vines (not a port
+  bug, trap 79), the third Ruffian battle won (Fume + Attack), the cave (a Punch Ant won), the island adrift, Felix
+  under control, Kraden/Jenna/Sheba join, Alex's departure, the World Map (scene 2). regress_tla 13 cases.
+  Func_08173aac D20: EQUIV 4 capture cases (forced variants). tools/deploy_web.sh ships GS1 at / and TLA at /tla/,
+  `--dry-run` OK; not deployed (TLA's 21 MB game.wasm is above Netlify's recommended 10 MB per file). docs/TLA6.md 18-22.
+
 - TLA7 (2026-11-04): **the first battle won** (Fight/Psynergy Fume, effects drawn), Suhalla Gate, **the second Ruffian
   battle won**, on to scene 7's mountain path (stop: the way down to its trigger 5). Fixes: heap blocks drop code
   aliases when handed out fresh (trap 20), battle blitters through GS1's C blitter (trap 77, diff_blitter.cjs
@@ -655,3 +661,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     aliased to GS1's port/pc/blitter.c with TLA's mode numbers (0 additive, 1 lighten, 2 transparent, else copy).
     tests/arm/tla/diff_blitter.cjs checks it against the ROM's builder and its ARM in the interpreter. The same block
     held the field's picture decoder alias (trap 20): HeapSlot_Alloc/AllocEwram drop aliases in a block handed out fresh.
+78. tools/wasm/leak_check.py picks its section table by PORT_GAME (default tbs). Run by hand on TLA's game.wasm with
+    the TLA ROM it looks up GS1's sections in the TLA ROM and gives a false FAIL (TLA8: 1 hit in "direct_sound_samples");
+    use `PORT_GAME=tla` (build.py sets it; tools/deploy_web.sh now does too).
+79. TLA field maps (TLA8): layer L's cells are the same 128-column buffers (0x02010000 / terrain ids 0x02024000) offset
+    by 64 * L columns, so layer 1's cell (x, z) is column x + 64 (Map_CopyCellAttributeRect(108, 38, ..., 102, 56) in
+    Suhalla Gate's prepare writes layer 1). Climbable vines are cell byte 3 bit 0x40 (byte 3 is 0 elsewhere), climbed
+    by holding the direction into them; a cliff with no slope cells (kinds 3/4 are diagonal height splits, 7 a pixel
+    mask) is not a port bug before the vines and layer-1 passages are checked.
