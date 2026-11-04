@@ -10,7 +10,10 @@ const crypto = require('crypto');
 // GS28: the masked digest also counts the saved actor snapshot's script and update words as 0 (gActorSnapshot at
 // 0x02001104: 32 actors of 0x70 bytes from +0x20; port/pc/save_compat.c), which GS28 builds keep as GBA addresses.
 // DIGEST_BOTH=1 prints the unmasked "digest" line (tools/regress.sh reads it) and a masked "mdigest" line.
+// DIGEST_FULL=1 (GS33): the picture digest covers the whole frame (Map zoom: up to 336 x 224) instead of its first
+// 240 x 160 x 4 bytes, so menus moved to a zoomed frame's bottom rows count (tools/regress.sh zoom_menus_* cases).
 const MASK = !!process.env.MASK_CODE;
+const FULL = !!process.env.DIGEST_FULL;
 const BOTH = !!process.env.DIGEST_BOTH;
 const AT = new Set((process.env.DIGEST_AT || '').split(',').filter(Boolean).map(Number));
 const SNAP = 0x02001104 + 0x20;
@@ -34,7 +37,8 @@ module.exports = (m, frame) => {
   if (!AT.has(frame)) return;
   const H = m.HEAPU8;
   const p = m._Port_FrameBuffer();
-  const pic = crypto.createHash('sha1').update(H.subarray(p, p + 240 * 160 * 4)).digest('hex').slice(0, 16);
+  const n = FULL ? m._Port_FrameWidth() * m._Port_FrameHeight() : 240 * 160;
+  const pic = crypto.createHash('sha1').update(H.subarray(p, p + n * 4)).digest('hex').slice(0, 16);
   console.log(`digest f${frame} ram ${ramDigest(H, MASK && !BOTH)} pic ${pic}`);
   if (BOTH) console.log(`mdigest f${frame} ram ${ramDigest(H, true)} pic ${pic}`);
 };

@@ -12,7 +12,9 @@
  *   0 Screen colours  Original / GBA LCD          (page: gs-lcd, the GS10 LCD curve)
  *   1 Brightness      Normal / Bright / Brighter   (page: gs-bright, a gamma lift on the canvas copy)
  *   2 Map zoom        Normal / More / Most         (page: gs-zoom; GS29, replaces GS27's Wide view: the field map at
- *                     240 x 160, 288 x 192 or 336 x 224, scaled by the page into the same box; ppu.c, c_rules) */
+ *                     240 x 160, 288 x 192 or 336 x 224, scaled by the page into the same box; ppu.c, c_rules)
+ *   3 Menus           Centre / Edges              (page: gs-menus; GS33, default Edges as the user asked: while the map is
+ *                     zoomed, windows move to the picture's edges they are near; ppu.c) */
 #include "gba.h"
 
 struct Window;
@@ -56,9 +58,9 @@ extern u8 gPointingHandTiles[];
 #define VRAM_CACHE_ENTRIES 96
 
 /* ---- the option values (shared with the page) ---- */
-enum { OPT_LCD, OPT_BRIGHT, OPT_ZOOM, OPT_COUNT };
-static const u8 sCount[OPT_COUNT] = {2, 3, 3};
-static u8 sOpt[OPT_COUNT];
+enum { OPT_LCD, OPT_BRIGHT, OPT_ZOOM, OPT_MENUS, OPT_COUNT };
+static const u8 sCount[OPT_COUNT] = {2, 3, 3, 2};
+static u8 sOpt[OPT_COUNT] = {0, 0, 0, 1};
 static u32 sOptGeneration;
 s32 Port_OptGet(s32 i) { return i >= 0 && i < OPT_COUNT ? sOpt[i] : 0; }
 void Port_OptSet(s32 i, s32 v) {   /* from the page: no generation bump */
@@ -68,9 +70,11 @@ void Port_OptSet(s32 i, s32 v) {   /* from the page: no generation bump */
 u32 Port_OptGeneration(void) { return sOptGeneration; }
 /* Map zoom (ppu.c reads it at each frame's first line; the field's culling follows the frame, gPortZoom*) */
 int Port_ZoomLevel(void) { return sOpt[OPT_ZOOM]; }
+/* GS33: menus at the zoomed picture's edges (1, the default) or where the GBA's screen is (0) */
+int Port_MenusEdges(void) { return sOpt[OPT_MENUS]; }
 
 /* ---- the screen ---- */
-#define ROWS 3
+#define ROWS 4
 #define WIN_X 2
 #define WIN_Y 5
 #define WIN_W 26
@@ -81,12 +85,14 @@ int Port_ZoomLevel(void) { return sOpt[OPT_ZOOM]; }
 #ifndef HINT_Y
 #define HINT_Y 0
 #endif
-static const char *const sLabel[3] = {"Screen colours", "Brightness", "Map zoom"};
-static const char *const sValue[3][3] = {{"Original", "GBA LCD", 0}, {"Normal", "Bright", "Brighter"}, {"Normal", "More", "Most"}};
-static const char *const sHelp[3] = {
+static const char *const sLabel[ROWS] = {"Screen colours", "Brightness", "Map zoom", "Menus"};
+static const char *const sValue[ROWS][3] = {
+    {"Original", "GBA LCD", 0}, {"Normal", "Bright", "Brighter"}, {"Normal", "More", "Most"}, {"Centre", "Edges", 0}};
+static const char *const sHelp[ROWS] = {
     "Like a real GBA screen.",
     "Lighten the picture.",
     "See more of the map.",
+    "Zoomed map: menus at the edges.",
 };
 static struct PortMenuCursor sCursor;
 

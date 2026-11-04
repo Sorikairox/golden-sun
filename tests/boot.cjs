@@ -62,7 +62,7 @@ async function main() {
   const every = +opt('--every', 0);
   const regFrames = new Set((opt('--regs', '') || '').split(',').filter(Boolean).map(Number));
   const flashIn = opt('--flash-in', ''), flashOut = opt('--flash-out', '');
-  // --opt I=V@F[,...] (GS27): set port option I (0 Screen colours, 1 Brightness, 2 Map zoom 0-2, GS29) to V at frame F (0: at power-on)
+  // --opt I=V@F[,...] (GS27): set port option I (0 Screen colours, 1 Brightness, 2 Map zoom 0-2, GS29; 3 Menus 0 Centre / 1 Edges, GS33) to V at frame F (0: at power-on)
   const optAt = (opt('--opt', '') || '').split(',').filter(Boolean).map((x) => { const [iv, f] = x.split('@'); const [i, v] = iv.split('='); return { i: +i, v: +v, f: +(f || 0) }; });
   let flashGen = 0;
   // --probe FILE[,FILE]: test-only hooks, each a module exporting (m, frame, keys) => void, run every frame.

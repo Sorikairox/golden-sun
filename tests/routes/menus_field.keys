@@ -1,0 +1,8 @@
+# GS33 (after vale_day1_continue.keys with --flash-in kolima_forest.sav, Map zoom Most; WARP_AT=3450 with --probe
+# tests/probes/warp.cjs: the game's own Event_SetDestination(WorldMap, 0), test-only): in Kolima Forest's entrance,
+# where the frame is held at the map's top edge (the GBA's view sits low in it, as in the user's report), the field
+# menu (A), Psynergy, Djinn, Item and Status screens, the Pause menu (START), Extra settings (R), then the World Map
+# and its field menu.
+A@2000-2002,A@2100-2102,B@2200-2202,RIGHT@2260-2262,A@2320-2322,B@2420-2422,RIGHT@2480-2482,A@2540-2542
+B@2640-2642,RIGHT@2700-2702,A@2760-2762,B@2860-2862,B@2920-2922,START@3000-3002,R@3150-3152,B@3300-3302,B@3360-3362
+A@3800-3802

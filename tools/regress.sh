@@ -66,6 +66,9 @@
 # instances, its own RAM digests).
 # zoom_edges_most, zoom_edges_more (GS31: kolima_glade's route at Map zoom Most, bilibin_ice's at More; zoomjitter.cjs
 # fails the case when the zoomed picture jitters at a map's edge: the frame's place must follow the camera the BGs show).
+# zoom_menus_field, zoom_menus_shop (GS33: "Menus: Edges", the default, at Map zoom Most: menus_field.keys's field menu, its
+# screens, Pause, Extra settings and the World Map's menu in Kolima Forest's entrance at the map's top edge; imil.keys's
+# dialogues and item shop; menujitter.cjs fails the case when an open window moves in the frame).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
@@ -143,6 +146,8 @@ CASES=(
   "ml_saturos_win|58100|12446,14000,17000,20000,30000,42169,42412,46000,50000,54000,58000||$R/vale_day1_continue.keys,$R/ml_saturos_win.keys,$R/ml_saturos_win_save.keys||--flash-in $W/ml_aerie_lv15.sav --flash-out $W/ml_saturos_win.sav"
   "zoom_edges_most|10800|2700,3800,5132,5400,9100,10000,10650,10800|JIT_FROM=1990 JIT_TO=10800|$R/vale_day1_continue.keys,$R/kolima_glade.keys|$P/zoomjitter.cjs|--flash-in $W/kolima_grind.sav --opt 2=2@0"
   "zoom_edges_more|5100|2571,3000,3568,4080,4300,4800,5100|JIT_FROM=1990 JIT_TO=5100|$R/vale_day1_continue.keys,$R/bilibin_ice.keys|$P/zoomjitter.cjs|--flash-in $W/bilibin_cave.sav --opt 2=1@0"
+  "zoom_menus_field|3950|2002,2004,2080,2180,2400,2600,3100,3250,3900|WARP_AT=3450 MJ_FROM=1990 MJ_TO=3949 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/menus_field.keys|$P/warp.cjs,$P/menujitter.cjs|--flash-in $W/kolima_forest.sav --opt 2=2@0"
+  "zoom_menus_shop|13330|5980,6100,12300,12530,12900,13250|MJ_FROM=2000 MJ_TO=13329 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/imil.keys|$P/menujitter.cjs|--flash-in $W/bilibin_exit.sav --opt 2=2@0"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)
 maker() { case "$1" in $W/vale_day1.sav) echo vale_day1_save;; $W/sol_sanctum.sav) echo sol_sanctum_save;; $W/sol_jewels.sav) echo sol_jewels;; $W/sol_star_room.sav) echo sol_star_room;; $W/mt_aleph.sav) echo mt_aleph;; $W/vault.sav) echo vault;; $W/vault_inn.sav) echo vault_inn;; $W/vault_crate.sav) echo vault_crate;; $W/vault_grind.sav) echo vault_grind;; $W/vault_thieves.sav) echo vault_thieves;; $W/goma_entrance.sav) echo goma_entrance;; $W/goma_ivan.sav) echo goma_ivan;; $W/goma_pillar.sav) echo goma_pillar;; $W/goma_forge.sav) echo goma_forge;; $W/bilibin.sav) echo bilibin;; $W/mccoy.sav) echo mccoy;; $W/kolima.sav) echo kolima;; $W/kolima_forest.sav) echo kolima_forest;; $W/kolima_grind.sav) echo kolima_grind;; $W/kolima_glade.sav) echo kolima_glade;; $W/kolima_cliff.sav) echo kolima_cliff;; $W/kolima_floodgate.sav) echo kolima_floodgate;; $W/tret_tree.sav) echo tret_tree;; $W/tret_battle.sav) echo tret_battle;; $W/tret_grind.sav) echo tret_grind;; $W/tret_win.sav) echo tret_win;; $W/bilibin_cave.sav) echo bilibin_cave;; $W/bilibin_ice.sav) echo bilibin_ice;; $W/bilibin_exit.sav) echo bilibin_exit;; $W/imil.sav) echo imil;; $W/lizard_man.sav) echo lizard_man;; $W/ml_lower.sav) echo ml_lower;; $W/mia_joins.sav) echo mia_joins;; $W/ml_ply.sav) echo ml_ply;; $W/ml_pipes.sav) echo ml_pipes;; $W/ml_upper.sav) echo ml_upper;; $W/ml_sleet.sav) echo ml_sleet;; $W/ml_aerie.sav) echo ml_aerie;; $W/imil_rest.sav) echo imil_rest;; $W/imil_grind1.sav) echo imil_grind1;; $W/imil_grind2.sav) echo imil_grind2;; $W/ml_upper_return.sav) echo ml_upper_return;; $W/ml_aerie_lv15.sav) echo ml_aerie_lv15;; esac; } # bash 3.2: no associative arrays

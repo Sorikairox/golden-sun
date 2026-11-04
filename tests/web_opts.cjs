@@ -1,5 +1,5 @@
 // GS27 page test (muted headless Chrome, one at a time): the game's own "Extra settings" screen (START, then R) and
-// its sync with the page menu: Screen colours (gs-lcd), Brightness (gs-bright) and Map zoom (gs-zoom, GS29). Keys are
+// its sync with the page menu: Screen colours (gs-lcd), Brightness (gs-bright) and Map zoom (gs-zoom, GS29), Menus (gs-menus, GS33). Keys are
 // scripted by game frame (window.__gsScript), so the run is the same every time.
 // Usage: node tests/web_opts.cjs --flash SAVE [--battle SAVE2] [--out port_work/gs29/web]
 //   SAVE: a 64 KB save in port_work (never committed) whose file 1 continues on the field (the regress run's
@@ -121,7 +121,7 @@ async function main() {
     const tap = (k, f) => ({ mask: K[k], a: f, b: f + 2 });
     const script = [tap('START', 1500), tap('A', 1800), tap('A', 1850),
       tap('START', 2050), tap('R', 2120), tap('RIGHT', 2220), tap('DOWN', 2280), tap('RIGHT', 2320),
-      tap('DOWN', 2380), tap('RIGHT', 2420), tap('RIGHT', 2470), tap('B', 2560),
+      tap('DOWN', 2380), tap('RIGHT', 2420), tap('RIGHT', 2470), tap('DOWN', 2490), tap('RIGHT', 2520), tap('B', 2560),
       tap('DOWN', 2600), tap('DOWN', 2630), tap('A', 2660), tap('B', 2760), tap('B', 2800)];   // + the game's Change settings
     for (let i = 0; i < 100 && !(await ev('!!window.__gs')); i++) await sleep(100);
     const mig = await ev(`JSON.stringify([GSZoom.level, localStorage.getItem('gs-zoom'), localStorage.getItem('gs-wide')])`).then(JSON.parse);
@@ -137,9 +137,9 @@ async function main() {
     };
     const st = () => ev(`JSON.stringify({ lcd: GSLcd.on, bright: GSLcd.bright, zoom: GSZoom.level,
       box: document.getElementById('opt-lcd').checked, sel: document.getElementById('opt-bright').value,
-      zsel: document.getElementById('opt-zoom').value,
-      ls: [localStorage.getItem('gs-lcd'), localStorage.getItem('gs-bright'), localStorage.getItem('gs-zoom')],
-      c: [__gs._Port_OptGet(0), __gs._Port_OptGet(1), __gs._Port_OptGet(2)], fw: __gs._Port_FrameWidth(), fh: __gs._Port_FrameHeight() })`).then(JSON.parse);
+      zsel: document.getElementById('opt-zoom').value, menus: GSMenus.edges, msel: document.getElementById('opt-menus').value,
+      ls: [localStorage.getItem('gs-lcd'), localStorage.getItem('gs-bright'), localStorage.getItem('gs-zoom'), localStorage.getItem('gs-menus')],
+      c: [__gs._Port_OptGet(0), __gs._Port_OptGet(1), __gs._Port_OptGet(2), __gs._Port_OptGet(3)], fw: __gs._Port_FrameWidth(), fh: __gs._Port_FrameHeight() })`).then(JSON.parse);
     // the boxes that must never move: the canvas, and (touch pad on) every touch control
     const boxes = () => ev(`JSON.stringify(['screen', 'tk-dpad', 'tk-A', 'tk-B', 'tk-L', 'tk-R', 'tk-SELECT', 'tk-START', 'tk-menu'].map((id) => {
       const e = document.getElementById(id); if (!e) return null; const r = e.getBoundingClientRect();
@@ -158,6 +158,7 @@ async function main() {
     let s = await st();
     const box0 = await boxes();
     check('defaults off', !s.lcd && s.bright === 0 && !s.box && s.ls[0] === null && s.c[0] === 0 && s.zoom === 0 && s.c[2] === 0 && s.ls[2] === null && s.fw === 240 && s.fh === 160, JSON.stringify(s));
+    check('Menus default Edges (GS33): page, select, game, nothing stored', s.menus === 1 && s.msel === '1' && s.c[3] === 1 && s.ls[3] === null, JSON.stringify(s));
     await until(2200); await shot('2_settings_off'); await pshot('a1_extra_settings');
     await until(2260); s = await st();
     check('in-game Screen colours -> GBA LCD: page on, checkbox, gs-lcd', s.lcd && s.box && s.ls[0] === '1' && s.c[0] === 1, JSON.stringify(s));
@@ -169,6 +170,9 @@ async function main() {
     await until(2500); await shot('4_settings_zoom2'); await pshot('a2_extra_settings_most'); s = await st();
     check('in-game Map zoom -> Most: page, select, gs-zoom, frame 336 x 224', s.zoom === 2 && s.zsel === '2' && s.ls[2] === '2' && s.c[2] === 2 && s.fw === 336 && s.fh === 224, JSON.stringify(s));
     sameBoxes('canvas box unchanged at Most', await boxes(), box0);
+    await until(2550); s = await st();
+    check('in-game Menus -> Centre: page, select, gs-menus 0, game 0', s.menus === 0 && s.msel === '0' && s.ls[3] === '0' && s.c[3] === 0 && s.fw === 336, JSON.stringify(s));
+    sameBoxes('canvas box unchanged (Menus Centre)', await boxes(), box0);
     await until(2720); await pshot('a3_change_settings_most');
     await until(2900); await shot('5_field_zoom2'); await pshot('b3_vale_most');
     // the page menu writes back into the game
@@ -177,9 +181,11 @@ async function main() {
     check('page menu More -> game 1, frame 288 x 192', s.c[2] === 1 && s.ls[2] === '1' && s.fw === 288 && s.fh === 192, JSON.stringify(s));
     sameBoxes('canvas box unchanged (page menu More)', await boxes(), box0);
     await ev(`(() => { const b = document.getElementById('opt-lcd'); b.checked = false; b.dispatchEvent(new Event('change')); const s = document.getElementById('opt-bright'); s.value = '0'; s.dispatchEvent(new Event('change'));
-      const z = document.getElementById('opt-zoom'); z.value = '0'; z.dispatchEvent(new Event('change')); return 1; })()`);
+      const z = document.getElementById('opt-zoom'); z.value = '0'; z.dispatchEvent(new Event('change'));
+      const mn = document.getElementById('opt-menus'); mn.value = '1'; mn.dispatchEvent(new Event('change')); return 1; })()`);
     await until(2960); s = await st(); await pshot('b1_vale_normal');
     check('page menu off -> game values 0, storage cleared, frame 240 x 160', !s.lcd && s.bright === 0 && s.c[0] === 0 && s.c[1] === 0 && s.ls[0] === null && s.ls[1] === null && s.c[2] === 0 && s.ls[2] === null && s.fw === 240 && s.fh === 160, JSON.stringify(s));
+    check('page menu Menus Edges -> game 1, gs-menus removed', s.menus === 1 && s.c[3] === 1 && s.ls[3] === null, JSON.stringify(s));
     sameBoxes('canvas box unchanged (Normal again)', await boxes(), box0);
     await shot('6_field_page_off');
     if (BATTLE) {   // GS29: the touch pad on, Most, a field map with random battles: nothing moves across the battle

@@ -7,6 +7,13 @@ extern u8 gOamMatrixCount;
 extern u32 gOamMatrices[];    /* 32 matrices of two words: pa | pb << 16, pc | pd << 16 */
 s32 IwramFillWords(void *destination, s32 size, u32 value);
 
+/* GS33 (port data, not GBA RAM): where each entry of the last list came from, for ppu.c's "Menus: Edges" (which OAM
+ * entries are menus): the queued entry's address, its depth slot and the attribute words it wrote (attributes 0-1,
+ * attribute 2). The game never reads these. */
+u32 gPortOamSrc[128], gPortOamWords[128][2];
+u8 gPortOamDepth[128];
+s32 gPortOamCount;
+
 /* Builds the frame's OAM list in `work`: depth slot 255 down to 0, each slot's chain in link order (an entry's
  * first word links to the next, words 1-2 are the sprite's attributes), at most 128 sprites; the rest of the
  * 128 entries are filled with 0x00C000C0 words (hidden). Then the affine matrices go into the fourth halfword
@@ -17,12 +24,19 @@ void Oam_BuildBufferKernel(void *work) {
   s32 left = 128;
   int b;
   u8 *o;
+  gPortOamCount = 0;
   u32 n;
   const u32 *m;
   for (b = 0; b < 256; b++) {
     u32 e = *--slot;
     while (e) {
       const u32 *p = (const u32 *)(uintptr_t)e;
+      s32 k = 128 - left;
+      gPortOamSrc[k] = e;
+      gPortOamDepth[k] = (u8)(255 - b);
+      gPortOamWords[k][0] = p[1];
+      gPortOamWords[k][1] = p[2] & 0xFFFF;
+      gPortOamCount = k + 1;
       e = p[0];
       *out++ = p[1];
       *out++ = p[2];
@@ -107,3 +121,9 @@ void PaletteFade_HalveNonzeroKernel(u8 *buffer, u8 *backup, u32 bytes) {
   FADE_LOOP(if (w) b[i] = 0x3f3f3f3fu & (w >> 1););
 }
 #undef FADE_LOOP
+
+/* GS33: the tags' addresses for test probes (0 sources, 1 depths, 2 words, 3 count) */
+void *Port_OamTags(s32 which) {
+  return which == 0 ? (void *)gPortOamSrc : which == 1 ? (void *)gPortOamDepth : which == 2 ? (void *)gPortOamWords
+                                                                                             : (void *)&gPortOamCount;
+}

@@ -154,7 +154,7 @@ async function main() {
     const menuChecks = async (label, w, h) => {
       await tap('#tk-menu');
       check(await ev('document.body.classList.contains("tmenu")'), `${label}: menu open`);
-      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-bright', ...(LCDK === 'gs-lcd' ? ['#opt-zoom'] : []), '#opt-offline', '#opt-title', '#net > summary']) {
+      for (const sel of ['#opt-touch', '#opt-mute', '#opt-volume', '#opt-lcd', '#opt-bright', ...(LCDK === 'gs-lcd' ? ['#opt-zoom', '#opt-menus'] : []), '#opt-offline', '#opt-title', '#net > summary']) {
         await ev(`document.querySelector(${JSON.stringify(sel)}).scrollIntoView({ block: 'center' }); true`);
         await sleep(50);
         const target = sel.startsWith('#opt-') && sel !== '#opt-title' && sel !== '#opt-touch' ? `label:has(> ${sel})` : sel;   // GS27: + Brightness; GS29: Map zoom

@@ -555,6 +555,7 @@ static inline u16 rd16(u32 off) {
   return IO16(off);
 }
 
+static void menu_snapshot(void); /* GS33 */
 void Port_PpuVBlank(void) {
   int i;
   for (i = 0; i < 2; i++) {
@@ -566,6 +567,7 @@ void Port_PpuVBlank(void) {
     wroteX[i] = wroteY[i] = 0;
   }
   zoom_camera_snapshot(); /* GS31 */
+  menu_snapshot();        /* GS33 */
 }
 
 /* GS30 "Map zoom" on the World Map (docs/GS30.md). The World Map is DISPCNT mode 2: BG3 (screen block 8, char block 2)
@@ -787,6 +789,404 @@ static void wm_layer(u16 *out, int bg, int v, int real, const struct WmView *w, 
   }
 }
 
+static const u8 OBJ_W[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
+static const u8 OBJ_H[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
+
+/* GS33 "Menus: Edges" (optional, default Edges as the user asked; port/pc/options.c row "Menus", page gs-menus;
+ * docs/GS33.md). On a zoomed frame (a field map or the World Map at More/Most) the game draws its windows the GBA's size
+ * in the GBA's 240 x 160, which sits inside the bigger frame (off-centre near a map's edge). With Edges each window
+ * moves, with the same pixels, toward the frame's edge it is near, so menus sit at the picture's edges as on the GBA;
+ * the map and the actors never move.
+ * - What is a menu: the window layer (the text BG whose map is screen block 4, WINDOW_TILEMAP_VRAM: BG0) inside the
+ *   rectangles of the live windows of the window work (gWindowWork, heap slot 15: 8 windows of 0x24 bytes at 0x500,
+ *   x/y/width/height in tiles), and the sprites the OAM kernel took from menu code (oam_kernel.c tags every entry it
+ *   builds with its source): the windows' own sprites (glyphs, portraits, cursors, headings: the 64 WindowSprites at
+ *   0x698, 28 bytes, queued by their link at +0x10), entries in the menus' heap slots (party status, selection screens,
+ *   settings, menus, icon menu: 16, 18, 19, 20, 55, 57, 58), bare entries outside GBA RAM (C locals: the "joined"
+ *   portrait) at depth 238-254, and the field sprite pool's (slot 4) at depth 238-254 (a menu's party members,
+ *   Render_ApplyProjectedPlacement at 251) only when inside a window. Nothing is guessed from pictures or positions.
+ * - When: the OAM tags, sprite lists and heap slots are read at the VBlank (Port_PpuVBlank), the moment the VBlank copies
+ *   the OAM list the coming frame shows (trap 93); an OAM entry whose words differ from its tag is not a menu. The
+ *   windows are the VBlank's plus those the game opened since (their text tiles go straight into VRAM's tilemap, so
+ *   they show a frame before the VBlank sees the window).
+ * - Groups per axis: across, windows side by side that touch or overlap and share rows; down, windows stacked that
+ *   touch or overlap and share columns (a full-screen menu is one group each way; a shop's price window and the list
+ *   below it are one group down). A menu sprite goes with the window under its centre, else its own window, else a
+ *   window within 8 px, else a menu sprite within 8 px that has one (a row of icons), else it stays.
+ * - Anchor, per axis, from the group's extent [a, b) on the GBA's screen (S = 240 or 160): touching one edge only ->
+ *   that edge; both -> the centre; neither: b <= S / 2 -> the low edge, a >= S / 2 -> the high edge, else the centre.
+ *   Edge: the window moves by the frame's margin on that side (to the frame's edge); centre: it keeps its place
+ *   relative to the frame's centre. A group keeps the anchor of its oldest window while that window stays open (a
+ *   window opening into a group takes the group's), so nothing jumps while open; the offsets follow the frame each
+ *   frame (the VBlank camera), so an anchored window stays put in the picture while the camera moves.
+ * - Drawing: the window layer at a frame pixel comes from the moved window that covers it (any row of the frame,
+ *   margins included), else from the GBA's own pixel where no live window is, else nothing; menu sprites are drawn
+ *   moved; the GBA windows (WIN0/WIN1/OBJ) of a moved pixel are those of its source pixel; past the map's bounds
+ *   (black) a moved menu is drawn over black.
+ * Normal (240 x 160 frames) and Centre never lay anything out; the VBlank read only fills port statics. */
+#define MENU_WINDOW_WORK (*(volatile u32 *)(uintptr_t)0x03001e8cu)
+#define MENU_HEAP_SLOTS ((const volatile u32 *)(uintptr_t)0x03001e50u)
+#define MENU_WINDOWS 8
+#define MENU_SPRITES 0x698
+#define MENU_SPRITE_SIZE 28
+#define MENU_NONE 0x7FFF
+extern u32 gPortOamSrc[128], gPortOamWords[128][2];
+extern u8 gPortOamDepth[128];
+extern s32 gPortOamCount;
+int Port_MenusEdges(void);
+struct MenuSnap {
+  int ok;
+  u32 work;
+  s16 x[MENU_WINDOWS], y[MENU_WINDOWS], w[MENU_WINDOWS], h[MENU_WINDOWS]; /* pixels, clipped to the GBA's screen */
+  u8 live[MENU_WINDOWS];
+  s32 n;
+  u32 words[128][2];
+  s8 kind[128]; /* -1 not a menu, 0..7 a sprite of that window, 8 another menu sprite, 9 one only inside a window */
+};
+static struct MenuSnap sMenuSnap, sMenuCur; /* the VBlank's; this frame's (menu_layout) */
+static u32 sMenuWorkSeen;
+static int sMenuOn;                                 /* this frame: menus drawn at the edges */
+static s8 sMenuAnchor[MENU_WINDOWS][2];             /* -1 low edge, 0 centre, 1 high edge */
+static u32 sMenuBorn[MENU_WINDOWS];                 /* the layout a window was first seen in; 0 not live */
+static u32 sMenuLayoutCount;
+static s16 sMenuDx[MENU_WINDOWS], sMenuDy[MENU_WINDOWS]; /* this frame's offset of each live window */
+static s16 sObjDx[128], sObjDy[128];
+static s16 sMenuXO, sMenuYO; /* the GBA screen's place in the frame as last drawn */
+static s16 sMenuDrawn[MENU_WINDOWS][7]; /* live, frame x, y, width, height, GBA x, y of each window as last drawn */
+static u8 sObjMenu[128];
+static int sMenuBg = -1;                            /* the window layer's BG, or -1 */
+static s16 sMenuSrcX[WMAX], sMenuSrcY[WMAX];        /* this row: a moved menu pixel's source (window layer) */
+static s16 sObjSrcX[WMAX], sObjSrcY[WMAX];          /* this row: a moved menu sprite pixel's source */
+
+static int menu_ram(u32 a, u32 n) {
+  return (a >= EWRAM_BASE && a + n <= EWRAM_BASE + 0x40000) || (a >= IWRAM_BASE && a + n <= IWRAM_BASE + 0x8000);
+}
+/* the heap slot whose block holds address a (the bump heap lays blocks out in order: the nearest base below) */
+static int menu_heap_slot(u32 a, const u32 *base) {
+  int k, best = -1;
+  for (k = 0; k < 64; k++)
+    if (base[k] && base[k] <= a && (base[k] >> 24) == (a >> 24) && (best < 0 || base[k] > base[best]))
+      best = k;
+  return best;
+}
+/* window slot i of the window work at ww: live (from Window_Create until the slot is freed, also while zooming open
+ * or shut) with a rectangle on the GBA's screen; r = x, y, width, height in pixels, clipped to the screen */
+static int menu_read_window(u32 ww, int i, s16 *r) {
+  const u8 *win = (const u8 *)(uintptr_t)(ww + 0x500 + i * 0x24);
+  s32 x0, y0, x1, y1;
+  if (!*(const u16 *)(win + 0x10) && !*(const u16 *)(win + 0x16) && !*(const s16 *)(win + 0x1a))
+    return 0;
+  x0 = *(const s16 *)(win + 0xc) * 8;
+  y0 = *(const s16 *)(win + 0xe) * 8;
+  x1 = x0 + *(const u16 *)(win + 8) * 8;
+  y1 = y0 + *(const u16 *)(win + 0xa) * 8;
+  if (x0 < 0) x0 = 0;
+  if (y0 < 0) y0 = 0;
+  if (x1 > W) x1 = W;
+  if (y1 > H) y1 = H;
+  if (x0 >= x1 || y0 >= y1)
+    return 0;
+  r[0] = (s16)x0;
+  r[1] = (s16)y0;
+  r[2] = (s16)(x1 - x0);
+  r[3] = (s16)(y1 - y0);
+  return 1;
+}
+/* the work arrays of menu_snapshot and menu_layout are static, not locals: a vendor routine that reads an
+ * uninitialised local (Message_OpenWindow's bounds[] for lines a message does not use) would see different garbage in
+ * GBA RAM if these arrays took the wasm stack (masked regress RAM digests differed at Normal) */
+static u32 sMenuBase[64];
+static s8 sMenuOwner[64];
+static s16 sMenuR[4];
+static int sMenuGrp[2][MENU_WINDOWS];
+static s32 sMenuLo[2][MENU_WINDOWS], sMenuHi[2][MENU_WINDOWS];
+static s16 sMenuOx0[128], sMenuOy0[128], sMenuOx1[128], sMenuOy1[128];
+static s8 sMenuOw[128];
+static void menu_snapshot(void) {
+  struct MenuSnap *s = &sMenuSnap;
+  u32 ww = MENU_WINDOW_WORK, *base = sMenuBase;
+  s8 *owner = sMenuOwner;
+  int i, k;
+  s->ok = menu_ram(ww, MENU_SPRITES + 64 * MENU_SPRITE_SIZE);
+  s->work = s->ok ? ww : 0;
+  for (k = 0; k < 64; k++)
+    base[k] = MENU_HEAP_SLOTS[k];
+  memset(owner, -1, sizeof sMenuOwner);
+  for (i = 0; i < MENU_WINDOWS; i++) {
+    const u8 *win = (const u8 *)(uintptr_t)(ww + 0x500 + i * 0x24);
+    s16 *r = sMenuR;
+    u32 sp;
+    s->live[i] = 0;
+    if (!s->ok)
+      continue;
+    /* its sprites, whether it shows on the screen or not (a portrait's window sits off the screen) */
+    if (*(const u16 *)(win + 0x10) || *(const u16 *)(win + 0x16) || *(const s16 *)(win + 0x1a))
+      for (sp = *(const u32 *)win, k = 0; sp && k < 64; sp = *(const u32 *)(uintptr_t)sp, k++) {
+        u32 off = sp - ww - MENU_SPRITES;
+        if (sp < ww + MENU_SPRITES || off >= 64 * MENU_SPRITE_SIZE || off % MENU_SPRITE_SIZE)
+          break;
+        owner[off / MENU_SPRITE_SIZE] = (s8)i;
+      }
+    if (!menu_read_window(ww, i, r))
+      continue;
+    s->x[i] = r[0];
+    s->y[i] = r[1];
+    s->w[i] = r[2];
+    s->h[i] = r[3];
+    s->live[i] = 1;
+  }
+  s->n = gPortOamCount > 128 ? 128 : gPortOamCount < 0 ? 0 : gPortOamCount;
+  for (i = 0; i < s->n; i++) {
+    u32 a = gPortOamSrc[i], d = gPortOamDepth[i], off = a - ww - MENU_SPRITES - 0x10;
+    int slot;
+    s->words[i][0] = gPortOamWords[i][0];
+    s->words[i][1] = gPortOamWords[i][1];
+    s->kind[i] = -1;
+    if (s->ok && a >= ww + MENU_SPRITES + 0x10 && off < 64 * MENU_SPRITE_SIZE && off % MENU_SPRITE_SIZE == 0)
+      s->kind[i] = owner[off / MENU_SPRITE_SIZE] >= 0 ? owner[off / MENU_SPRITE_SIZE] : 8;
+    else if (!menu_ram(a, 4))
+      s->kind[i] = d >= 238 && d <= 254 ? 8 : -1;
+    else if ((slot = menu_heap_slot(a, base)) == 16 || slot == 18 || slot == 19 || slot == 20 || slot == 55 ||
+             slot == 57 || slot == 58)
+      s->kind[i] = 8;
+    else if (slot == 4 && d >= 238 && d <= 254) /* a menu's party member (Render_ApplyProjectedPlacement at 251) */
+      s->kind[i] = 9;
+  }
+}
+
+/* one axis: the anchor of extent [a, b) on a screen of size S */
+static int menu_anchor(int a, int b, int S) {
+  int lo = a <= 0, hi = b >= S;
+  if (lo != hi)
+    return lo ? -1 : 1;
+  if (lo)
+    return 0;
+  return b <= S / 2 ? -1 : a >= S / 2 ? 1 : 0;
+}
+static int menu_offset(int anchor, int frame, int gba, int o) {
+  return anchor < 0 ? -o : anchor > 0 ? frame - gba - o : (frame - gba) / 2 - o;
+}
+static int menu_near(int ax0, int ay0, int ax1, int ay1, int bx0, int by0, int bx1, int by1, int gap) {
+  return ax0 <= bx1 + gap && bx0 <= ax1 + gap && ay0 <= by1 + gap && by0 <= ay1 + gap;
+}
+
+/* the frame's layout (line 0, after the frame's size and the GBA screen's place are known) */
+static int menu_root(int *p, int i) {
+  while (p[i] != i)
+    i = p[i];
+  return i;
+}
+static void menu_layout(void) {
+  struct MenuSnap *s = &sMenuCur;
+  int (*grp)[MENU_WINDOWS] = sMenuGrp, i, j, k, ax, changed;
+  s32 (*lo)[MENU_WINDOWS] = sMenuLo, (*hi)[MENU_WINDOWS] = sMenuHi;
+  s16 *ox0 = sMenuOx0, *oy0 = sMenuOy0, *ox1 = sMenuOx1, *oy1 = sMenuOy1;
+  s8 *ow = sMenuOw;
+  u32 ww = MENU_WINDOW_WORK;
+  /* the VBlank's windows, and those the game opened since: their text tiles go straight into VRAM's tilemap
+   * (text_tiles.c), so they show a frame before the VBlank sees the window */
+  *s = sMenuSnap;
+  if (ww != s->work) /* another window work (a scene change): only the VBlank's */
+    ww = 0;
+  for (i = 0; i < MENU_WINDOWS; i++) {
+    s16 *r = sMenuR;
+    if (!s->live[i] && ww && menu_read_window(ww, i, r)) {
+      s->x[i] = r[0];
+      s->y[i] = r[1];
+      s->w[i] = r[2];
+      s->h[i] = r[3];
+      s->live[i] = 1;
+    }
+  }
+  sMenuLayoutCount++;
+  if (s->work != sMenuWorkSeen) { /* a new window work: no window carries over */
+    sMenuWorkSeen = s->work;
+    memset(sMenuBorn, 0, sizeof sMenuBorn);
+  }
+  for (i = 0; i < MENU_WINDOWS; i++)
+    if (!s->live[i])
+      sMenuBorn[i] = 0;
+    else if (!sMenuBorn[i]) {
+      sMenuBorn[i] = sMenuLayoutCount;
+      sMenuAnchor[i][0] = sMenuAnchor[i][1] = 2; /* given below */
+    }
+  for (i = 0; i < 128; i++)
+    sObjMenu[i] = 0;
+  sMenuBg = -1;
+  for (i = 0; i < 4; i++)
+    if (((IO16(R_BG0CNT + 2 * i) >> 8) & 31) == 4) {
+      sMenuBg = i;
+      break;
+    }
+  /* groups per axis: across, windows side by side that touch or overlap and share rows; down, windows stacked that
+   * touch or overlap and share columns */
+  for (ax = 0; ax < 2; ax++)
+    for (i = 0; i < MENU_WINDOWS; i++)
+      grp[ax][i] = i;
+  for (i = 0; i < MENU_WINDOWS; i++)
+    for (j = i + 1; j < MENU_WINDOWS; j++) {
+      s32 ax0, ax1, ay0, ay1, bx0, bx1, by0, by1;
+      if (!s->live[i] || !s->live[j])
+        continue;
+      ax0 = s->x[i]; ax1 = ax0 + s->w[i]; ay0 = s->y[i]; ay1 = ay0 + s->h[i];
+      bx0 = s->x[j]; bx1 = bx0 + s->w[j]; by0 = s->y[j]; by1 = by0 + s->h[j];
+      if (ax0 <= bx1 && bx0 <= ax1 && ay0 < by1 && by0 < ay1)
+        grp[0][menu_root(grp[0], j)] = menu_root(grp[0], i);
+      if (ay0 <= by1 && by0 <= ay1 && ax0 < bx1 && bx0 < ax1)
+        grp[1][menu_root(grp[1], j)] = menu_root(grp[1], i);
+    }
+  for (ax = 0; ax < 2; ax++) {
+    for (i = 0; i < MENU_WINDOWS; i++)
+      if (s->live[i])
+        grp[ax][i] = menu_root(grp[ax], i);
+    for (i = 0; i < MENU_WINDOWS; i++) {
+      lo[ax][i] = 0x7FFF;
+      hi[ax][i] = -0x7FFF;
+    }
+    for (i = 0; i < MENU_WINDOWS; i++)
+      if (s->live[i]) {
+        int g = grp[ax][i];
+        s32 a = ax ? s->y[i] : s->x[i], b = a + (ax ? s->h[i] : s->w[i]);
+        if (a < lo[ax][g]) lo[ax][g] = a;
+        if (b > hi[ax][g]) hi[ax][g] = b;
+      }
+    /* each group's anchor: its oldest window's, or new from the group's extent */
+    for (i = 0; i < MENU_WINDOWS; i++)
+      if (s->live[i] && grp[ax][i] == i) {
+        int old = -1, an;
+        for (j = 0; j < MENU_WINDOWS; j++)
+          if (s->live[j] && grp[ax][j] == i && sMenuBorn[j] < sMenuLayoutCount && sMenuAnchor[j][ax] != 2 &&
+              (old < 0 || sMenuBorn[j] < sMenuBorn[old]))
+            old = j;
+        an = old >= 0 ? sMenuAnchor[old][ax] : menu_anchor(lo[ax][i], hi[ax][i], ax ? H : W);
+        for (j = 0; j < MENU_WINDOWS; j++)
+          if (s->live[j] && grp[ax][j] == i) {
+            sMenuAnchor[j][ax] = (s8)an;
+            if (ax)
+              sMenuDy[j] = (s16)menu_offset(an, LH, H, YO);
+            else
+              sMenuDx[j] = (s16)menu_offset(an, LW, W, XO);
+          }
+      }
+  }
+  /* menu sprites (checked against the OAM the frame shows) and the window each goes with */
+  for (i = 0; i < s->n && i < 128; i++) {
+    u16 a0 = OAMH[i * 4], a1 = OAMH[i * 4 + 1], a2 = OAMH[i * 4 + 2];
+    int shape = a0 >> 14, sz = a1 >> 14, w, h, x, y, cx, cy, dbl = ((a0 >> 8) & 1) && ((a0 >> 9) & 1);
+    ow[i] = -1;
+    if (s->kind[i] < 0 || a0 != (u16)s->words[i][0] || a1 != (u16)(s->words[i][0] >> 16) || a2 != (u16)s->words[i][1])
+      continue;
+    if (shape == 3 || (!((a0 >> 8) & 1) && ((a0 >> 9) & 1))) /* not drawn */
+      continue;
+    w = OBJ_W[shape][sz] << dbl;
+    h = OBJ_H[shape][sz] << dbl;
+    y = a0 & 0xFF;
+    if (y >= H)
+      y -= 256;
+    x = a1 & 0x1FF;
+    if (x >= 256)
+      x -= 512;
+    ox0[i] = (s16)x; oy0[i] = (s16)y; ox1[i] = (s16)(x + w); oy1[i] = (s16)(y + h);
+    cx = x + w / 2;
+    cy = y + h / 2;
+    for (j = 0; j < MENU_WINDOWS && ow[i] < 0; j++)
+      if (s->live[j] && cx >= s->x[j] && cx < s->x[j] + s->w[j] && cy >= s->y[j] && cy < s->y[j] + s->h[j])
+        ow[i] = (s8)j;
+    if (s->kind[i] == 9 && ow[i] < 0) /* a field sprite pool entry: a menu's only inside a window */
+      continue;
+    sObjMenu[i] = 1;
+    if (ow[i] < 0 && s->kind[i] < MENU_WINDOWS && s->live[(int)s->kind[i]])
+      ow[i] = s->kind[i];
+    for (j = 0; j < MENU_WINDOWS && ow[i] < 0; j++)
+      if (s->live[j] && menu_near(x, y, x + w, y + h, s->x[j], s->y[j], s->x[j] + s->w[j], s->y[j] + s->h[j], 8))
+        ow[i] = (s8)j;
+  }
+  /* chains of sprites (a row of icons beside its window) */
+  do {
+    changed = 0;
+    for (i = 0; i < s->n && i < 128; i++)
+      if (sObjMenu[i] && ow[i] < 0)
+        for (k = 0; k < s->n && k < 128; k++)
+          if (sObjMenu[k] && ow[k] >= 0 &&
+              menu_near(ox0[i], oy0[i], ox1[i], oy1[i], ox0[k], oy0[k], ox1[k], oy1[k], 8)) {
+            ow[i] = ow[k];
+            changed = 1;
+            break;
+          }
+  } while (changed);
+  for (i = 0; i < MENU_WINDOWS; i++) {
+    if (!s->live[i])
+      sMenuAnchor[i][0] = sMenuAnchor[i][1] = 2; /* none yet */
+    /* as drawn this frame (test probes: Port_MenuWindow) */
+    sMenuXO = (s16)XO;
+    sMenuYO = (s16)YO;
+    sMenuDrawn[i][0] = s->live[i];
+    sMenuDrawn[i][1] = s->x[i] + XO + sMenuDx[i];
+    sMenuDrawn[i][2] = s->y[i] + YO + sMenuDy[i];
+    sMenuDrawn[i][3] = s->w[i];
+    sMenuDrawn[i][4] = s->h[i];
+    sMenuDrawn[i][5] = s->x[i];
+    sMenuDrawn[i][6] = s->y[i];
+  }
+  for (i = 0; i < 128; i++) {
+    sObjDx[i] = sObjDy[i] = 0;
+    if (i < s->n && sObjMenu[i] && ow[i] >= 0) {
+      sObjDx[i] = sMenuDx[(int)ow[i]];
+      sObjDy[i] = sMenuDy[(int)ow[i]];
+    }
+  }
+}
+
+/* test probes (tests/probes/menujitter.cjs): window i as the last frame drew it (what: 0 live and moved, 1 frame x,
+ * 2 frame y, 3 width, 4 height, 5 GBA x, 6 GBA y; pixels; i -1: what 0 / 1 the GBA screen's place in the frame), or
+ * -1 when that frame did not lay menus out */
+int Port_MenuWindow(int i, int what) {
+  if (sMenuOn && i == -1 && (what == 0 || what == 1))
+    return what ? sMenuYO : sMenuXO;
+  if (!sMenuOn || i < 0 || i >= MENU_WINDOWS || what < 0 || what > 6)
+    return -1;
+  return sMenuDrawn[i][what];
+}
+
+/* test probes: OAM entry i as the last frame drew it (what: 0 a moved menu sprite, 1 its x offset, 2 its y offset), or
+ * -1 when that frame did not lay menus out */
+int Port_MenuSprite(int i, int what) {
+  if (!sMenuOn || i < 0 || i >= 128 || what < 0 || what > 2)
+    return -1;
+  return what == 0 ? sObjMenu[i] : what == 1 ? sObjDx[i] : sObjDy[i];
+}
+
+/* frame row v: for each frame column, the window-layer pixel it shows (GBA x, line), or MENU_NONE */
+static void menu_row_sources(int v) {
+  const struct MenuSnap *s = &sMenuCur;
+  int x, k;
+  for (x = 0; x < LW; x++) {
+    int gx = x - XO, sx = MENU_NONE, sy = MENU_NONE, inside = 0;
+    for (k = 0; k < MENU_WINDOWS; k++) {
+      int tx, ty;
+      if (!s->live[k])
+        continue;
+      tx = gx - sMenuDx[k];
+      ty = v - sMenuDy[k];
+      if (tx >= s->x[k] && tx < s->x[k] + s->w[k] && ty >= s->y[k] && ty < s->y[k] + s->h[k]) {
+        sx = tx;
+        sy = ty;
+        break;
+      }
+    }
+    if (sx == MENU_NONE && gx >= 0 && gx < W && v >= 0 && v < H) {
+      for (k = 0; k < MENU_WINDOWS && !inside; k++)
+        inside = s->live[k] && gx >= s->x[k] && gx < s->x[k] + s->w[k] && v >= s->y[k] && v < s->y[k] + s->h[k];
+      if (!inside) { /* the window layer's own pixel where no window is (left as the game drew it) */
+        sx = gx;
+        sy = v;
+      }
+    }
+    sMenuSrcX[x] = (s16)sx;
+    sMenuSrcY[x] = (s16)sy;
+  }
+}
+
 /* a still-picture frame: the margins of row v as layer BG1, the last moving frame's BG2 over BG3 (by their priority) */
 static u16 sStillRow[WMAX], sStillTmp[2][WMAX];
 static void wm_still_row(int v, int real) {
@@ -814,6 +1214,38 @@ static void text_bg(int bg, int line, int v) {
   u16 *out = bgLine[bg];
   int x;
   int real = v == line;
+  if (sMenuOn && bg == sMenuBg) { /* GS33: the window layer with its windows moved (menu_row_sources) */
+    menu_row_sources(v);
+    for (x = 0; x < LW; x++) {
+      u32 px, py, tile, tx, ty, ci, block;
+      u16 entry;
+      if (sMenuSrcX[x] == MENU_NONE) {
+        out[x] = TRANSPARENT;
+        continue;
+      }
+      px = ((u32)sMenuSrcX[x] + hofs) & wmask;
+      py = ((u32)sMenuSrcY[x] + vofs) & hmask;
+      block = (px >> 8) + ((py >> 8) * ((size & 1) ? 2 : 1));
+      entry = *(u16 *)(VRAM + screenBase + block * 0x800 + (((py & 255) >> 3) * 32 + ((px & 255) >> 3)) * 2);
+      tile = entry & 0x3FF;
+      tx = px & 7;
+      ty = py & 7;
+      if (entry & 0x400)
+        tx = 7 - tx;
+      if (entry & 0x800)
+        ty = 7 - ty;
+      if (color256) {
+        u32 a = charBase + tile * 64 + ty * 8 + tx;
+        ci = a < 0x10000 ? VRAM[a] : 0;
+        out[x] = ci ? PAL[ci] & 0x7FFF : TRANSPARENT;
+      } else {
+        u32 a = charBase + tile * 32 + ty * 4 + (tx >> 1);
+        ci = a < 0x10000 ? (VRAM[a] >> ((tx & 1) * 4)) & 15 : 0;
+        out[x] = ci ? PAL[(entry >> 12) * 16 + ci] & 0x7FFF : TRANSPARENT;
+      }
+    }
+    return;
+  }
   /* map zoom: a field map layer's margins from the map grid, at its full scroll (gBgScroll, with this line's
    * register offsets); other layers are empty there */
   int mapLayer = fieldCandidate && bg >= 1 && size == 0 && screenBase == (u32)(5 + 3 - bg) * 0x800;
@@ -915,8 +1347,6 @@ static void affine_bg(int bg, int real, int v) {
   }
 }
 
-static const u8 OBJ_W[3][4] = {{8, 16, 32, 64}, {16, 32, 32, 64}, {8, 8, 16, 32}};
-static const u8 OBJ_H[3][4] = {{8, 16, 32, 64}, {8, 8, 16, 32}, {16, 32, 32, 64}};
 
 /* sprites on frame row v (see text_bg). On the GBA's lines OAM y 160-255 is above the screen, as on the GBA; on a
  * margin row a sprite is below the screen up to the frame's last row (OAM y < 160 + gPortZoomB, as Sprite_Draw
@@ -932,6 +1362,7 @@ static void sprites(int v, u16 dispcnt) {
     objPrio[i] = 4;
     objSemi[i] = 0;
     objWin[i] = 0;
+    sObjSrcX[i] = MENU_NONE;
   }
   if (!(dispcnt & 0x1000))
     return;
@@ -940,11 +1371,12 @@ static void sprites(int v, u16 dispcnt) {
     int affine = (a0 >> 8) & 1, dbl = (a0 >> 9) & 1, mode = (a0 >> 10) & 3, c256 = (a0 >> 13) & 1;
     int shape = a0 >> 14, sz = a1 >> 14;
     int w, h, bw, bh, y, x, sx, prio = (a2 >> 10) & 3;
+    int menu = sMenuOn && sObjMenu[i]; /* GS33: a menu sprite, placed as on the GBA and moved with its block */
     s32 pa = 256, pb = 0, pc = 0, pd = 256;
     u32 tile = a2 & 0x3FF;
     if (!affine && dbl)
       continue; /* disabled */
-    if (!real && a0 == 0x00C0 && a1 == 0x00C0 && a2 == 0x00C0)
+    if (!real && !menu && a0 == 0x00C0 && a1 == 0x00C0 && a2 == 0x00C0)
       continue; /* a hidden entry (map zoom margin rows only) */
     if (shape == 3 || mode == 3)
       continue;
@@ -953,13 +1385,22 @@ static void sprites(int v, u16 dispcnt) {
     bw = w << (affine && dbl);
     bh = h << (affine && dbl);
     y = a0 & 0xFF;
-    if (y >= below)
-      y -= 256;
+    x = a1 & 0x1FF;
+    if (menu) {
+      if (y >= H)
+        y -= 256;
+      if (x >= 256)
+        x -= 512;
+      y += sObjDy[i];
+      x += sObjDx[i];
+    } else {
+      if (y >= below)
+        y -= 256;
+      if (x >= 240 + LW - W - XO) /* map zoom: OAM x up to 240 + the right margin - 1 is on screen, from 512 - XO the left */
+        x -= 512;
+    }
     if (v < y || v >= y + bh)
       continue;
-    x = a1 & 0x1FF;
-    if (x >= 240 + LW - W - XO) /* map zoom: OAM x up to 240 + the right margin - 1 is on screen, from 512 - XO the left */
-      x -= 512;
     if (affine) {
       int p = (a1 >> 9) & 31;
       pa = (s16)OAMH[p * 16 + 3];
@@ -1008,6 +1449,8 @@ static void sprites(int v, u16 dispcnt) {
         objLine[px] = col & 0x7FFF;
         objPrio[px] = (u8)prio;
         objSemi[px] = mode == 1;
+        sObjSrcX[px] = menu ? (s16)(px - XO - sObjDx[i]) : MENU_NONE;
+        sObjSrcY[px] = (s16)(v - sObjDy[i]);
       }
     }
   }
@@ -1113,7 +1556,31 @@ static void render_row(int line, int v) {
     int topL = L_BD, secondL = L_BD, topP = 4, secondP = 4;
     int semi = 0;
     int wx = x - XO; /* map zoom: the margins take the windows of the GBA screen's edge column (and edge line) */
-    if (!real || wx < 0 || wx >= W) {
+    int onlyMenu = 0, i0 = in0, i1 = in1;
+    if (sMenuOn) { /* GS33: a moved menu's pixel takes its source pixel's windows */
+      int sx = MENU_NONE, sy = 0;
+      if (sMenuBg >= 0 && enabled[sMenuBg] && sMenuSrcX[x] != MENU_NONE && bgLine[sMenuBg][x] != TRANSPARENT) {
+        sx = sMenuSrcX[x];
+        sy = sMenuSrcY[x];
+      } else if (sObjSrcX[x] != MENU_NONE && objLine[x] != TRANSPARENT) {
+        sx = sObjSrcX[x];
+        sy = sObjSrcY[x];
+      }
+      if (sx != MENU_NONE) {
+        int oob = wx < sBoundL || wx >= sBoundR || v < sBoundT || v >= sBoundB;
+        if ((!real || wx < 0 || wx >= W) && oob) {
+          onlyMenu = 1; /* past the map's edge: the menu over black */
+          top = second = 0;
+        }
+        wx = sx < 0 ? 0 : sx >= W ? W - 1 : sx;
+        sy = sy < 0 ? 0 : sy >= H ? H - 1 : sy;
+        if (sy != line) {
+          i0 = (winOn & 1) && (w0y1 <= w0y2 ? sy >= w0y1 && sy < w0y2 : sy >= w0y1 || sy < w0y2);
+          i1 = (winOn & 2) && (w1y1 <= w1y2 ? sy >= w1y1 && sy < w1y2 : sy >= w1y1 || sy < w1y2);
+        }
+      }
+    }
+    if (!onlyMenu && (!real || wx < 0 || wx >= W)) {
       if (!sZoomOn || wx < sBoundL || wx >= sBoundR || v < sBoundT || v >= sBoundB) { /* past the map's edge: black */
         out[x] = 0xFF000000u;
         continue;
@@ -1121,9 +1588,9 @@ static void render_row(int line, int v) {
       wx = wx < 0 ? 0 : wx >= W ? W - 1 : wx;
     }
     if (winOn) {
-      if (in0 && (w0x1 <= w0x2 ? wx >= w0x1 && wx < w0x2 : wx >= w0x1 || wx < w0x2))
+      if (i0 && (w0x1 <= w0x2 ? wx >= w0x1 && wx < w0x2 : wx >= w0x1 || wx < w0x2))
         mask = winin & 0x3F;
-      else if (in1 && (w1x1 <= w1x2 ? wx >= w1x1 && wx < w1x2 : wx >= w1x1 || wx < w1x2))
+      else if (i1 && (w1x1 <= w1x2 ? wx >= w1x1 && wx < w1x2 : wx >= w1x1 || wx < w1x2))
         mask = (winin >> 8) & 0x3F;
       else if ((winOn & 4) && objWin[x])
         mask = (winout >> 8) & 0x3F;
@@ -1133,7 +1600,7 @@ static void render_row(int line, int v) {
     /* BGs: lower priority number wins, then lower BG number */
     for (bg = 3; bg >= 0; bg--) {
       u16 c;
-      if (!enabled[bg] || !((mask >> bg) & 1))
+      if (!enabled[bg] || !((mask >> bg) & 1) || (onlyMenu && bg != sMenuBg))
         continue;
       c = bgLine[bg][x];
       if (c == TRANSPARENT)
@@ -1145,7 +1612,7 @@ static void render_row(int line, int v) {
         second = c; secondL = bg; secondP = bgPrio[bg];
       }
     }
-    if (objLine[x] != TRANSPARENT && ((mask >> 4) & 1)) {
+    if (objLine[x] != TRANSPARENT && ((mask >> 4) & 1) && (!onlyMenu || sObjSrcX[x] != MENU_NONE)) {
       if (objPrio[x] <= topP) {
         second = top; secondL = topL;
         top = objLine[x]; topL = L_OBJ;
@@ -1207,6 +1674,10 @@ void Port_PpuLine(int line) {
       LH = H;
       XO = YO = 0;
     }
+    /* GS33: menus at the frame's edges */
+    sMenuOn = sZoomOn && (LW != W || LH != H) && Port_MenusEdges() && sMenuSnap.ok;
+    if (sMenuOn)
+      menu_layout();
     gPortZoomL = XO;
     gPortZoomR = LW - W - XO;
     gPortZoomT = YO;

@@ -257,7 +257,7 @@ async function start(rom) {
 // GS27: "Brightness" (Normal / Bright / Brighter, gs-bright, default Normal) lifts the picture with an output gamma
 // (1 / 1.25, 1 / 1.5) in the same LUT. Both are also set in the game itself: START, then R ("Extra settings",
 // port/pc/options.c): the page and the game share the values (Port_OptGet/Port_OptSet/Port_OptGeneration).
-const OPT_LCD = 0, OPT_BRIGHT = 1, OPT_ZOOM = 2;
+const OPT_LCD = 0, OPT_BRIGHT = 1, OPT_ZOOM = 2, OPT_MENUS = 3;
 const lcd = {
   on: false,
   bright: 0,
@@ -357,6 +357,31 @@ const GSZoom = {
 }
 window.GSZoom = GSZoom;
 
+// ---- optional "Menus" (GS33; Edges by default, as the user asked; gs-menus = 0 stores Centre): while the map is
+// zoomed (field maps and the World Map at More/Most) the game's windows move to the edges of the bigger picture they
+// are near, the same size (port/pc/ppu.c); Centre leaves them in the GBA's 240 x 160 inside it. Also in the game's
+// Extra settings (START, then R).
+const GSMenus = {
+  edges: 1,
+  set(v, fromGame) {
+    this.edges = v ? 1 : 0;
+    try { if (this.edges) localStorage.removeItem(K_OPT + 'menus'); else localStorage.setItem(K_OPT + 'menus', '0'); } catch (e) { /* storage blocked */ }
+    const sel = $('opt-menus');
+    if (sel) sel.value = String(this.edges);
+    if (!fromGame) GSOpts.push();
+  },
+};
+{
+  let v = 1;
+  try { if (localStorage.getItem(K_OPT + 'menus') === '0') v = 0; } catch (e) { /* storage blocked: default Edges */ }
+  if (params.get('menus') !== null) v = params.get('menus') === '0' ? 0 : 1;   // tests: ?menus=0/1 (not stored)
+  GSMenus.edges = v;
+  const sel = $('opt-menus');
+  if (sel) { sel.value = String(v); sel.addEventListener('change', () => GSMenus.set(+sel.value)); }
+  if (GAME_TLA && $('opt-menus-row')) $('opt-menus-row').style.display = 'none';   // GS1's renderer only
+}
+window.GSMenus = GSMenus;
+
 // GS27: the option values the game's Extra settings screen shows and edits (port/pc/options.c). The page owns them
 // (storage, presentation); push() copies them into the running module, poll() picks up edits made in the game.
 const GSOpts = {
@@ -373,6 +398,7 @@ const GSOpts = {
     m._Port_OptSet(OPT_LCD, lcd.on ? 1 : 0);
     m._Port_OptSet(OPT_BRIGHT, lcd.bright);
     m._Port_OptSet(OPT_ZOOM, GSZoom.level);
+    m._Port_OptSet(OPT_MENUS, GSMenus.edges);
   },
   poll() {
     const m = this.m;
@@ -384,6 +410,8 @@ const GSOpts = {
     if (on !== lcd.on || br !== lcd.bright) { lcd.on = on; lcd.setBright(br, true); }
     const z = m._Port_OptGet(OPT_ZOOM);
     if (z !== GSZoom.level) GSZoom.set(z, true);
+    const mn = m._Port_OptGet(OPT_MENUS);
+    if (mn !== GSMenus.edges) GSMenus.set(mn, true);
   },
 };
 window.GSOpts = GSOpts;
