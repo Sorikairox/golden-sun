@@ -7,8 +7,10 @@
 const AT = +(process.env.WALK_AT || 0), STUCK = +(process.env.WALK_STUCK || 90);
 // a waypoint written 'vX,Z' moves along z first; 'sX,Z' walks toward X,Z until the scene changes (an exit)
 // 'dX,Z' (GS19) walks diagonally (both keys held) until the cell is reached
-const pts = (process.env.WALK || '').split(';').filter(Boolean).map((p) => [...p.replace(/^[vsd]/, '').split(',').map(Number), p[0] === 'v', p[0] === 's', p[0] === 'd']);
+// TLA6b: the prefixes combine ('sv6,32': z first, then on into the exit)
+const pts = (process.env.WALK || '').split(';').filter(Boolean).map((p) => { const f = p.match(/^[vsd]*/)[0]; return [...p.slice(f.length).split(',').map(Number), f.includes('v'), f.includes('s'), f.includes('d')]; });
 let scene0 = -1;
+const TLA = process.env.WALK_GAME === 'tla', SC = TLA ? 0x02000420 : 0x02000400;
 const KEY = { A: 1, B: 2, RIGHT: 16, LEFT: 32, UP: 64, DOWN: 128 };
 // WALK_TAP=N: after N frames without reaching a new cell (a cutscene, a message), tap A every 24 frames, B every
 // fourth tap (closes a field menu opened by a stray A); the taps are recorded with the walk keys.
@@ -30,13 +32,15 @@ module.exports = (m, frame, keys) => {
   if (done || frame < AT || !pts.length) return;
   const H = m.HEAPU8;
   const u32 = (a) => (H[a] | H[a + 1] << 8 | H[a + 2] << 16 | H[a + 3] << 24) >>> 0;
-  const leader = u32(u32(0x03001ebc) + 20);
+  // WALK_GAME=tla (TLA6b): the leader is EventWork.objects[gMainRoutineWork.currentOwner] (eventWork heap slot
+  // 0x0300006c, objects at +0x14; currentOwner at gMainRoutineWork+0x214), the scene/entrance at +0x1e0/+0x1e2
+  const leader = TLA ? u32(u32(0x0300006c) + 0x14 + 4 * (u32(0x02000454) & 0x7f)) : u32(u32(0x03001ebc) + 20);
   const press = (k) => {
     m._Port_SetKeys(keys | k.split('+').reduce((a, n) => a | KEY[n], 0));
     const s = spans[spans.length - 1];
     if (s && s.k === k && s.b === frame - 1) s.b = frame; else spans.push({ k, a: frame, b: frame });
   };
-  const sc = H[0x02000400] | H[0x02000401] << 8;
+  const sc = H[SC] | H[SC + 1] << 8;
   if (FIGHT && (sc === 510 || leader < 0x02000000 || leader >= 0x03008000)) {
     if (away < 0) away = frame;
     lastMove = frame; back = -1;
@@ -52,7 +56,7 @@ module.exports = (m, frame, keys) => {
   if (cell !== lastCell) { lastCell = cell; lastMove = frame; }
   if (frame - lastMove > STUCK) return finish(frame, `stuck at ${cell} (waypoint ${pts[i]})`);
   const [tx, tz, zFirst, exit, diag] = pts[i];
-  const scene = (H[0x02000400] | H[0x02000401] << 8) * 65536 + (H[0x02000402] | H[0x02000403] << 8); // gMainRoutineWork.next, .entrance (GS13: exits between rooms of one scene change only the entrance)
+  const scene = (H[SC] | H[SC + 1] << 8) * 65536 + (H[SC + 2] | H[SC + 3] << 8); // gMainRoutineWork.next, .entrance (GS13: exits between rooms of one scene change only the entrance)
   if (exit && scene0 < 0) scene0 = scene;
   if (exit && scene !== scene0) { scene0 = -1; lastMove = frame; if (++i >= pts.length) return finish(frame, `exit to scene ${scene >> 16} entrance ${scene & 0xffff}`); return; }
   // aim for the cell's middle so the next leg starts clear of the edges
@@ -68,6 +72,7 @@ module.exports = (m, frame, keys) => {
   // WALK_CENTER=N (GS13): a waypoint counts as reached only within N pixels of the cell's middle (pillar tops and
   // jumps need the leader centred before the next leg)
   if (!k && CENTER && (Math.abs(ax) > CENTER || Math.abs(az) > CENTER)) k = Math.abs(az) > CENTER ? (az < 0 ? 'UP' : 'DOWN') : (ax < 0 ? 'LEFT' : 'RIGHT');
+  if (!k && exit) return; // TLA6b: in the exit cell: wait for the scene change (else a late change ends the next 's' leg at once)
   if (!k) {
     vert = false;
     if (++i >= pts.length) return finish(frame, `arrived ${cell}`);

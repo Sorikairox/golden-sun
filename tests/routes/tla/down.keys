@@ -1,0 +1,6 @@
+# TLA6b: after opening.keys: the way down from the aerie (vendor scene tables, not guessed): UP through the door (exit 22),
+# LEFT and UP through exit 10, the stairs room (exit 13), the pit room's lower floor (exit 7), the middle room (exit 3),
+# the top room's stairs (exit 1) to the Venus Lighthouse entrance; then down the left of the steps (step trigger 9: the
+# statues move). Inputs only (recorded by tests/probes/autowalk.cjs WALK_GAME=tla).
+UP@14500-14538,LEFT@14540-14590,UP@14592-14602,LEFT@14623-14769,DOWN@14771-14845,RIGHT@14847-14886,DOWN@14888-14922,DOWN@14943-14961,RIGHT@14963-15004,DOWN@15006-15040,RIGHT@15042-15101,DOWN@15103-15137,RIGHT@15139-15150,DOWN@15152-15170,DOWN@15191-15209,RIGHT@15211-15268,DOWN@15270-15384,LEFT@15386-15441,DOWN@15443-15461,DOWN@15482-15596
+LEFT@15880-15921,DOWN@15923-16036

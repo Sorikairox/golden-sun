@@ -13,6 +13,10 @@
 #   save      from opening: pause menu 14750, Save 14800, "Your game was saved" 14950; the flash's SHA-1
 #   continue  with save's flash: the intro 300, Continue (file 1: Jenna, Venus Lighthouse) at 700-900, back in the field 1100
 #             (the same picture as opening 14700), the field menu 1300 and 1700
+#   down      (TLA6b) from opening: the way down the lighthouse's rooms (14800 the room behind the door, 15200, 15700 the
+#             Venus Lighthouse entrance), 16100 Jenna below the steps (step trigger 9 moved the statues)
+#   battle    (TLA6b) from down: the guards and Alex (16500, 20000, 24000), Kraden's talk 26800, the Ruffian's talk 28100,
+#             the first battle ("Ruffian appeared!") 28300 and 28700
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -31,6 +35,8 @@ CASES=(
   "walk|15010|14660,14800,14900,15010|$R/new_game.keys,$R/opening.keys,$R/walk.keys|"
   "save|15300|14750,14800,14950,15250|$R/new_game.keys,$R/opening.keys,$R/save.keys|--flash-out $W/save.sav"
   "continue|1800|300,1100,1300,1700|$R/continue.keys|--flash-in $W/save.sav"
+  "down|16100|14800,15200,15700,16100|$R/new_game.keys,$R/opening.keys,$R/down.keys|"
+  "battle|28700|16500,20000,24000,26800,28100,28300,28700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv

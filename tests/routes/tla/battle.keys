@@ -1,0 +1,6 @@
+# TLA6b: after down.keys: trigger 10 below the steps (the guards, Alex, Kraden), A through the talk, then the walk west
+# to trigger 11 (the Ruffian: the first battle starts ~28180). Inputs only.
+RIGHT@16040-16063,DOWN@16065-16174,A@16175-16175,DOWN@16176-16197,A@16198-16199,DOWN@16200-16200
+A@16300-26860/40
+DOWN@26950-27044,LEFT@27046-27220,UP@27222-27346,LEFT@27348-27364,UP@27366-27382,LEFT@27384-27400,UP@27402-27435,LEFT@27437-27453,UP@27455-27471,LEFT@27473-27538
+A@27560-28160/40      # the Ruffian's talk; the battle starts after it
