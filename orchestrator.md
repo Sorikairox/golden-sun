@@ -17,7 +17,7 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 - TLA6b (2026-11-04): **down Venus Lighthouse to the first battle** (the rooms by the vendor's scene tables, the
   entrance, the guards, Alex, Kraden, "Ruffian appeared!", drawn right); the battle is not won (Fight stops in a
   self-patching IWRAM blitter run through a stale decoder alias, docs/TLA6.md 9). Fixes: K&R GameFlag_Test argument
-  (trap 75), render.c built. D20 batch/diff_hw seeded per routine (trap 76): 217/0/988, 124/0/64. regress_tla 7 cases.
+  (trap 75), render.c built. D20 batch/diff_hw seeded per routine (trap 76): 218/0/987 (captured inputs: Func_080cf78c EQUIV), 124/0/64. regress_tla 7 cases.
 
 - TLA6 part 1 (2026-11-03): **new game to Jenna under control at Venus Lighthouse** (intro, talk, quake, area name,
   walking, menus), **in-game save -> Continue** works; fixes: asm2c rel16 jump tables, long-jump `bl` return points

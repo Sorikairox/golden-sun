@@ -14,14 +14,14 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
   backdrop and units drawn; 0 objects left out, 0 stubs).
 - D20: 251 -> 248 was input sampling (one random stream per shard dealt by index, leftover memory): 55 routines moved
   both ways, no translation changed. Batch and diff_hw now seeded per routine (batch also resets memory): batch
-  217/0/988 (same per routine on the pre-TLA6 tree), diff_hw 124/0/64. Captured-state inputs (CAPTURES=dir): the three
-  new translations stay NOINPUT (Func_080cf78c's captures run the original into a bad decoder mode; the other two
-  not reached in play).
+  217/0/988 (same per routine on the pre-TLA6 tree), diff_hw 124/0/64. Captured-state inputs (CAPTURES=dir, local game
+  RAM; DMA3 modelled in capture cases): **Func_080cf78c EQUIV 6 cases**, batch 218/0/987; Func_08173aac and
+  Func_02002f64@681 not reached in play (NOINPUT).
 - Audio (node, opening 280 s): 27/27 windows with sound, clipped <= 0.06 % (the DAC clamp, as GS1).
-- Checks: build 0 warnings/0 stubs, calls PASS, leak 0; batch 217/0/988; diff_tla 30/30; diff_hw 124/0/64 neg 4/4;
+- Checks: build 0 warnings/0 stubs, calls PASS, leak 0; batch 218/0/987 (217 without local captures); diff_tla 30/30; diff_hw 124/0/64 neg 4/4;
   diff_mixer 300/300; test_arm 79/79; regress_tla 7/7 twice; GS1 687968a7 / 895d45cc, regress --quick 9/9.
 - **Next:** the battle stop (alias drop on heap reuse + a port of the patch template builder), win the Ruffian battle,
-  Felix/Idejima; the 16 open short K&R calls (text.c's window fixed); Func_080cf78c's decoder mode; deploy after the user's bar.
+  Felix/Idejima; the 16 open short K&R calls (text.c's window fixed); captures for the other two new translations; deploy after the user's bar.
 
 ## TLA6 (part 1) — 2026-11-03: new game to Jenna under control; save -> continue; /tla/ site prep (local)
 

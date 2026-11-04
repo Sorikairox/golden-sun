@@ -122,7 +122,7 @@ ran, the two statues stayed on the stairs and Jenna could not go down.
    wasm K&R adapter passed 0 (link.py adapter(): missing arguments are 0). Every trigger, placement and entrance
    condition was wrong. Two text rules pass `condition`. **18 other K&R calls passed fewer words than their target takes**
    (list below): each needs the same reading of what r0-r3 hold on the ARM. Done for one more: text.c's
-   WindowSprite_PrepareForRedraw() gets `win` (the ROM keeps it in r0 up to the bl; commit after 'docs: TLA6b'). Message_Start
+   WindowSprite_PrepareForRedraw() gets `win` (the ROM keeps it in r0 up to the bl; commit dde94b0). Message_Start
    5/6 is fine as is (the vendor notes the sixth word is the 0 already on the stack, which the adapter passes).
 3. Tools: autowalk.cjs WALK_GAME=tla; diff_hw and the D20 batch seeded per routine (section 10).
 2. **render.c built** (asm_rules, commit 9706b35): Render_SetIdentity's three `stmia` as twelve C stores. render.c was
@@ -166,13 +166,15 @@ two are triaged. diff_hw had the same single stream (131 -> 124 with nothing cha
 one-case routines flipped back); now seeded per routine, 124 / 0 / 64, identical over two runs.
 
 **Inputs for the three new translations.** batch.cjs takes captured entry states (CAPTURES=dir, default
-port_work/tla6b/captures, local only): game RAM, r0-r3 and sp at the routine's entry, taken by a capture build
-(temporary: `#define A2C_T(a)` comparing the three addresses -> `(A2C_SPILL(), a2c_capture(a))` at the top of the
-units, a2c_capture -> EM_ASM -> a boot.cjs probe that writes the regions). Func_080cf78c: 6 captures in the opening;
-on them the original calls the IWRAM copy of Render_DecodePicture at 0x03002780 and its colour-mode jump reads
-outside the GBA regions (a mode past 15), so it stays NOINPUT. That is the same symptom as the battle stop and may
-be the same cause (a stale RAM copy or alias). Func_08173aac (battle effects) and Func_02002f64@681 are not reached
-in play yet. All three remain NOINPUT.
+port_work/tla6b/captures, local only: game RAM): RAM, r0-r3 and sp at the routine's entry, taken in real play by a
+capture build (temporary, not committed: `#define A2C_T(a)` comparing the three entry addresses ->
+`(A2C_SPILL(), a2c_capture(a))` put at the top of the asm2c units holding them, rebuilt with tools/tla_incr.sh
+--no-asm2c; a2c_capture -> EM_ASM -> a boot.cjs probe that writes the RAM regions and the registers). In capture
+cases code in RAM counts as code and immediate DMA3 copies run (Window_FillFromScene's RamCode_Load DMA-copies
+Tile_BuildCellPictures into a heap block; without the copy both sides ran the decoder bytes left there and read
+outside the GBA regions). **Func_080cf78c: EQUIV, 6 cases (capture)** from the opening. Func_08173aac (a battle
+effect) and Func_02002f64@681 (Ov681Room*, Gaia Rock) are not reached in play yet: NOINPUT. Batch with the local
+captures **218 EQUIV / 0 FAIL / 987 NOINPUT** (217 without them). CAPDEBUG=1 logs the calls out of a translation.
 
 ## 11. Audio (node)
 
@@ -186,7 +188,7 @@ port_work/tla6b/audio/opening.wav (sha1 cfed3c8a45fb7c90).
 | check | result |
 |---|---|
 | TLA build | 0 linker warnings, 0 objects left out, 0 logged stubs, calls PASS (9 allowed), leak 0, no _bitcast_invalid |
-| D20 batch | 217 EQUIV / 0 FAIL / 988 NOINPUT of 1,205 (order independent; section 10) |
+| D20 batch | 218 EQUIV / 0 FAIL / 987 NOINPUT of 1,205 with the local captures, 217 without (order independent; section 10) |
 | diff_tla | 30/30 |
 | diff_hw | 124 EQUIV / 0 FAIL / 64 NOINPUT; negative 4/4; decoders 60/60 |
 | diff_mixer | 300/300 |
@@ -199,6 +201,5 @@ port_work/tla6b/audio/opening.wav (sha1 cfed3c8a45fb7c90).
 1. The battle stop (section 9): drop aliases on heap reuse; port BattleEffect_PatchTemplate's builder (or run RAM code
    in an interpreter); then win the Ruffian battle and go on (Felix, Idejima).
 2. The 16 open short K&R adapters (section 8; Window_CloseIfOpen's r1 and Func_080af794's r1 come from their callers): read each call site's r0-r3 on the ARM and give the call its words.
-3. Func_080cf78c's captured states (section 10): why the original, on the port's RAM, calls the decoder copy with a
-   bad mode.
+3. Captures for Func_08173aac (a battle with Psynergy effects, after item 1) and Func_02002f64@681 (Gaia Rock).
 4. The heap-slot world profile for the D20 batch (555 EQUIV) after triaging its two FAILs.
