@@ -1,0 +1,15 @@
+# TLA8: after gate.keys, scene 7 (the mountain path): west along the 128 px path, UP to z 53, LEFT to the vine at
+# (34,54), DOWN climbs it to the 96 px ledge (34,55), LEFT to the second vine (33,56), DOWN climbs to the 32 px level
+# (33,58), RIGHT along z 58 to (38,58), UP into the cave mouth (trigger 5 at 38,57, layer 1 at 38,56): three Ruffians come
+# out ("Ha! That was a good idea, waiting here for 'em!"), the third battle (Fight, Psynergy, Fume, then Attack; won
+# ~34700), back at entrance 99, UP into the cave: scene 8 entrance 1 (~35100). Inputs only.
+LEFT@31520-31640,UP@31641-31700,LEFT@31701-31729,DOWN@31735-31840,LEFT@31842-31858,DOWN@31862-32040,RIGHT@32050-32124,RIGHT@32126-32129,UP@32130-32300
+A@32400-32720/40,A@32840-32841,A@32940-32941,A@33000-33001,A@33040-33041,RIGHT@33100-33101,A@33140-33141,A@33200-33201,A@33260-33261,A@33320-34960/40,B@35020-35021,UP@35060-35200
+# scene 8 (cave): north and east along the upper floor, down the slope, UP into the hole (trigger 2 at 11,10) -> entrance 3
+# (17,21) ~35700; east, down x 20, east along z 28-30 (a Punch Ant on the way, won with Attack ~37100; Kraden: "I never
+# knew fighting could be so fun!"), south down x 40-41 to trigger 4 (41,39) -> scene 9 (Kraden: "This is the place,
+# isn't it?") ~37800
+UP@35300-35320,RIGHT@35322-35426,RIGHT@35428-35499,DOWN@35501-35528,LEFT@35530-35563,UP@35600-35680
+RIGHT@35720-35766,DOWN@35768-35946,LEFT@35947-35952,UP@35954-35987,RIGHT@35989-36086,RIGHT@36089-36260,A@36480-37280/40,B@37360-37361
+DOWN@37420-37454,RIGHT@37456-37581,UP@37582-37588,DOWN@37590-37722
+RIGHT@37730-37742,DOWN@37745-37900

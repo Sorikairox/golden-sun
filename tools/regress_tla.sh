@@ -21,6 +21,10 @@
 #             Ruffian!" 29120, the field back 29240, west past the beaten Ruffian into Suhalla Gate (scene 6) 29500, 29800
 #   gate      (TLA7) from win: up the Suhalla Gate ledges to trigger 20 (30100 "Waahhh! It's them!"), the second Ruffian
 #             battle (30600, 31000 the rewards), back on the plateau 31300, west to scene 7's mountain path 31500, 31800
+#   cave      (TLA8) from gate: down scene 7's two vines to the cave mouth (32300 the three Ruffians), the third battle
+#             (33180 Psynergy: Fume, 34700 won), scene 8's cave (35700), a Punch Ant won and Kraden (37300), scene 9 37900
+#   idejima   (TLA8) from cave: Alex, the beam, the island adrift (40000, 46000), Felix and Sheba (50000), Felix's check
+#             for injuries (54300), Felix under control on Idejima 55300
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -43,6 +47,8 @@ CASES=(
   "battle|28700|16500,20000,24000,26800,28100,28300,28700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys|"
   "win|29800|28720,28880,29120,29240,29500,29800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys|"
   "gate|31800|30100,30600,31000,31300,31500,31800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys|"
+  "cave|37900|32300,33180,34700,35700,37300,37900|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys|"
+  "idejima|55300|40000,46000,50000,54300,55300|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys,$R/cave.keys,$R/idejima.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv
