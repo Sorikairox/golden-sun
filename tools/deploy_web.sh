@@ -26,6 +26,8 @@ STAGE=${GS_STAGE:-$HOME/golden-sun-site}
 # object size?"); no hard per-file limit is documented. TLA's game.wasm is ~21 MB: reported here, and the live check
 # below compares the served size with the local one.
 BIG=$((10 * 1024 * 1024))
+# leak_check.py picks its section table by PORT_GAME (default tbs): TLA's check needs PORT_GAME=tla, else it
+# looks up GS1's sections in the TLA ROM (TLA8, trap 78)
 # the netlify CLI: on PATH, else the copy npx already cached (no download here)
 NL=$(command -v netlify || ls -d "$HOME"/.npm/_npx/*/node_modules/.bin/netlify 2>/dev/null | head -1 || true)
 if [ -z "$NL" ]; then
@@ -37,13 +39,13 @@ fi
 [ $TLA = 0 ] || [ -f build/wasm-tla/game.wasm ] || { echo "no TLA build: run tools/web_build.sh --game tla (or TLA=0)"; exit 1; }
 [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "uncommitted changes: commit first so BUILD.txt names the deployed code"; exit 1; }
 for f in game.wasm game.js; do
-  python3 tools/wasm/leak_check.py build/wasm/$f "$ROM" . | grep -q 'PASS' || { echo "leak check failed on $f"; exit 1; }
+  PORT_GAME=tbs python3 tools/wasm/leak_check.py build/wasm/$f "$ROM" . | grep -q 'PASS' || { echo "leak check failed on $f"; exit 1; }
 done
 echo "leak check: game.wasm, game.js PASS (GS1 ROM)"
 if [ $TLA = 1 ]; then
   [ -f "$ROM_TLA" ] || { echo "no TLA ROM for the leak check: ROM_TLA=..."; exit 1; }
   for f in game.wasm game.js; do
-    python3 tools/wasm/leak_check.py build/wasm-tla/$f "$ROM_TLA" . | grep -q 'PASS' || { echo "leak check failed on tla/$f"; exit 1; }
+    PORT_GAME=tla python3 tools/wasm/leak_check.py build/wasm-tla/$f "$ROM_TLA" . | grep -q 'PASS' || { echo "leak check failed on tla/$f"; exit 1; }
   done
   echo "leak check: tla/game.wasm, tla/game.js PASS (TLA ROM)"
   BOTH=1 tools/site.sh
