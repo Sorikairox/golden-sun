@@ -2,6 +2,23 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS29 — 2026-11-04: Map zoom (3:2, nothing on the page moves) replaces Wide view; our floating heading removed
+
+- Read docs/GS29.md and traps 89-91. On `main` (1efad3f, c6b8b35, 54edecb, 941426a, e434de5 + docs), **not deployed**.
+- **Map zoom** (option, default Normal; in-game Extra settings row and page select, gs-zoom; gs-wide=1 migrates to 1):
+  field maps at 288 x 192 or 336 x 224 (3:2, whole tiles), scaled by the page into the same 3:2 box; battles, World Map,
+  title, File Screen stay 240 x 160 and fill the box. Margins down and across from the map grid; the GBA's view is placed
+  so the frame stays inside the map's camera bounds (camera itself unchanged); culling via gPortZoomL/R/T/B (0 at
+  Normal). Page: frame x whole factor, smoothed into the box (sharp bilinear).
+- **Heading**: the bobbing "Settings" tab on our Extra settings screen was ours (MenuTitle_Create in options.c):
+  removed. GS1's own Change settings (and Pause menu) draw theirs: kept. "R: More" is an ordinary window, not floating.
+- Tests: regress full masked vs 6d08d4c8 549/550 (link2's own row), then all OK vs the rewritten expected.tsv;
+  web_opts ALL PASS (levels, sync, migration, canvas + touch boxes across levels / a battle / an interior), web_phone
+  --flash --query zoom=0/1/2 ALL PASS with identical boxes, web_offline/web_touch/web_link PASS; TLA rebuilt df7c39fb /
+  d184cc2a unchanged, web_transfer + TLA page offline/phone ALL PASS. tools/regress_cmp.sh for two-build masked runs.
+- Builds: GS1 43130de1 / 13f7526d (site 1d2a4fb6f65558c0). Contact sheet: port_work/gs29/sheet/sheet.png (local).
+- Next: deploy when the user says so.
+
 ## TLA9 — 2026-11-04: "only say Yes": the party from Golden Sun with one press (branch tla9)
 
 - Read docs/TLA9.md and traps 87-88. Worktree ~/golden-sun-wt/tla9, branch `tla9` (4 commits on ac16be5 + docs),

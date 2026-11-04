@@ -14,6 +14,12 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS29 (2026-11-04, main): **Map zoom** replaces Wide view (docs/GS29.md): field maps at 288 x 192 / 336 x 224 (3:2),
+  scaled into the same box, nothing on the page moves (canvas + touch boxes checked across levels, a battle, an
+  interior); the GBA's view placed inside the map's camera bounds (no black at map edges; camera unchanged); our Extra
+  settings' floating "Settings" heading removed (the game's own Change settings keeps its own). Regress masked = 6d08d4c8
+  (61 cases), expected.tsv RAM rows rewritten; GS1 43130de1 / 13f7526d; TLA df7c39fb / d184cc2a unchanged; not deployed.
+
 - TLA9 (2026-11-04, branch tla9, not merged): **"only say Yes"** (docs/TLA9.md): on the TLA page, with a GS1 ROM + a
   save holding a cleared file in the origin's IndexedDB, Yes to "Transfer data from Golden Sun?" brings the party: a
   headless GS1 instance runs GS1's own Save_* routines through Port_CallCode4 before TLA starts (4,100 bytes = route
@@ -736,3 +742,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 88. (TLA9) **two games in one page**: both game.js factories are the global `GoldenSun`; transfer.js keeps TLA's, loads
     GS1's ../game.js, takes it and puts TLA's back (MODULARIZE; locateFile to ../). A service worker's FILES may name
     files above its scope ('../game.js'); Cache.addAll refuses duplicate URLs, so it installs each resolved URL once.
+89. (GS29) **the OAM build's hidden entries are y 192**: oam_kernel.c fills unused entries with 0x00C000C0 words (y 192,
+    x 192, tile 0xC0). Off the GBA's 160 lines, but a renderer that draws more lines (Map zoom's bottom margin, up to 64
+    rows when the frame is clamped to a map's top) reaches them: ppu.c's margin rows skip exactly those entries.
+90. (GS29) **"inside the field sequence and a map scrolled" is not "a field map on screen"**: the File Screen after
+    Continue runs inside FieldSequence_Run with MapGrid_UpdateLayerScroll stamping. Map zoom zooms a frame only when the
+    previous field frame's map layers matched the map grid's cells on at least 80 lines (ppu.c ZOOM_MIN_LINES).
+91. (GS29) **a class's `display` beats the `hidden` attribute**: `.opt-big { display: inline-flex }` keeps a `hidden`
+    label visible (the TLA page's zoom row); hide such rows with `style.display = 'none'` or a `[hidden]` rule.
