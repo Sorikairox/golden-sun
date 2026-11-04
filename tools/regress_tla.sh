@@ -19,6 +19,8 @@
 #             the first battle ("Ruffian appeared!") 28300 and 28700
 #   win       (TLA7) from battle: Fight, Psynergy, Fume on the Ruffian (28720 the target, 28880 the flames), "You felled
 #             Ruffian!" 29120, the field back 29240, west past the beaten Ruffian into Suhalla Gate (scene 6) 29500, 29800
+#   gate      (TLA7) from win: up the Suhalla Gate ledges to trigger 20 (30100 "Waahhh! It's them!"), the second Ruffian
+#             battle (30600, 31000 the rewards), back on the plateau 31300, west to scene 7's mountain path 31500, 31800
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -40,6 +42,7 @@ CASES=(
   "down|16100|14800,15200,15700,16100|$R/new_game.keys,$R/opening.keys,$R/down.keys|"
   "battle|28700|16500,20000,24000,26800,28100,28300,28700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys|"
   "win|29800|28720,28880,29120,29240,29500,29800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys|"
+  "gate|31800|30100,30600,31000,31300,31500,31800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys,$R/gate.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv

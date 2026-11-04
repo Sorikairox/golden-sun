@@ -1,0 +1,7 @@
+# TLA7: after win.keys, Suhalla Gate (scene 6): east box -> the stairs (x 35-38, z 24) up to the 64 and 96 ledges ->
+# trigger 20 at (30, 22) on the 128 plateau: "Waahhh! It's them!", the second Ruffian battle (Attack; won ~31100),
+# B closes "Oooog. Maybe I shouldn't have underestimated her...", then west along z 18 to trigger 4 (x 21): scene 7
+# entrance 4 ~31480. Inputs only.
+LEFT@29500-29557,UP@29559-29584,LEFT@29586-29721,UP@29723-29734,LEFT@29736-29837,UP@29839-29940,RIGHT@29945-30011
+A@30150-31260/40,B@31300-31301
+UP@31330-31339,LEFT@31341-31463
