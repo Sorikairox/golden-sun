@@ -14,6 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS30 (2026-11-04, main): **Map zoom on GS1's World Map** (docs/GS30.md): the moving view at 288 x 192 / 336 x 224,
+  renderer only: extra columns continue the hardware's affine stepping, extra rows fit a + b / (line - h) on the frame's
+  own lines; margin samples only where the game holds that place (RAM tile block, decoded quarter, BG cell == RAM cell),
+  else black; menus keep the last moving frame's ground in the margins; R's world picture stays 240 x 160; GBA view
+  centred, no clamp. Projected-sprite culling widened by gPortZoom*. Regress masked = 43130de1 (61 cases), expected.tsv
+  RAM rows rewritten; GS1 b13e7532 / 13f7526d; TLA df7c39fb / d184cc2a unchanged; not deployed.
+
 - GS29 (2026-11-04, main): **Map zoom** replaces Wide view (docs/GS29.md): field maps at 288 x 192 / 336 x 224 (3:2),
   scaled into the same box, nothing on the page moves (canvas + touch boxes checked across levels, a battle, an
   interior); the GBA's view placed inside the map's camera bounds (no black at map edges; camera unchanged); our Extra
@@ -750,3 +757,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     previous field frame's map layers matched the map grid's cells on at least 80 lines (ppu.c ZOOM_MIN_LINES).
 91. (GS29) **a class's `display` beats the `hidden` attribute**: `.opt-big { display: inline-flex }` keeps a `hidden`
     label visible (the TLA page's zoom row); hide such rows with `style.display = 'none'` or a `[hidden]` rule.
+92. (GS30) **the World Map's cell-picture table is borrowed by the still picture**: WorldMap_StartStillPicture draws
+    the frozen view into Ram_MapGridCellBuffer (0x02010000) a frame before it shows, and WorldMap_LoadAreaGraphics
+    decodes the table back a frame after the moving view returns. Anything that reads cell pictures there on those
+    frames (ppu.c's World Map cell checks) reads picture bytes: keep the last moving frame's result while the BG maps
+    and Ram_CellPictures are unchanged. Also: World Map lines switch DISPCNT mode per line (VCount/HBlank handlers:
+    the opening letterbox, the encounter's centre line), so a margin row must take its line's mode, not the frame's.

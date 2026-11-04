@@ -2,6 +2,27 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS30 — 2026-11-04: Map zoom on GS1's World Map
+
+- Read docs/GS30.md and trap 92. On `main` (fc337a4, b8473a3, a1f42b4 + docs), **not deployed, not pushed**.
+- Phase 1 (feasibility): the World Map is mode 2, BG2/BG3 affine 512 px wrapping, per-line PA/PC/X/Y by HBlank DMA 0,
+  reference points absolute; RAM holds a 1024 x 1024-unit block of world tiles around the party and the BG maps the
+  same toroid, far beyond the GBA's view (and the margins'); every line term is a + b / (line - h): feasible in the
+  renderer without game changes.
+- Built (ppu.c GS1 branch, own `wm_*` block; one c_rules row pair): at More/Most the moving view is 288 x 192 / 336 x
+  224, GBA lines centred (no GS29 clamp, so nothing moves when the camera stops); margins truthful (black where the
+  game has not loaded the ground: seen only with L held at Most); menus/events keep the last moving frame's ground in
+  the margins; R's world picture, battles and other screens stay 240 x 160; actors in the margins projected
+  (Render_PlaceProjectedSprite bounds + gPortZoom*).
+- Tests: GBA view equal to Normal in 516/522 frames (6: an actor animated a step ahead after crossing the margins);
+  regress full masked vs 43130de1 549/550 (link2's own row), expected.tsv RAM rows rewritten, --quick OK; web_opts
+  --worldmap (new) + GS29 steps ALL PASS (canvas + touch boxes across World Map, menu, world picture, levels);
+  web_phone zoom 0/1/2 ALL PASS, boxes identical; web_offline/web_touch/web_link PASS; TLA rebuilt df7c39fb / d184cc2a
+  unchanged, web_transfer ALL PASS.
+- Builds: GS1 b13e7532 / 13f7526d (site b6c0cf6796471d30). Contact sheet: port_work/gs30/sheet/sheet.png (local).
+- GS31 (other agent) fixes GS29's field-map edge jitter in zoom_offset; the World Map path does not use it.
+- Next: merge with GS31; deploy when the user says so.
+
 ## GS29 — 2026-11-04: Map zoom (3:2, nothing on the page moves) replaces Wide view; our floating heading removed
 
 - Read docs/GS29.md and traps 89-91. On `main` (1efad3f, c6b8b35, 54edecb, 941426a, e434de5 + docs), **not deployed**.
