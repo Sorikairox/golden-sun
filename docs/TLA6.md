@@ -91,3 +91,112 @@ of the newly translated Func_02002f64; the batch's per-routine table of the last
 - D20 inputs for Func_080cf78c / Func_08173aac / Func_02002f64@681 (captured states).
 - The EQUIV 251 -> 248 change in the batch.
 - Audio check on the opening (tools/audio_check) and the Chrome page through the opening.
+
+# TLA6b (2026-11-04): the way down, the first battle, D20 batch order, audio
+
+## 7. Furthest real play
+
+`tools/regress_tla.sh` cases `down` and `battle` (routes tests/routes/tla/down.keys, battle.keys; inputs only):
+Jenna under control at the aerie door (~14,450) -> **down the lighthouse** -> the Venus Lighthouse entrance (15,616)
+-> down the steps (16,040) -> the guards, Alex freezes them, Kraden ("Come", Yes, ~26,800) -> the walk west -> the
+Ruffian's talk -> **the first battle, "Ruffian appeared!" (28,226)**, drawn correctly (forest backdrop, Ruffian, Jenna).
+The battle is **not won**: the first Fight/Attack input stops the game (section 9). Contact sheet (local):
+port_work/tla6b/contact.png (aerie door, the rooms, the entrance, the steps, the guards, Alex, Kraden, the battle).
+
+**The way down (vendor tables, not guessed).** The opening ends with Jenna at entrance 22 (728,936) of scene 5
+(VenusLighthouse, overlay 0x64e; scene/venus_lighthouse/data.c gSceneEntrances/gSceneExits/gSceneEvents). The map
+dump (cell behaviour = trigger id, shapes = heights) gives the room graph: exit 22 (the door north of her) -> entrance
+9 (a ledge above a pit: DOWN/RIGHT there are 32 px drops, rightly blocked) -> LEFT, UP through exit 10 -> entrance 12
+-> exit 13 -> entrance 11 (the pit room's lower floor) -> exit 7 -> entrance 6 -> exit 3 -> entrance 2 -> exit 1 ->
+scene 4 (VenusLighthouseEntrance) entrance 9. Not a port bug: "DOWN blocked on the door cell" was the wall row below the
+platform, and TLA6's "UP into the aerie and back" was exits 22/9 (a door pair). TLA6's walk probe also mis-detected
+exits (fixed: autowalk.cjs waits in the exit cell; WALK_GAME=tla).
+
+**Then a port bug stopped the way down at the entrance steps** (fix 1 below): step trigger 9 (condition 0x892) never
+ran, the two statues stayed on the stairs and Jenna could not go down.
+
+## 8. Port bugs fixed
+
+1. **GameFlag_IsConditionActive tested flag 0 for every condition** (c_rules, commit 1421ddd). is_condition_active.c
+   calls the K&R-declared `GameFlag_Test()` with no argument; on the ARM the flag is the condition GCC left in r0, the
+   wasm K&R adapter passed 0 (link.py adapter(): missing arguments are 0). Every trigger, placement and entrance
+   condition was wrong. Two text rules pass `condition`. **18 other K&R calls pass fewer words than their target takes**
+   (list below): each needs the same reading of what r0-r3 hold on the ARM.
+3. Tools: autowalk.cjs WALK_GAME=tla; diff_hw and the D20 batch seeded per routine (section 10).
+2. **render.c built** (asm_rules, commit 9706b35): Render_SetIdentity's three `stmia` as twelve C stores. render.c was
+   the last left-out object; its 7 transform routines were stubs and the battle drew a tiled green screen. 0 objects
+   left out, 0 logged stubs; 10 call-target allow rows (render.c addresses) removed.
+
+Short K&R adapters left (caller file -> target, words passed/taken): definition_flags.c BattleEffect_GetAnimationValue
+0/1 (BattleEffect_GetFlags passes its own r0 through), cell_mark.c Func_08020310 3/4 (Func_0802d7b0's height in r3),
+add_action.c Func_080afb80 1/2, shop/f1082c4.c Func_0810a2c8 0/4, window/f044a58.c + f044c80.c Message_Start 5/6,
+window/text.c WindowSprite_PrepareForRedraw 0/1, menu/lifecycle.c Window_CloseFar 1/2, and 11 in scene overlays
+(664 airs_rock_inside, 665 alhafra, 671 gabomba_statue x2, 674 islets, 681/68e/692 Actor_GetById, 682 champa,
+6aa mars_lighthouse_entrance, 6b8 debug). To list them: in build/wasm-tla/gen/glue.ll, the `define ... @"NAME$c..."(params)`
+adapters whose body calls the target with more arguments than the adapter's own parameters.
+
+## 9. The battle stop (next)
+
+Fight -> Attack: "asm2c: continuation at 0x0801f786, expected the return to 0x0d0ffff0", in Render_DecodePicture
+called through a2c_dispatch from Func_0815e3ac (battle effect code) with r2 = 39. The call is to 0x03005381, a heap
+block in IWRAM. Func_08196404 (translated asm) allocates it and copies **BattleEffect_PatchTemplate**
+(battle_effect/patch_template.s, 0x081972a0) there with ldm/stm, then patches its instructions (a self-patching
+blitter like GS1's BattleEffect_BuildBlitter). The port still has the alias of the picture decoder that the field
+copied to the same block by DMA (trap 20: translated stores do not drop aliases), so the call runs the decoder. Two
+things are needed: (a) drop RAM aliases when a heap block is reused (HeapSlot_Alloc, or the copy loop), (b) run the
+patched template: a C port of the template + builder like port/pc/blitter.c (Port_CodeAliasFn), checked by D20 against
+the patched words in RAM, or an ARM interpreter for RAM code.
+
+## 10. D20 batch 251 -> 248 explained; order independence
+
+No translation changed except the three callers of the new routines (Func_080cf554, Func_08173588,
+Func_02002f30@681, NOINPUT before and after). The batch dealt routines to shards by index and drew all inputs of a
+shard from one random stream, and memory outside the world (gHeapSlots, VRAM, the stack) carried over from earlier
+routines. The three routines added to the report re-dealt every later routine: 55 routines moved between EQUIV and
+NOINPUT (26 one way, 29 the other), net -3. A worktree of the tree before TLA6's asm2c change gave 251 again with
+the old batch, so the count was sampling. Now (commit 5580884) each routine has its own stream (seeded by
+name@overlay) and starts from the same memory: **217 EQUIV / 0 FAIL / 988 NOINPUT of 1,205**, and the old tree gives
+the same result for each of its 1,202 routines. The 31 fewer EQUIV only ran on heap-slot pointers left by earlier
+routines. Tried and not kept: filling gHeapSlots' work-area words with world pointers gave 555 EQUIV but 2 FAILs
+(Func_020004a4@6ae "port: executes data at 0xd1007f2", Func_02002790@664 a cell differs; the callee Func_0802b450 gets
+the same arguments in both runs, likely wild writes from random sizes, not proven): a candidate profile once those
+two are triaged. diff_hw had the same single stream (131 -> 124 with nothing changed: Render_ConvertMap flipped and 9
+one-case routines flipped back); now seeded per routine, 124 / 0 / 64, identical over two runs.
+
+**Inputs for the three new translations.** batch.cjs takes captured entry states (CAPTURES=dir, default
+port_work/tla6b/captures, local only): game RAM, r0-r3 and sp at the routine's entry, taken by a capture build
+(temporary: `#define A2C_T(a)` comparing the three addresses -> `(A2C_SPILL(), a2c_capture(a))` at the top of the
+units, a2c_capture -> EM_ASM -> a boot.cjs probe that writes the regions). Func_080cf78c: 6 captures in the opening;
+on them the original calls the IWRAM copy of Render_DecodePicture at 0x03002780 and its colour-mode jump reads
+outside the GBA regions (a mode past 15), so it stays NOINPUT. That is the same symptom as the battle stop and may
+be the same cause (a stale RAM copy or alias). Func_08173aac (battle effects) and Func_02002f64@681 are not reached
+in play yet. All three remain NOINPUT.
+
+## 11. Audio (node)
+
+Opening, frames 0-16,700 (279.6 s, tests/probes/wav.cjs, tools/audio_check.cjs 10 s windows): **27/27 windows with
+sound**, RMS 3,200-9,300, peak full scale, **clipped at most 0.06 %** of samples (the mixer's 10-bit DAC clamp, as
+GS1's G16-G26 notes; diff_mixer: 206 of its 300 EQUIV cases clip in the original too). Local file
+port_work/tla6b/audio/opening.wav (sha1 cfed3c8a45fb7c90).
+
+## 12. Checks (end of session)
+
+| check | result |
+|---|---|
+| TLA build | 0 linker warnings, 0 objects left out, 0 logged stubs, calls PASS (9 allowed), leak 0, no _bitcast_invalid |
+| D20 batch | 217 EQUIV / 0 FAIL / 988 NOINPUT of 1,205 (order independent; section 10) |
+| diff_tla | 30/30 |
+| diff_hw | 124 EQUIV / 0 FAIL / 64 NOINPUT; negative 4/4; decoders 60/60 |
+| diff_mixer | 300/300 |
+| test_arm (GS1) | 79/79, negative controls detected |
+| regress_tla | 7/7 OK twice (new: down, battle; RAM digests of the old cases changed with render.c, pictures and the save's SHA-1 did not) |
+| GS1 | game.wasm 687968a7, game.js 895d45cc; regress --quick 9/9 OK |
+
+## 13. Next
+
+1. The battle stop (section 9): drop aliases on heap reuse; port BattleEffect_PatchTemplate's builder (or run RAM code
+   in an interpreter); then win the Ruffian battle and go on (Felix, Idejima).
+2. The 18 short K&R adapters (section 8): read each call site's r0-r3 on the ARM and give the call its words.
+3. Func_080cf78c's captured states (section 10): why the original, on the port's RAM, calls the decoder copy with a
+   bad mode.
+4. The heap-slot world profile for the D20 batch (555 EQUIV) after triaging its two FAILs.

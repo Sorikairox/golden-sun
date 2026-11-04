@@ -14,6 +14,11 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA6b (2026-11-04): **down Venus Lighthouse to the first battle** (the rooms by the vendor's scene tables, the
+  entrance, the guards, Alex, Kraden, "Ruffian appeared!", drawn right); the battle is not won (Fight stops in a
+  self-patching IWRAM blitter run through a stale decoder alias, docs/TLA6.md 9). Fixes: K&R GameFlag_Test argument
+  (trap 75), render.c built. D20 batch/diff_hw seeded per routine (trap 76): 217/0/988, 124/0/64. regress_tla 7 cases.
+
 - TLA6 part 1 (2026-11-03): **new game to Jenna under control at Venus Lighthouse** (intro, talk, quake, area name,
   walking, menus), **in-game save -> Continue** works; fixes: asm2c rel16 jump tables, long-jump `bl` return points
   (Func_080cf78c/08173aac/02002f64@681 translate), link adapter for cast calls (trap 74); tools/regress_tla.sh 5 cases;
@@ -629,4 +634,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     on an s8 function) is valid on the ARM and a trap in wasm: LLVM emits a `NAME_bitcast_invalid` stub and wasm-opt
     turns the caller into `unreachable` (Scene_GetAreaNameIndex). link.py's adapt_mismatched_calls sends such calls to
     the `NAME$c<signature>` adapter. After a link, `grep -rl _bitcast_invalid build/wasm-tla/obj` must be empty.
-
+75. A K&R call that passes fewer words than the callee's definition gets 0 for the missing ones in wasm (link.py
+    adapter()); on the ARM they are whatever the caller's registers hold, often its own incoming argument passed
+    through. TLA6b: is_condition_active.c's `GameFlag_Test()` meant GameFlag_Test(condition) (r0), so every trigger
+    condition tested flag 0 and the Venus Lighthouse statues never moved. 18 such calls are left (docs/TLA6.md 8):
+    read each call site's r0-r3 and give the call its words (c_rules).
+76. A D20 run that draws all routines' inputs from one random stream is order dependent: adding a routine to the
+    report or one routine stopping early moves EQUIV/NOINPUT elsewhere (TLA6b: 251 -> 248 with no translation
+    changed). The batch and diff_hw seed each routine by name, and the batch restores the same memory before each.

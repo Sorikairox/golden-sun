@@ -2,6 +2,27 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA6b — 2026-11-04: the way down, the first battle reached (not won); D20 batch order explained; audio
+
+- Read docs/TLA6.md sections 7-13 and traps 75-76.
+- Real play (node, tools/regress_tla.sh 7 cases): the aerie door -> **down the lighthouse's rooms** (vendor tables:
+  exits 22, 10, 13, 7, 3, 1; the "blocked DOWN" was the room's wall, not a port bug) -> the entrance -> the steps ->
+  the guards, Alex, Kraden -> the Ruffian -> **first battle shown** (28,226). Not won: Fight/Attack stops the game
+  (a self-patching IWRAM blitter, BattleEffect_PatchTemplate, run through a stale decoder alias; TLA6.md 9).
+- Fixed: GameFlag_IsConditionActive passed 0 instead of its condition to the K&R GameFlag_Test() (every trigger
+  condition tested flag 0; the steps' statues never moved; trap 75); render.c builds (identity stmia as C; battle
+  backdrop and units drawn; 0 objects left out, 0 stubs).
+- D20: 251 -> 248 was input sampling (one random stream per shard dealt by index, leftover memory): 55 routines moved
+  both ways, no translation changed. Batch and diff_hw now seeded per routine (batch also resets memory): batch
+  217/0/988 (same per routine on the pre-TLA6 tree), diff_hw 124/0/64. Captured-state inputs (CAPTURES=dir): the three
+  new translations stay NOINPUT (Func_080cf78c's captures run the original into a bad decoder mode; the other two
+  not reached in play).
+- Audio (node, opening 280 s): 27/27 windows with sound, clipped <= 0.06 % (the DAC clamp, as GS1).
+- Checks: build 0 warnings/0 stubs, calls PASS, leak 0; batch 217/0/988; diff_tla 30/30; diff_hw 124/0/64 neg 4/4;
+  diff_mixer 300/300; test_arm 79/79; regress_tla 7/7 twice; GS1 687968a7 / 895d45cc, regress --quick 9/9.
+- **Next:** the battle stop (alias drop on heap reuse + a port of the patch template builder), win the Ruffian battle,
+  Felix/Idejima; the 18 short K&R calls; Func_080cf78c's decoder mode; deploy after the user's bar.
+
 ## TLA6 (part 1) — 2026-11-03: new game to Jenna under control; save -> continue; /tla/ site prep (local)
 
 - Read docs/TLA6.md and trap 74.
