@@ -69,6 +69,10 @@
 # zoom_menus_field, zoom_menus_shop (GS33: "Menus: Edges", the default, at Map zoom Most: menus_field.keys's field menu, its
 # screens, Pause, Extra settings and the World Map's menu in Kolima Forest's entrance at the map's top edge; imil.keys's
 # dialogues and item shop; menujitter.cjs fails the case when an open window moves in the frame).
+# zoom_menus_status, zoom_menus_status_more (GS34: Map zoom Most with Menus Edges, More with Centre: menus_field.keys's
+# full-screen menus (Psynergy, Djinn, Item, Status) in Kolima Forest's entrance, then menus_status.keys's World Map Status;
+# margins.cjs fails the case when a margin pixel of a frame covered by a full-screen menu is neither the map as the last
+# uncovered frame showed it nor black: the Status screen borrows the map's BG palettes 0-1 and char block 1).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
@@ -147,6 +151,8 @@ CASES=(
   "zoom_edges_most|10800|2700,3800,5132,5400,9100,10000,10650,10800|JIT_FROM=1990 JIT_TO=10800|$R/vale_day1_continue.keys,$R/kolima_glade.keys|$P/zoomjitter.cjs|--flash-in $W/kolima_grind.sav --opt 2=2@0"
   "zoom_edges_more|5100|2571,3000,3568,4080,4300,4800,5100|JIT_FROM=1990 JIT_TO=5100|$R/vale_day1_continue.keys,$R/bilibin_ice.keys|$P/zoomjitter.cjs|--flash-in $W/bilibin_cave.sav --opt 2=1@0"
   "zoom_menus_field|3950|2002,2004,2080,2180,2400,2600,3100,3250,3900|WARP_AT=3450 MJ_FROM=1990 MJ_TO=3949 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/menus_field.keys|$P/warp.cjs,$P/menujitter.cjs|--flash-in $W/kolima_forest.sav --opt 2=2@0"
+  "zoom_menus_status|4300|2770,2800,2850,4010,4100,4300|WARP_AT=3450 MG_FROM=1990 MG_TO=4299 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/menus_field.keys,$R/menus_status.keys|$P/warp.cjs,$P/margins.cjs|--flash-in $W/kolima_forest.sav --opt 2=2@0"
+  "zoom_menus_status_more|4300|2800,4100|WARP_AT=3450 MG_FROM=1990 MG_TO=4299 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/menus_field.keys,$R/menus_status.keys|$P/warp.cjs,$P/margins.cjs|--flash-in $W/kolima_forest.sav --opt 2=1@0,3=0@0"
   "zoom_menus_shop|13330|5980,6100,12300,12530,12900,13250|MJ_FROM=2000 MJ_TO=13329 DIGEST_FULL=1|$R/vale_day1_continue.keys,$R/imil.keys|$P/menujitter.cjs|--flash-in $W/bilibin_exit.sav --opt 2=2@0"
 )
 # the case that writes each save a later case starts from (made first when only the later case is asked for)

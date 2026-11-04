@@ -524,6 +524,105 @@ static void zoom_frame(int level) {
   YO = zoom_offset(fh, H, sBoundT, sBoundB);
 }
 
+/* GS34: full-screen menus over a zoomed map. A screen such as the field menu's Status covers the GBA's whole screen with
+ * the window layer and then borrows the map's VRAM and palette under it: StatusScreen_Run (menu/menu/status.c) draws a
+ * 30 x 20 border, then saves and overwrites BG palettes 0-1 (the first sprite palette, for its element icons) and 8 KB
+ * of char block 1 (its text canvas), the map's own tiles there (the ground layer's), and puts them back before the
+ * border goes. On the GBA nothing of the map shows meanwhile; the margins, drawn from the map grid's cells with the live
+ * tiles and palette (and with "Menus: Edges" the GBA-screen pixels the moved windows leave), showed those borrowed bytes
+ * as the map: pink and orange ground, a "lava" river, specks on the World Map. So while the window layer covers the
+ * whole GBA screen (checked at line 0 from VRAM and the display registers: what the frame really shows), every layer
+ * but the window layer is drawn in the margins from the BG VRAM and palette of the last zoomed frame that was not
+ * covered: the map continued exactly as it was when the screen opened (the game's camera and actors are stopped under
+ * such screens). The GBA's own 240 x 160 stays the hardware's (its window corners included), but while "Menus: Edges"
+ * lays the windows out (sMenuOn) the map under them is the snapshot's there too, since moved windows uncover it.
+ * Without such a frame (none since the frame zoomed) those layers are left out and the backdrop is black. Live while
+ * covered: the window layer, sprites, registers, the map grid. At Normal and on frames that are not zoomed nothing
+ * here runs (sCoverOn = sCoverBlack = 0). */
+static int sCoverOn, sCoverBlack; /* this frame: map layers from the snapshot / left out */
+static int sCoverKind;            /* the snapshot's frame kind: 1 field map, 2 World Map still picture; 0 none */
+static u16 sMapPal[256];          /* its BG palette */
+static u8 sMapVram[0x10000];      /* its BG VRAM (char and screen blocks) */
+static const u16 *sWmPal = (const u16 *)(uintptr_t)PALETTE_BASE; /* the World Map margins' palette this frame */
+static u32 sCoverFrames;          /* test probes: frames drawn with the snapshot */
+/* the window layer (the BG on screen block 4, WINDOW_TILEMAP_VRAM) is in front of every other BG and opaque on the
+ * GBA's 240 x 160 pixels, unblended and unwindowed (line 0's registers; the field keeps them for the frame). A window's
+ * border tiles leave its corner pixel transparent (the Status screen: 12 such pixels, where the GBA itself shows the
+ * borrowed palette), so up to COVER_HOLES transparent pixels still count as covered. */
+#define COVER_HOLES 64
+static int cover_check(void) {
+  u16 dispcnt = IO16(R_DISPCNT), bldcnt = IO16(R_BLDCNT), cnt;
+  int wb = -1, i, x, y, prio, color256, size, holes = 0;
+  u32 hofs, vofs, charBase, screenBase, wmask, hmask;
+  if ((dispcnt & 0x80) || (dispcnt & 7) != 0 || (dispcnt & 0xE000))
+    return 0;
+  for (i = 0; i < 4; i++)
+    if (((IO16(R_BG0CNT + 2 * i) >> 8) & 31) == 4) {
+      wb = i;
+      break;
+    }
+  if (wb < 0 || !((dispcnt >> (8 + wb)) & 1) || (((bldcnt >> 6) & 3) == 1 && (bldcnt & (1u << wb))))
+    return 0;
+  cnt = IO16(R_BG0CNT + 2 * wb);
+  prio = cnt & 3;
+  for (i = 0; i < 4; i++)
+    if (i != wb && ((dispcnt >> (8 + i)) & 1)) {
+      int p = IO16(R_BG0CNT + 2 * i) & 3;
+      if (p < prio || (p == prio && i < wb))
+        return 0;
+    }
+  hofs = IO16(R_BG0HOFS + 4 * wb) & 0x1FF;
+  vofs = IO16(R_BG0HOFS + 2 + 4 * wb) & 0x1FF;
+  charBase = ((cnt >> 2) & 3) * 0x4000;
+  screenBase = ((cnt >> 8) & 31) * 0x800;
+  color256 = (cnt >> 7) & 1;
+  size = cnt >> 14;
+  wmask = (size & 1) ? 511 : 255;
+  hmask = (size & 2) ? 511 : 255;
+  for (y = 0; y < H; y++) {
+    u32 py = ((u32)y + vofs) & hmask;
+    for (x = 0; x < W; x++) {
+      u32 px = ((u32)x + hofs) & wmask, block = (px >> 8) + ((py >> 8) * ((size & 1) ? 2 : 1)), tx, ty, a, ci;
+      u16 entry = *(u16 *)(VRAM + screenBase + block * 0x800 + (((py & 255) >> 3) * 32 + ((px & 255) >> 3)) * 2);
+      tx = (entry & 0x400) ? 7 - (px & 7) : px & 7;
+      ty = (entry & 0x800) ? 7 - (py & 7) : py & 7;
+      if (color256) {
+        a = charBase + (entry & 0x3FF) * 64 + ty * 8 + tx;
+        ci = a < 0x10000 ? VRAM[a] : 0;
+      } else {
+        a = charBase + (entry & 0x3FF) * 32 + ty * 4 + (tx >> 1);
+        ci = a < 0x10000 ? (VRAM[a] >> ((tx & 1) * 4)) & 15 : 0;
+      }
+      if (!ci && ++holes > COVER_HOLES)
+        return 0;
+    }
+  }
+  return 1;
+}
+/* line 0 of a frame: kind 1 a zoomed field map, 2 a zoomed World Map still picture, 0 anything else */
+static void cover_frame(int kind) {
+  sCoverOn = sCoverBlack = 0;
+  if (!kind) {
+    sCoverKind = 0;
+  } else if (cover_check()) {
+    if (sCoverKind == kind)
+      sCoverOn = 1;
+    else
+      sCoverBlack = 1;
+  } else {
+    memcpy(sMapPal, (const void *)(uintptr_t)PALETTE_BASE, sizeof sMapPal);
+    memcpy(sMapVram, VRAM, sizeof sMapVram);
+    sCoverKind = kind;
+  }
+  sCoverFrames += sCoverOn;
+  sWmPal = sCoverOn ? sMapPal : PAL;
+}
+/* test probes (tests/probes/margins.cjs), the last frame: what 0: 0 nothing done, 1 map layers from the snapshot, 2
+ * left out (no snapshot); 1: frames drawn from the snapshot so far; 2, 3: the GBA screen's place in the frame (XO, YO) */
+int Port_ZoomCover(int what) {
+  return what == 1 ? (int)sCoverFrames : what == 2 ? XO : what == 3 ? YO : sCoverOn ? 1 : sCoverBlack ? 2 : 0;
+}
+
 /* affine BG internal reference points (BG2, BG3) */
 static s32 refX[2], refY[2];
 static u32 lastX[2], lastY[2];
@@ -749,7 +848,7 @@ static inline u16 wm_sample(const u8 *map, const u8 *chr, s32 px, s32 py) {
   py &= 511;
   tile = map[(py >> 3) * 64 + (px >> 3)];
   ci = chr[(tile * 64 + (py & 7) * 8 + (px & 7)) & 0x3FFF];
-  return ci ? PAL[ci] & 0x7FFF : TRANSPARENT;
+  return ci ? sWmPal[ci] & 0x7FFF : TRANSPARENT; /* GS34: the snapshot's palette under a full-screen menu */
 }
 
 /* frame row v of a World Map BG (bg 2 or 3) from view w and VRAM copy (vram, or NULL for the live VRAM); on a GBA line
@@ -1246,6 +1345,12 @@ static void text_bg(int bg, int line, int v) {
     }
     return;
   }
+  /* GS34: under a full-screen menu every layer but the window layer comes from the last uncovered frame (cover_frame) */
+  int frozen = (sCoverOn || sCoverBlack) && screenBase != 4 * 0x800;
+  const u8 *vram = sCoverOn && frozen ? sMapVram : VRAM;           /* margins */
+  const u16 *pal = sCoverOn && frozen ? sMapPal : PAL;
+  const u8 *gvram = sMenuOn ? vram : VRAM;                         /* the GBA's pixels */
+  const u16 *gpal = sMenuOn ? pal : PAL;
   /* map zoom: a field map layer's margins from the map grid, at its full scroll (gBgScroll, with this line's
    * register offsets); other layers are empty there */
   int mapLayer = fieldCandidate && bg >= 1 && size == 0 && screenBase == (u32)(5 + 3 - bg) * 0x800;
@@ -1260,10 +1365,10 @@ static void text_bg(int bg, int line, int v) {
     for (e = 0; e < 2 && mapLayer; e++) {
       s32 gx = e ? W - 1 : 0;
       u32 px = (gx + hofs) & 255;
-      u16 vram = *(u16 *)(VRAM + screenBase + ((y >> 3) * 32 + (px >> 3)) * 2);
+      u16 got = *(u16 *)(vram + screenBase + ((y >> 3) * 32 + (px >> 3)) * 2);
       s32 fx = fullX + gx;
       u32 cell = MAP_CELLS[((fullY >> 4) & 127) * 128 + ((fx >> 4) & 127)];
-      if (vram != CELL_PICTURES[(cell & 0xFFF) * 4 + ((fullY >> 3) & 1) * 2 + ((fx >> 3) & 1)])
+      if (got != CELL_PICTURES[(cell & 0xFFF) * 4 + ((fullY >> 3) & 1) * 2 + ((fx >> 3) & 1)])
         mapLayer = 0;
     }
     if (mapLayer && real)
@@ -1272,17 +1377,25 @@ static void text_bg(int bg, int line, int v) {
       mapLayer = 0;
     fullY += v - line;
   }
+  int black = frozen && sCoverBlack; /* no uncovered frame to take them from: left out (the GBA's own pixels kept) */
   if (worldStill && bg == 1) /* GS30: the still picture's margins: the last moving frame's ground */
     wm_still_row(v, real);
   for (x = 0; x < LW; x++) {
     int gx = x - XO;
     u32 px, tile, tx, ty, ci;
     u16 entry;
-    if ((real && gx >= 0 && gx < W) || wrapOn) {
+    int gba = (real && gx >= 0 && gx < W) || wrapOn;
+    const u8 *vm = gba ? gvram : vram;
+    const u16 *pl = gba ? gpal : pal;
+    if (black && (sMenuOn || !gba)) {
+      out[x] = TRANSPARENT;
+      continue;
+    }
+    if (gba) {
       u32 block;
       px = (gx + hofs) & wmask;
       block = (px >> 8) + ((y >> 8) * ((size & 1) ? 2 : 1));
-      entry = *(u16 *)(VRAM + screenBase + block * 0x800 + (((y & 255) >> 3) * 32 + ((px & 255) >> 3)) * 2);
+      entry = *(u16 *)(vm + screenBase + block * 0x800 + (((y & 255) >> 3) * 32 + ((px & 255) >> 3)) * 2);
       ty = y & 7;
     } else if (mapLayer) {
       s32 fx = fullX + gx;
@@ -1302,12 +1415,12 @@ static void text_bg(int bg, int line, int v) {
       ty = 7 - ty;
     if (color256) {
       u32 a = charBase + tile * 64 + ty * 8 + tx;
-      ci = a < 0x10000 ? VRAM[a] : 0;
-      out[x] = ci ? PAL[ci] & 0x7FFF : TRANSPARENT;
+      ci = a < 0x10000 ? vm[a] : 0;
+      out[x] = ci ? pl[ci] & 0x7FFF : TRANSPARENT;
     } else {
       u32 a = charBase + tile * 32 + ty * 4 + (tx >> 1);
-      ci = a < 0x10000 ? (VRAM[a] >> ((tx & 1) * 4)) & 15 : 0;
-      out[x] = ci ? PAL[(entry >> 12) * 16 + ci] & 0x7FFF : TRANSPARENT;
+      ci = a < 0x10000 ? (vm[a] >> ((tx & 1) * 4)) & 15 : 0;
+      out[x] = ci ? pl[(entry >> 12) * 16 + ci] & 0x7FFF : TRANSPARENT;
     }
   }
 }
@@ -1504,6 +1617,8 @@ static void render_row(int line, int v) {
   u8 bgPrio[4];
 
   int real = v == line;
+  /* GS34: under a full-screen menu the backdrop is the snapshot's too (or black without one) */
+  u16 bdLive = PAL[0] & 0x7FFF, bdMap = (sCoverOn ? sMapPal[0] : sCoverBlack ? 0 : PAL[0]) & 0x7FFF;
   out = gPortFrame + (v + YO) * LW;
   if (dispcnt & 0x80) { /* forced blank: white */
     for (x = 0; x < LW; x++)
@@ -1552,7 +1667,7 @@ static void render_row(int line, int v) {
 
   for (x = 0; x < LW; x++) {
     u32 mask = 0x3F; /* layers 0-4 and the effect bit 5 */
-    u16 top = PAL[0] & 0x7FFF, second = top;
+    u16 top = sMenuOn || !real || x < XO || x >= XO + W ? bdMap : bdLive, second = top;
     int topL = L_BD, secondL = L_BD, topP = 4, secondP = 4;
     int semi = 0;
     int wx = x - XO; /* map zoom: the margins take the windows of the GBA screen's edge column (and edge line) */
@@ -1674,6 +1789,7 @@ void Port_PpuLine(int line) {
       LH = H;
       XO = YO = 0;
     }
+    cover_frame(fieldZoom ? 1 : worldStill ? 2 : 0); /* GS34 */
     /* GS33: menus at the frame's edges */
     sMenuOn = sZoomOn && (LW != W || LH != H) && Port_MenusEdges() && sMenuSnap.ok;
     if (sMenuOn)

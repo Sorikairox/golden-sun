@@ -1,0 +1,4 @@
+# GS34 (after vale_day1_continue.keys and menus_field.keys, with --flash-in kolima_forest.sav, WARP_AT=3450 and
+# tests/probes/warp.cjs): on the World Map's field menu (opened by menus_field.keys at 3800), RIGHT three times to
+# Status, its Status screen (4000-4160), B back to the field menu and B to close it.
+RIGHT@3860-3862,RIGHT@3900-3902,RIGHT@3940-3942,A@4000-4002,B@4160-4162,B@4220-4222
