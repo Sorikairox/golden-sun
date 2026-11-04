@@ -1466,6 +1466,22 @@ static void affine_bg(int bg, int real, int v) {
  * queues them) and above it from there. The OAM build fills unused entries with 0x00C000C0 words (y 192, x 192,
  * tile 0xC0: off the GBA's screen; oam_kernel.c): with a bottom margin over 32 rows y 192 is on it, so margin rows
  * skip exactly those entries */
+/* GS34: a sprite the GBA shows nowhere on its 240 x 160, which the zoomed frame's wider OAM range would draw in the
+ * margins: menus park unused sprites off the screen (the Status screen's page arrows at x 256 / y 216 or x 248 / y 168,
+ * its Djinn figures at y 210 on the pages that do not show them). Not drawn on a zoomed frame when it is a menu's (by
+ * the VBlank's OAM tags) or when a full-screen menu covers the GBA's screen (then the margins hold only the map's
+ * snapshot and the menus; the Djinn figures are field sprites, like the actors). Field actors in the margins of an
+ * uncovered frame are still drawn. */
+static int menu_parked(int i, u16 a0, u16 a1, int bw, int bh) {
+  const struct MenuSnap *s = &sMenuSnap;
+  int y = a0 & 0xFF, x = a1 & 0x1FF, rows, cols;
+  if (!sCoverOn && !sCoverBlack &&
+      (!s->ok || i >= s->n || s->kind[i] < 0 || s->words[i][0] != ((u32)a0 | (u32)a1 << 16)))
+    return 0;
+  rows = y < H || y + bh > 256;  /* some line 0..159 is inside (the 8-bit y wraps past 255) */
+  cols = x < W || x + bw > 512;  /* some column 0..239 is inside (the 9-bit x wraps past 511) */
+  return !rows || !cols;
+}
 static void sprites(int v, u16 dispcnt) {
   int real = v >= 0 && v < H, below = real ? H : H + gPortZoomB;
   int i;
@@ -1499,6 +1515,8 @@ static void sprites(int v, u16 dispcnt) {
     bh = h << (affine && dbl);
     y = a0 & 0xFF;
     x = a1 & 0x1FF;
+    if (LW != W && menu_parked(i, a0, a1, bw, bh))
+      continue;
     if (menu) {
       if (y >= H)
         y -= 256;
