@@ -1048,7 +1048,8 @@ static void menu_snapshot(void) {
     else if ((slot = menu_heap_slot(a, base)) == 16 || slot == 18 || slot == 19 || slot == 20 || slot == 55 ||
              slot == 57 || slot == 58)
       s->kind[i] = 8;
-    else if (slot == 4 && d >= 238 && d <= 254) /* a menu's party member (Render_ApplyProjectedPlacement at 251) */
+    else if (slot == 4 && d >= 238) /* a menu's party member (Render_ApplyProjectedPlacement at 251), or (GS34) the
+                                       * Status screen's Djinn figures (djinn_figures.c, depth 255): inside a window */
       s->kind[i] = 9;
   }
 }
