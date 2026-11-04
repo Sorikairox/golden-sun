@@ -16,6 +16,22 @@ assemble() {
   cp port/web/index.html port/web/main.js port/web/touch.js port/web/touch.css port/web/audio.js port/web/net.js "$D"/
   cp port/web/manifest.webmanifest port/web/icon-192.png port/web/icon-512.png port/web/apple-touch-icon.png "$D"/
   cp $W/game.js $W/game.wasm "$D"/
+  # TLA9: The Lost Age's page gets the one-"Yes" party transfer (port/web/transfer.js) and its option in the page menu;
+  # GS1's page stays as it was
+  if [ "$G" = tla ]; then
+    cp port/web/transfer.js "$D"/
+    python3 - "$D"/index.html <<'EOF2'
+import sys
+p = sys.argv[1]; s = open(p).read()
+anchor = ' Wide view</label>\n'
+row = ('    <label class="opt-big" id="opt-gs1party-row" hidden title="When the game asks &quot;Transfer data from Golden Sun?&quot;, '
+       'Yes brings the party of your cleared Golden Sun file on this site (no link cable or password menus)">'
+       '<input id="opt-gs1party" type="checkbox" checked> Bring party from Golden Sun</label> <span id="opt-gs1party-state"></span>\n')
+assert s.count(anchor) == 1 and s.count('<script src="main.js"></script>') == 1
+s = s.replace(anchor, anchor + row).replace('<script src="main.js"></script>', '<script src="main.js"></script>\n<script src="transfer.js"></script>')
+open(p, 'w').write(s)
+EOF2
+  fi
   # build id for the online hello / room check (G7): both players must run the same game code
   local BUILD SITE PREFIX=golden-sun-
   BUILD=$(cat "$D"/game.wasm "$D"/game.js | shasum -a 256 | cut -c1-16)
@@ -28,11 +44,15 @@ assemble() {
   fi
   # offline: every file above is precached (the page itself as './'); the site hash changes with any file, so any
   # page change is a new cache, not only a new game build. Files only: the tla/ folder has its own worker
-  SITE=$(cd "$D" && for f in $(ls | sort); do [ -f "$f" ] && shasum -a 256 "$f"; done | shasum -a 256 | cut -c1-12)
-  python3 - "$D" "$BUILD" "$SITE" "$PREFIX" <<'EOF'
+  # TLA9: with both games (BOTH=1) The Lost Age's worker also keeps GS1's game.js/game.wasm (../), which the party
+  # transfer runs headless to read the GS1 save, so it works offline even if GS1's page was never opened
+  local UP=""
+  [ "$G" = tla ] && [ "$B" = 1 ] && UP="../game.js ../game.wasm"
+  SITE=$(cd "$D" && for f in $(ls | sort) $UP; do [ -f "$f" ] && shasum -a 256 "$f"; done | shasum -a 256 | cut -c1-12)
+  UP="$UP" python3 - "$D" "$BUILD" "$SITE" "$PREFIX" <<'EOF'
 import json, os, sys
 d, build, site, prefix = sys.argv[1:5]
-files = ['./'] + sorted(f for f in os.listdir(d) if f != 'index.html' and os.path.isfile(os.path.join(d, f)))
+files = ['./'] + sorted(f for f in os.listdir(d) if f != 'index.html' and os.path.isfile(os.path.join(d, f))) + os.environ['UP'].split()
 src = open('port/web/sw.js').read()
 for k, v in (("'__GS_BUILD__'", repr(build)), ("'__GS_SITE__'", repr(site)), ("['__GS_FILES__']", json.dumps(files)),
              ("'__GS_PREFIX__'", repr(prefix))):

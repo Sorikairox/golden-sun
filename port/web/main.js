@@ -140,6 +140,7 @@ async function start(rom) {
     if (frames === 1) status('');
     window.__gsFrames = frames;
     if (window.GSNet) GSNet.onFrame(m);   // G7: per-turn hash of a link battle (only in an online session)
+    if (window.GSTransfer) GSTransfer.onFrame(m);   // TLA9: the virtual Golden Sun partner's frame
     return new Promise((resolve) => {
       const tick = (now) => {
         if (now + 1 >= next) {
@@ -175,6 +176,7 @@ async function start(rom) {
     GSOpts.attach(m);
     window.__gs = m;
     if (window.GSNet) { GSNet.module = m; m.linkTransport = GSNet.transport; }
+    if (window.GSTransfer) GSTransfer.attach(m);   // TLA9: the one-"Yes" party transfer (transfer.js), TLA's page only
     // main() resets the hardware with a blank chip unless the host put a save there first (Port_KeepFlash)
     if (flash && flash.length === 65536) {
       m.HEAPU8.set(flash, m._Port_FlashMemory());
@@ -223,6 +225,8 @@ async function start(rom) {
     $('opts-game').hidden = false;
   }
   $('status').addEventListener('click', () => { if (window.GSNet) GSNet.clearNote(); });
+  // TLA9: a cleared Golden Sun file is read by GS1's own code before the TLA module is made (one module at a time)
+  if (window.GSTransfer) { status('Looking for a Golden Sun save...'); await GSTransfer.prepare(dbGet); }
   await launch(savedFlash);
 }
 

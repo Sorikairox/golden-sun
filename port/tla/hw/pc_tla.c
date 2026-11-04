@@ -122,3 +122,26 @@ s32 Port_TlaBuildBlitter(s32 slot, s32 widthShift, s32 heightShift, s32 flags, u
     Port_BlitterBuilt(gba, widthShift, heightShift, flags, mode < 3 ? gs1Mode[mode] : 0 /* copy */);
   return (s32)r;
 }
+
+/* TLA9 "Bring party from Golden Sun" (page option, default on; docs/TLA9.md): when the page has read the 4,100
+ * bytes of a cleared Golden Sun file with GS1's own save code (port/web/transfer.js), it arms this one-shot answer.
+ * TLA's "Transfer Method" menu (Func_0804d7fc mode 0, reached by Func_02000328's Yes through the veneer
+ * Func_020022b0; a c_rules.tsv rule calls this first) then returns 1 (Link cable) at once instead of showing the
+ * menu, and TLA's own cable receive (Func_02000b24) runs against the page's virtual Golden Sun partner. Not armed
+ * (option off, no GS1 ROM/save, no cleared file) or already used: -1 here and the menu runs as on the cartridge. */
+static s32 sTlaAutoTransferArmed, sTlaAutoTransferHits, sTlaTransferMenuShown;
+void Port_TlaAutoTransferArm(s32 on) { sTlaAutoTransferArmed = on ? 1 : 0; }
+s32 Port_TlaAutoTransferHits(void) { return sTlaAutoTransferHits; }
+/* how many times the Transfer Method menu ran as on the cartridge (tests/web_transfer.cjs: option off, no save) */
+s32 Port_TlaTransferMenuShown(void) { return sTlaTransferMenuShown; }
+s32 Port_TlaAutoTransferMethod(s32 mode) {
+  if ((mode & 1) != 0)
+    return -1;
+  if (!sTlaAutoTransferArmed) {
+    sTlaTransferMenuShown++;
+    return -1;
+  }
+  sTlaAutoTransferArmed = 0;
+  sTlaAutoTransferHits++;
+  return 1;
+}

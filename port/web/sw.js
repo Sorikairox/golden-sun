@@ -8,7 +8,8 @@
 //   waiting worker activated by a message from the page proved unreliable in headless Chrome: docs/OFFLINE.md.)
 // - fetch: cache-first for the site files only; a page navigation is answered with the cached page (any query);
 //   /api/* (the room function) and every other URL go to the network untouched and are never cached (the ROM
-//   and saves live in IndexedDB, never here);
+//   and saves live in IndexedDB, never here); TLA9: listed files above the scope ('../game.js': GS1's, which The
+//   Lost Age's party transfer runs) are kept and answered too;
 'use strict';
 const BUILD = '__GS_BUILD__';
 const SITE = '__GS_SITE__';
@@ -36,6 +37,9 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   const base = scopePath();
+  // TLA9: files above the scope this worker keeps too (The Lost Age's: GS1's ../game.js and ../game.wasm)
+  const up = FILES.find((f) => f.startsWith('../') && new URL(f, self.registration.scope).pathname === url.pathname);
+  if (up) { e.respondWith(caches.match(up, { cacheName: CACHE }).then((hit) => hit || fetch(req))); return; }
   if (!url.pathname.startsWith(base)) return;
   let rel = url.pathname.slice(base.length);
   if (rel.startsWith('api/')) return;              // the room server: always the network
