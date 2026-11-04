@@ -76,3 +76,7 @@ on the menu and back buttons, which suppresses that click.
 Also `tests/web_touch.cjs` ALL PASS, `tests/web_phone.cjs` ALL PASS (after the touch.js fix; it now also checks the
 new option is reachable and touch-sized), `tests/web_link.cjs` (see HANDOFF GS-deploy). Live: `node tests/web_offline.cjs
 --live https://golden-sun-web-port.netlify.app` runs steps 1, 3 and 4 against the deployed site.
+
+TLA9: The Lost Age's worker (scope /tla/) also precaches GS1's `../game.js` and `../game.wasm` (BOTH=1 site only) for
+the party transfer (docs/TLA9.md), answers them from its cache, and installs each resolved URL once.
+`tests/web_transfer.cjs offline` checks the transfer with the network off.

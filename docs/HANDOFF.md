@@ -2,6 +2,24 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA9 — 2026-11-04: "only say Yes": the party from Golden Sun with one press (branch tla9)
+
+- Read docs/TLA9.md and traps 87-88. Worktree ~/golden-sun-wt/tla9, branch `tla9` (4 commits on ac16be5 + docs),
+  **not merged, not deployed**.
+- TLA page: with a GS1 ROM + a cleared GS1 save in IndexedDB, Yes to "Transfer data from Golden Sun?" -> TLA's own
+  cable import with no other menu. port/web/transfer.js (headless GS1 instance runs GS1's Save_* routines through
+  Port_CallCode4 at its first frame, before the TLA module exists; virtual GS1 partner on TLA's link transport);
+  port/tla/hw/pc_tla.c + c_rules on Func_0804d7fc (Transfer Method -> Link cable, one-shot, when armed);
+  option "Bring party from Golden Sun" (tla-gs1party, default on) injected into TLA's page by tools/site.sh; TLA's
+  service worker keeps GS1's ../game.js/../game.wasm. Several cleared files: the longest play time, no chooser.
+- Tests: tests/web_transfer.cjs ALL PASS (auto = route (a)'s units 14648e8f916d / flags 6ffcc5c1ef6b; option off and
+  no save -> the menu; phone touch A; offline), tests/transfer_pick.cjs 8/8. regress_tla masked = 2ee38c9f in all 13
+  cases (RAM rows rewritten), transfer_pw --twice OK, calls/K&R/leak PASS; GS1 clean rebuild 6d08d4c8 / cab9b56b
+  unchanged; GS1 page web_opts/web_phone/web_offline/web_link PASS; TLA page web_offline/web_phone PASS.
+- Builds: TLA df7c39fb / d184cc2a (site 98bd0dc1a98414c4); GS1 e48c5ad1fd47a302.
+- Next: merge tla9 into main (coordinator); deploy when the user says so; the review screen after the import is left
+  with B (the cartridge's own screen).
+
 ## TLA9a — 2026-11-04: integration: gs1-options merged, GS1 bulk limit, TLA build-independent saves
 
 - Read docs/TLA9a.md and traps 82, 85, 86.

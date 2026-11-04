@@ -14,6 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA9 (2026-11-04, branch tla9, not merged): **"only say Yes"** (docs/TLA9.md): on the TLA page, with a GS1 ROM + a
+  save holding a cleared file in the origin's IndexedDB, Yes to "Transfer data from Golden Sun?" brings the party: a
+  headless GS1 instance runs GS1's own Save_* routines through Port_CallCode4 before TLA starts (4,100 bytes = route
+  (a)'s), TLA's Transfer Method menu answers Link cable (pc_tla.c + c_rules on Func_0804d7fc, one-shot), a virtual GS1
+  partner on TLA's link transport sends them; option "Bring party from Golden Sun" (tla-gs1party, default on);
+  several cleared files: the longest play time. web_transfer ALL PASS (units/flags = route (a)'s 14648e8f916d /
+  6ffcc5c1ef6b; off, no save, phone, offline). GS1 unchanged 6d08d4c8 / cab9b56b; TLA df7c39fb / d184cc2a; not deployed.
+
 - TLA9a (2026-11-04): **integration** (docs/TLA9a.md): gs1-options merged into main (GS27 in-game settings + Wide view,
   GS28 build-independent saves; branch traps renumbered 83-85); **GS1 link.c BULK_MAX 4352** (both games; wire format
   unchanged): route (a) runs to the end, GS1's real 4100-byte send imported by TLA, 52/52 PASS, units/flags equal to
@@ -720,3 +728,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     game build defines A2C_PORT_HOOKS (build.py stage_asm2c), so the D20 test modules still test the plain translation.
     Use it when a raw routine must see port-side values (pc_binds.tsv rows only catch calls by symbol: a translated
     caller's direct `a2c_XXXX()` call bypasses them).
+87. (TLA9) **worktree builds: copy port_work inputs, do not symlink them**: tools/web_build.sh runs build.py in Docker
+    with the repo mounted at /gs; a symlink in port_work/ pointing outside the worktree (tla1/overlays, g1/alchemy) is
+    dangling inside the container, and the TLA build then quietly links with stubs (106 logged stubs, 5 new call
+    targets, a smaller game.wasm). Needed: port_work/tla1/{tla-en.map,syms.txt,tla-en.elf,overlays}, tla2/gen,
+    g1/gen, g1/alchemy/overlays (copies). The vendor/ symlink is fine (Docker resolves a bind source's symlink).
+88. (TLA9) **two games in one page**: both game.js factories are the global `GoldenSun`; transfer.js keeps TLA's, loads
+    GS1's ../game.js, takes it and puts TLA's back (MODULARIZE; locateFile to ../). A service worker's FILES may name
+    files above its scope ('../game.js'); Cache.addAll refuses duplicate URLs, so it installs each resolved URL once.
