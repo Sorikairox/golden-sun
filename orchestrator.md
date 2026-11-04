@@ -14,6 +14,13 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA9a (2026-11-04): **integration** (docs/TLA9a.md): gs1-options merged into main (GS27 in-game settings + Wide view,
+  GS28 build-independent saves; branch traps renumbered 83-85); **GS1 link.c BULK_MAX 4352** (both games; wire format
+  unchanged): route (a) runs to the end, GS1's real 4100-byte send imported by TLA, 52/52 PASS, units/flags equal to
+  the stand-in's; **TLA saves build-independent** (gSnapshotObjects in GBA spelling; asm2c port hooks around TLA's raw
+  restore Func_080cae5c): padded-layout build saves byte-identical. All checks green; GS1 6d08d4c8 / cab9b56b, TLA
+  2ee38c9f / 8c87348c; live-build saves migrate; deploy dry run OK, **not deployed**.
+
 - TLA8b (2026-11-04): **the games' own transfer, by hand** (docs/TLA8.md): the test-only cleared GS1 save (6.1: warp to
   the File Screen at FILE_SCREEN_FROM_TITLE, Yes, file 2); GS1's hidden Send (R+Left) by keys; **Gold/Silver/Bronze
   passwords** read off GS1's screen and typed into TLA by keys, all accepted, TLA's party checked against the vendor's
@@ -687,10 +694,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 81. TLA's scene overlays are linked and loaded at 0x02008000: a listing name Data_0200xxxx / gData_0200xxxx in an
     overlay draft is RAM 0x0200xxxx + 0x8000 (the clear overlay's tables at 0x0200a490-0x0200a6c0). Absolute names
     of the main image (gData_02000000, Data_02012f94) are not shifted.
-82. link.c's bulk limit (TLA8): GS1's BULK_MAX is 4096 and Serial_StartSend sends a larger buffer as 0 bytes. GS1's
-    clear-data send is 4100 bytes, so GS1 -> TLA by cable carries nothing (and TLA imports its stale buffer) until GS1's
-    BULK_MAX is raised (a GS1 build change). TLA's path (PORT_GAME_TLA) takes 4352. Shared port/pc files differ per game
-    only under PORT_GAME_TLA; check GS1's IR of the file is unchanged (emcc -S -emit-llvm before/after).
+82. link.c's bulk limit (TLA8): Serial_StartSend sends a buffer larger than BULK_MAX as 0 bytes (and the receiver
+    imports its stale buffer). GS1's clear-data send is 4100 bytes; TLA8's GS1 limit 4096 carried nothing. **Since
+    TLA9a BULK_MAX is 4352 in both games** (wire format unchanged: the size is a u32 in the bulk header). Shared port/pc
+    files differ per game only under PORT_GAME_TLA; when a change is meant for one game, check the other's IR of the
+    file is unchanged (emcc -S -emit-llvm before/after).
 83. (GS27) **regress RAM digests are build-specific**: the game keeps wasm table indices and pointers into the module's own
     data (relocated buffers) in its RAM, and even writes such a pointer into its save. Any change to code or data layout
     changes them; pictures do not. Compare two builds with `MASK_CODE=1` (tests/probes/digest.cjs: words in 0x10000-0x1ffffff
@@ -704,3 +712,11 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     and migrates pre-GS28 saves with the live build 687968a7's tables (port/pc/save_legacy.h, never remove). Any other
     saved structure that gets a relocated pointer or a callback needs the same; find them by diffing the saves of one
     route on two builds (docs/GS27.md 8). Since GS28, link.py refuses stale port/pc and probe/tmp objects.
+    **TLA (TLA9a)**: the same for gSnapshotObjects (0x02001024, 32 x 0x80; slots at 0x02001004): ObjectTable_Snapshot
+    (c_rules) ends with Port_TlaObjectsSnapshotToGba; the raw restore Func_080cae5c runs inside asm2c port hooks
+    (trap 86) that hand it this build's values and put the snapshot back. Test: tests/probes/tla_snapshot.cjs.
+86. (TLA9a) **asm2c port hooks**: a translated raw routine can run port code on entry and before its single exit
+    (port/tla/a2c_hooks.tsv: routine, enter, leave; void(void), registers untouched; emitted as A2C_PORT_HOOK). Only the
+    game build defines A2C_PORT_HOOKS (build.py stage_asm2c), so the D20 test modules still test the plain translation.
+    Use it when a raw routine must see port-side values (pc_binds.tsv rows only catch calls by symbol: a translated
+    caller's direct `a2c_XXXX()` call bypasses them).

@@ -2,6 +2,27 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA9a — 2026-11-04: integration: gs1-options merged, GS1 bulk limit, TLA build-independent saves
+
+- Read docs/TLA9a.md and traps 82, 85, 86.
+- **Merge** fdbbbfb (gs1-options -> main, merge commit): conflicts only in docs (both kept; the branch's traps 77-79
+  renumbered 83-85 with their references). Worktree ~/golden-sun-wt/gs1-opts removed (clean), branch kept. Live build
+  687968a7 copied to port_work/live_687968a7/ (migration tests); port/pc/save_legacy.h kept.
+- **GS1 link.c BULK_MAX 4352** (both games, one define): wire format unchanged (u32 size in the bulk header; battles
+  <= 340 bytes). Route (a) now completes: GS1's 4100 bytes -> TLA, 52/52 PASS, units 14648e8f916d / flags 6ffcc5c1ef6b
+  equal to the --virtual run; tools/transfer_pw.sh route_a runs it to the check.
+- **TLA saves build-independent**: gSnapshotObjects in GBA spelling (c_rules on ObjectTable_Snapshot; new asm2c port
+  hooks, port/tla/a2c_hooks.tsv, around the raw restore Func_080cae5c). Padded-layout test build: saves byte-identical
+  (tests/probes/tla_snapshot.cjs + tests/routes/tla/save2.keys); the pre-fix build saves raw buffer/index words.
+- Expected digests rewritten, RAM rows only, each against a masked comparison with the previous build: expected.tsv
+  (GS1 data +0xa00 from link.c's buffers; saves/pictures/masked all equal vs 087d3b7e), expected_tla.tsv (vs eade7bef),
+  expected_transfer.tsv (route_a fixed, cleared save from a GS28-built source, TLA RAM).
+- All checks green (table in TLA9a.md 4). GS1 6d08d4c8 / cab9b56b (site e48c5ad1fd47a302), TLA 2ee38c9f / 8c87348c
+  (dc1a9a3baba11a67). `tools/deploy_web.sh --dry-run` OK. **Not deployed** (the merge, Wide view and the bulk change
+  reach players only with the next deploy; live saves migrate, tested).
+- Next: deploy when the user says so (TLA's 20 MB wasm note stands); TLA9: the page's transfer (GS1 export, stand-in
+  on TLA's transport, the option), per docs/TLA8.md 8.
+
 ## TLA8b — 2026-11-04: the games' own transfer by hand (passwords, TLA link layer, route (a) stopped at GS1's bulk limit)
 
 - Read docs/TLA8.md and traps 80-82. One command: `tools/transfer_pw.sh [--twice]` (~30 s; needs
