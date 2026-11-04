@@ -69,7 +69,11 @@ async function main() {
   const h = new Harness(m, { game: 'tla' });
   const mem = h.mem, cpu = h.cpu;
   const dv = new DataView(mem.buffer);
-  const R = rng(0x7a3);
+  // TLA6b: one random stream per routine (seeded by its name): with one stream for the run, a routine that stops
+  // early (TMAX, a first FAIL) shifted every later routine's inputs (Render_ConvertMap flipped NOINPUT -> EQUIV between
+  // two runs and 8 later routines flipped back: 131 -> 124 EQUIV with nothing changed)
+  let R = rng(0x7a3);
+  const seedOf = (s) => { let x = 0x7a3; for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 0x01000193) >>> 0; return x || 1; };
   const regs = m._a2c_regs_addr();
   // `wait` is the task scheduler's yield (a fiber yield in the port, D8): in a test it returns at once, for the
   // original and for the translation's interpreter calls alike (a stack switch from a nested call cannot match)
@@ -194,6 +198,7 @@ async function main() {
   const out = [];
   for (const r of list) {
     if (filter && !r.name.includes(filter)) continue;
+    R = rng(seedOf(r.name));
     if (r.missing) { console.log(`${r.name.padEnd(34)} FAIL not translated`); fail++; continue; }
     // TLA4c: the colour kernel loaders DMA a kernel onto the stack and call it there (`mov lr, sp` + BL suffix).
     // The interpreter does not run that DMA, so the original executes whatever the stack held (zeros slide down
