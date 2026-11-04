@@ -25,6 +25,11 @@ const BATTLE = argOpt('--battle');
 // --interior a new game's first room (tests/routes/prologue.keys) at each zoom level; DIR/sheet.png puts them together
 const SHOTS = argOpt('--shots') ? path.resolve(ROOT, argOpt('--shots')) : '';
 const INTERIOR = process.argv.includes('--interior');
+// --worldmap (GS30): with the touch pad on and ?zoom=2, the --flash save continued, then the game's own
+// Event_SetDestination(WorldMap, 0) through the test hook Port_CallCode4 (as tests/probes/warp.cjs; test only): the
+// World Map at Most (336 x 224), its field menu (the still picture, still 336 x 224), R's world picture (240 x 160) and
+// back, the three levels: the canvas's and every touch control's box are the same throughout
+const WORLDMAP = process.argv.includes('--worldmap');
 const OUT = path.resolve(ROOT, argOpt('--out', 'port_work/gs29/web'));
 const PORT = 8937 + (process.pid % 200);
 const DEBUG_PORT = 9537 + (process.pid % 200);
@@ -232,6 +237,39 @@ async function main() {
         await until3(f); s = await st(); await pshot(`c${z + 1}_interior_${['normal', 'more', 'most'][z]}`); await shot(`10_interior_${z}`);
         check(`interior (a small map) at level ${z}: frame ${[240, 288, 336][z]} wide`, s.fw === [240, 288, 336][z], JSON.stringify(s));
         sameBoxes(`interior: canvas box unchanged at level ${z}`, await boxes(), box0);
+      }
+    }
+    if (WORLDMAP) {
+      let warpAddr = 0;
+      for (const l of fs.readFileSync(path.join(ROOT, 'port/symbols/tbs-en.tsv'), 'utf8').split('\n')) { const c = l.split('\t'); if (c[0] === 'Event_SetDestination') warpAddr = parseInt(c[1], 16); }
+      const tap = (k, f) => ({ mask: K[k], a: f, b: f + 2 });
+      const spans = [tap('START', 1500), tap('A', 1800), tap('A', 1850), tap('A', 2400), tap('B', 2500), tap('R', 2600), tap('B', 2800)];
+      console.log('flash: ' + await putFlash('flash.sav'));
+      await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/index.html?romurl=rom.gba&offline=0&touch=on&zoom=2` });
+      await sleep(300);
+      for (let i = 0; i < 100 && !(await ev('!!window.__gs && window.__gsFrames < 50')); i++) await sleep(100);
+      await ev(`window.__gsScript = ${JSON.stringify(spans)}; 1`);
+      const t3 = Date.now();
+      const until4 = async (f) => { let n; while ((n = await frames()) < f) { if (Date.now() - t3 > 240000) throw new Error(`only ${n} frames`); if (errors.length) throw new Error(errors[0]); await sleep(10); } return n; };
+      await until4(1700); const title = await boxes(); s = await st();
+      check('world map: title at 240 x 160', s.fw === 240 && s.fh === 160 && s.zoom === 2, JSON.stringify(s));
+      await until4(2100); await ev(`(() => { __gs._Port_CallCode4(${warpAddr}, 2, 0, 0, 0); return 1; })()`);
+      await until4(2300); await shot('11_worldmap_most'); await pshot('e1_worldmap_touch_most'); s = await st();
+      check('world map: at Most, 336 x 224', s.fw === 336 && s.fh === 224, JSON.stringify(s));
+      sameBoxes('world map: canvas + controls unchanged, title -> World Map at Most', await boxes(), title);
+      await until4(2460); await shot('12_worldmap_menu'); await pshot('e2_worldmap_menu_most'); s = await st();
+      check('world map: field menu (still picture) at 336 x 224', s.fw === 336 && s.fh === 224, JSON.stringify(s));
+      sameBoxes('world map: canvas + controls unchanged in the menu', await boxes(), title);
+      await until4(2700); await shot('13_world_picture'); s = await st();
+      check('world map: R\'s world picture at 240 x 160', s.fw === 240 && s.fh === 160, JSON.stringify(s));
+      sameBoxes('world map: canvas + controls unchanged on the world picture', await boxes(), title);
+      await until4(2900); s = await st();
+      check('world map: back at Most after the world picture', s.fw === 336 && s.fh === 224, JSON.stringify(s));
+      for (const z of [1, 0, 2]) {
+        await ev(`(() => { GSZoom.set(${z}); return 1; })()`);
+        const f = await frames(); await until4(f + 5); s = await st(); await shot(`14_worldmap_${z}`);
+        check(`world map: level ${z}`, s.fw === [240, 288, 336][z] && s.fh === [160, 192, 224][z], JSON.stringify(s));
+        sameBoxes(`world map: canvas + controls unchanged at level ${z}`, await boxes(), title);
       }
     }
     if (SHOTS && shotNames.length) {   // the screenshots side by side, at their own (equal) page size
