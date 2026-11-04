@@ -1,4 +1,8 @@
 # TLA7: raw (recon/tla/raw) routines that a PC-layer function answers for (tools/wasm/link.py veneer map, TLA only).
-# The port function may still run the translation (a2cw_<addr>) and add what the port needs around it.
-symbol	port	why
+# The port function may still run the translation (a2cw_<addr>) and add what the port needs around it. calls
+# `replace` (TLA8): the routine is not translated at all, its translated callers reach the port function through
+# a2c_call (port/tla/hw/tools/hw2c.py).
+symbol	port	why	calls
 Func_08196404	Port_TlaBuildBlitter	battle effect blitter builder: runs the translation, then aliases the patched heap block to GS1's C blitter (port/tla/hw/pc_tla.c, trap 29/77)
+Func_08016180	Serial_Initialize	Serial_InitializeFar's target, TLA's serial init (raw asm: SIO IRQ handlers, SIOCNT); port/pc/link.c's resets the message link (TLA8, D21)	replace
+Func_08016990	Serial_StepBlockTransfer	Serial_StepBlockTransferFar's target, run by the VBlank handler after Serial_ExchangePayloads; port/pc/link.c's finishes bulk sends and receives (TLA8, D21)	replace

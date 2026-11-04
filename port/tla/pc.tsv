@@ -17,7 +17,7 @@ field_asm	no	tbs field ARM routines
 flash	yes	the flash driver replaced at its API (port/tla/fn_overrides.tsv): TLA's driver has the same six entry points as tbs (TLA2b)
 hw	yes	DMA, timers, IRQs, keypad, frame driver
 iwram	twins	__divsi3 __udivsi3 __modsi3 __umodsi3 (GS1 twins, bindings.tsv gs1)
-link	no	tbs serial driver replacement (D21)
+link	yes	the serial driver replaced at its API (D21): TLA's driver has the same globals, layouts and entry points (TLA8: port/tla/fn_overrides.tsv, pc_binds.tsv)
 m4a	twins	ply_* track commands, TrackStop, ply_endtie (GS1 twins, bindings.tsv gs1)
 main	yes	module entry
 memory	yes	identity memory map (D5)

@@ -17,11 +17,21 @@
  *   While the transport is not connected the peer is forgotten (GS10), so a new link session (the partner
  *   reloaded or restarted its game, whose epochs start again at 1) is accepted whatever its epoch.
  * - SIOCNT keeps plausible id bits (4-5), SD and SI, because game code reads them directly (LINK.md section 2).
- * No serial or timer-3 IRQ is used; Serial_HandleTransferInterrupt is never installed. */
+ * No serial or timer-3 IRQ is used; Serial_HandleTransferInterrupt is never installed.
+ *
+ * The Lost Age (TLA8, PORT_GAME_TLA): TLA's driver (src/system/serial) has the same globals and layouts
+ * (include/system/serial.h) and the same entry points; there Serial_Initialize is the raw Func_08016180 and
+ * Serial_StepBlockTransfer the raw Func_08016990 (port/tla/hw/pc_binds.tsv), the C ones are replaced through
+ * port/tla/fn_overrides.tsv. Its receive buffer global is named gSerialReceiveDest, and its bulks are larger: the
+ * clear data's cable transfer is GS1's whole save part, 4100 bytes (Func_02000b24 receives it). */
 #include <string.h>
 
 #include "gba.h"
 #include "link_transport.h"
+
+#ifdef PORT_GAME_TLA
+#define gSerialReceiveDestination gSerialReceiveDest
+#endif
 
 /* game data (bound to their GBA addresses by tools/wasm/bind.py; layouts from include/system/serial.h) */
 extern u8 gSerialTransfer[24];        /* struct SerialTransferState */
@@ -65,7 +75,11 @@ void Port_LinkSetFreshFrames(int frames) { freshFrames = frames > 0 ? frames : 1
 enum { MSG_FRAME = 1, MSG_BULK = 2 };
 #define FRAME_BYTES 36 /* type, epoch, rxEpoch, 0, rxDone u16, 0 u16, frame u32, payload[24] */
 #define BULK_HEADER 8  /* type, epoch, seq u16, size u32 */
+#ifdef PORT_GAME_TLA
+#define BULK_MAX 4352 /* TLA: Func_02000b24 receives GS1's 4100-byte save part */
+#else
 #define BULK_MAX 4096
+#endif
 #define QUEUE_LEN 8
 
 static u8 myEpoch;        /* bumped by each Serial_Initialize */

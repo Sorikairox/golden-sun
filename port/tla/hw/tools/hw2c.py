@@ -251,6 +251,21 @@ def main():
         if args.with_listings:
             listing_load(self)
     asm2c.Translator.load = load
+    # TLA8: raw routines a PC-layer function replaces outright (port/tla/hw/pc_binds.tsv, 4th column `replace`) are
+    # not translated, so translated callers reach the port function through a2c_call -> Port_ResolveCode (the
+    # codemap names the routine's address, link.py aliases the name to the port function). Rows without it keep
+    # their translation (Port_TlaBuildBlitter runs a2cw_08196404).
+    replaced = set()
+    for line in open(os.path.join(ROOT, 'port/tla/hw/pc_binds.tsv'), encoding='utf-8'):
+        f = line.rstrip('\n').split('\t')
+        if len(f) > 3 and not line.startswith('#') and f[3] == 'replace':
+            replaced.add(f[0])
+    listing_routines = asm2c.Translator.routines
+
+    def routines(self):
+        return [r for r in listing_routines(self) if r[1] not in replaced]
+    if not args.all:
+        asm2c.Translator.routines = routines
     sys.argv = ['asm2c', '--vendor', os.path.join(ROOT, 'vendor/alchemy'), '--symbols', os.path.join(ROOT, 'port/symbols'),
                 '--extra-symbols', os.path.join(ROOT, 'port_work/tla1/syms.txt'), '-o', args.out, '--export', args.export]
     if args.report:

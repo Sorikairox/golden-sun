@@ -7,3 +7,7 @@ EraseFlashChip	port/pc/flash.c	chip command sequence + polling; ours fills the 6
 EraseFlashSector	port/pc/flash.c	sector command sequence + polling; ours fills the sector with 0xff (TLA2b: the TLA driver has the same API and SST path)
 ReadFlash	port/pc/flash.c	runs ReadFlashCore from a halfword copy on the stack (no wasm function there); ours copies directly (TLA2b: the TLA driver has the same API and SST path)
 Flash_VerifySector	port/pc/flash.c	runs VerifyFlashCore from a stack copy; ours compares directly, same result (TLA2b: the TLA driver has the same API and SST path)
+Serial_PollStatus	port/pc/link.c	partner search from SIOCNT's SD/SI, arms timer 3 on the parent; ours: connected = the transport is (TLA8: same as tbs, D21)
+Serial_ExchangePayloads	port/pc/link.c	collects the packets the IRQ handler assembled and builds the next; ours trades the 24-byte payload on the unreliable channel, newest wins (TLA8)
+Serial_StartSend	port/pc/link.c	streams 20-byte blocks over the per-frame payload; ours sends the whole buffer on the reliable channel (TLA8)
+Serial_StartReceive	port/pc/link.c	receives the block stream; ours takes the next queued bulk message (TLA8: the clear data's 4100 bytes in one)
