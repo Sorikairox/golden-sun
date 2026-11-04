@@ -37,13 +37,16 @@ function write(file, px, w, h) {
 const [out, colsArg, ...files] = process.argv.slice(2);
 // SCALE=N (env, GS13): each frame N times larger (nearest), CROP=x,y,w,h: only that part of each frame
 const S = +(process.env.SCALE || 1), [cx, cy, cw, ch] = (process.env.CROP || '0,0,240,160').split(',').map(Number);
-const cols = +colsArg, imgs = files.map(read), W = cw * S, H = ch * S, G = 2;
+// FIT=WxH (GS29): every frame scaled (nearest) to a W x H cell, whatever its size (Map zoom frames are 240 x 160 to
+// 336 x 224, all 3:2), the way the page shows them in one box
+const FIT = process.env.FIT ? process.env.FIT.split('x').map(Number) : null;
+const cols = +colsArg, imgs = files.map(read), W = FIT ? FIT[0] : cw * S, H = FIT ? FIT[1] : ch * S, G = 2;
 const rows = Math.ceil(imgs.length / cols), sw = cols * (W + G), sh = rows * (H + G);
 const sheet = Buffer.alloc(sw * sh * 4, 255);
 imgs.forEach((im, i) => {
   const ox = (i % cols) * (W + G), oy = Math.floor(i / cols) * (H + G);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const sx = cx + Math.floor(x / S), sy = cy + Math.floor(y / S);
+    const sx = FIT ? Math.floor(x * im.w / W) : cx + Math.floor(x / S), sy = FIT ? Math.floor(y * im.h / H) : cy + Math.floor(y / S);
     if (sx < im.w && sy < im.h) im.px.copy(sheet, ((oy + y) * sw + ox + x) * 4, (sy * im.w + sx) * 4, (sy * im.w + sx) * 4 + 4);
   }
 });

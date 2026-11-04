@@ -68,8 +68,10 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 ROM=${ROM:-$HOME/roms/Golden_Sun_USA_Europe.gba}
 EXP=tests/regress/expected.tsv
-W=port_work/regress; BIN=$W/bin; mkdir -p $BIN
-cp build/wasm/game.js build/wasm/game.wasm $BIN/
+# REGRESS_DIR / REGRESS_BUILD (GS29, tools/regress_cmp.sh): another work folder and build (default port_work/regress,
+# build/wasm), so two builds can run side by side
+W=${REGRESS_DIR:-port_work/regress}; BIN=$W/bin; mkdir -p $BIN
+cp ${REGRESS_BUILD:-build/wasm}/game.js ${REGRESS_BUILD:-build/wasm}/game.wasm $BIN/
 update=0; [ "${1:-}" = --update ] && { update=1; shift; }
 quick=0; [ "${1:-}" = --quick ] && { quick=1; shift; }
 R=tests/routes; P=tests/probes
