@@ -12,7 +12,8 @@
 //  offline  the service worker (TLA's keeps GS1's ../game.js and ../game.wasm too) installed online, then network
 //           off (CDP) and reload: the transfer runs from the cache; the same SHA-1s
 // Usage: node tests/web_transfer.cjs [case ...]   (needs build/site from BOTH=1 tools/site.sh and the cleared save)
-// Screenshots go to port_work/web_transfer/ (game pictures: never committed).
+// Screenshots and the game's pictures go to port_work/web_transfer/ (they show the game: never committed); a contact
+// sheet of the game pictures: port_work/web_transfer/sheet.png.
 'use strict';
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
@@ -32,6 +33,18 @@ const otherHeadlessChrome = () => execSync('ps -axo pid=,command=').toString().s
   .filter((l) => /Google Chrome/.test(l) && /--headless/.test(l));
 let fails = 0;
 const check = (ok, what) => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${what}`); if (!ok) fails++; };
+
+function png(rgba, w, h) {
+  const zlib = require('zlib');
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4);
+  const t = new Int32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c; });
+  const crc = (b) => { let c = -1; for (const x of b) c = t[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ -1) >>> 0; };
+  const chunk = (type, data) => { const l = Buffer.alloc(4); l.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]);
+    const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+  const ih = Buffer.alloc(13); ih.writeUInt32BE(w, 0); ih.writeUInt32BE(h, 4); ih[8] = 8; ih[9] = 6;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
 
 async function main() {
   for (const f of Object.values(FILES)) if (!fs.existsSync(f)) throw new Error('missing ' + f);
@@ -104,9 +117,13 @@ async function main() {
     }
   };
   const navigate = async (url) => { await send('Page.navigate', { url }); await sleep(500); await waitFor('document.readyState === "complete"', 'page load'); };
+  // the page (Chrome's screenshot) and the game's own 240 x 160 picture (plain PNG, for tools/contact.cjs)
   const shot = async (name) => {
     const s = await send('Page.captureScreenshot', { format: 'png' });
     fs.writeFileSync(path.join(OUT, name + '.png'), Buffer.from(s.result.data, 'base64'));
+    const b64 = await ev(`(() => { const p = __gs._Port_FrameBuffer(); let s = ''; const a = __gs.HEAPU8.subarray(p, p + 240 * 160 * 4);
+      for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode(...a.subarray(i, i + 0x8000)); return btoa(s); })()`);
+    fs.writeFileSync(path.join(OUT, name + '_game.png'), png(Buffer.from(b64, 'base64'), 240, 160));
   };
   // IndexedDB of the origin (on a blank page of it, so no game starts while it is filled)
   const idb = async (puts, dels) => {
@@ -226,6 +243,8 @@ async function main() {
     }
   }
   ws.close();
+  const pics = CASES.flatMap((c) => [`${c}_after_yes_game.png`, `${c}_end_game.png`]).map((f) => path.join(OUT, f)).filter((f) => fs.existsSync(f));
+  try { execSync(`node ${path.join(ROOT, 'tools/contact.cjs')} ${path.join(OUT, 'sheet.png')} 2 ${pics.join(' ')}`); console.log('sheet: ' + path.relative(ROOT, path.join(OUT, 'sheet.png'))); } catch (e) { console.log('sheet: not made'); }
   console.log(fails ? `web_transfer: ${fails} FAIL` : 'web_transfer: ALL PASS');
   cleanup();
   process.exit(fails ? 1 : 0);
