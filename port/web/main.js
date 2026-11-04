@@ -116,7 +116,8 @@ async function start(rom) {
     frames++;
     const p = m._Port_FrameBuffer();
     image.data.set(m.HEAPU8.subarray(p, p + 240 * 160 * 4));
-    if (lcd.on) lcd.apply(pixels);   // optional "GBA screen colours": presentation only, game memory untouched
+    GSOpts.poll();   // GS27: options changed in the game's Extra settings screen
+    if (lcd.lut) lcd.apply(pixels);   // optional "GBA screen colours" / brightness: presentation only, game memory untouched
     ctx.putImageData(image, 0, 0);
     m._Port_SetKeys(held | (window.GSTouch ? GSTouch.keys() : 0) | scriptKeys(frames));   // keyboard + touch pad: one key state
     if (window.GSAudio) GSAudio.feed(m);   // this frame's samples to the audio worklet (never waits)
@@ -161,6 +162,7 @@ async function start(rom) {
     });
     m = mod;
     m.HEAPU8.set(rom, 0x08000000);
+    GSOpts.attach(m);
     window.__gs = m;
     if (window.GSNet) { GSNet.module = m; m.linkTransport = GSNet.transport; }
     // main() resets the hardware with a blank chip unless the host put a save there first (Port_KeepFlash)
@@ -219,21 +221,35 @@ async function start(rom) {
 // the 15-bit colour), never to game memory, so game state, hashes and online sessions are unchanged. The transform is
 // the widely used GBA colour emulation of higan/bsnes (Talarubi's curve): LCD gamma 4.0, channel mixing, output gamma
 // 2.2, white at 255/280.
+// GS27: "Brightness" (Normal / Bright / Brighter, gs-bright, default Normal) lifts the picture with an output gamma
+// (1 / 1.25, 1 / 1.5) in the same LUT. Both are also set in the game itself: START, then R ("Extra settings",
+// port/pc/options.c): the page and the game share the values (Port_OptGet/Port_OptSet/Port_OptGeneration).
+const OPT_LCD = 0, OPT_BRIGHT = 1, OPT_WIDE = 2;
 const lcd = {
   on: false,
+  bright: 0,
   lut: null,
   build() {
     const lut = new Uint32Array(32768);
     const lcdG = 4.0, outG = 1 / 2.2, top = 255 * 255 / 280;
+    const lift = [1, 1 / 1.25, 1 / 1.5][this.bright] || 1;
+    const b8 = (v) => Math.min(255, Math.round(255 * Math.pow(Math.min(v, 255) / 255, lift)));
     for (let c = 0; c < 32768; c++) {
-      const lr = Math.pow((c & 31) / 31, lcdG), lg = Math.pow((c >> 5 & 31) / 31, lcdG), lb = Math.pow((c >> 10 & 31) / 31, lcdG);
-      const r = Math.round(Math.pow((0 * lb + 50 * lg + 255 * lr) / 255, outG) * top);
-      const g = Math.round(Math.pow((30 * lb + 230 * lg + 10 * lr) / 255, outG) * top);
-      const b = Math.round(Math.pow((220 * lb + 10 * lg + 50 * lr) / 255, outG) * top);
-      lut[c] = 0xff000000 | Math.min(b, 255) << 16 | Math.min(g, 255) << 8 | Math.min(r, 255);   // little-endian RGBA
+      let r, g, b;
+      if (this.on) {
+        const lr = Math.pow((c & 31) / 31, lcdG), lg = Math.pow((c >> 5 & 31) / 31, lcdG), lb = Math.pow((c >> 10 & 31) / 31, lcdG);
+        r = Math.round(Math.pow((0 * lb + 50 * lg + 255 * lr) / 255, outG) * top);
+        g = Math.round(Math.pow((30 * lb + 230 * lg + 10 * lr) / 255, outG) * top);
+        b = Math.round(Math.pow((220 * lb + 10 * lg + 50 * lr) / 255, outG) * top);
+      } else {   // the renderer's own expansion of 5 bits to 8 (v << 3 | v >> 2)
+        const x = (v) => v << 3 | v >> 2;
+        r = x(c & 31); g = x(c >> 5 & 31); b = x(c >> 10 & 31);
+      }
+      lut[c] = 0xff000000 | b8(b) << 16 | b8(g) << 8 | b8(r);   // little-endian RGBA
     }
     this.lut = lut;
   },
+  active() { return this.on || this.bright > 0; },
   // the renderer expands each 5-bit channel to 8 bits; its top 5 bits are the GBA's value again
   apply(px) {
     const lut = this.lut;
@@ -242,22 +258,69 @@ const lcd = {
       px[i] = lut[(v >> 3 & 31) | (v >> 11 & 31) << 5 | (v >> 19 & 31) << 10];
     }
   },
-  set(on) {
-    this.on = !!on;
-    if (this.on && !this.lut) this.build();
-    try { if (on) localStorage.setItem(K_OPT + 'lcd', '1'); else localStorage.removeItem(K_OPT + 'lcd'); } catch (e) { /* storage blocked */ }
+  store() {
+    try {
+      if (this.on) localStorage.setItem(K_OPT + 'lcd', '1'); else localStorage.removeItem(K_OPT + 'lcd');
+      if (this.bright) localStorage.setItem(K_OPT + 'bright', String(this.bright)); else localStorage.removeItem(K_OPT + 'bright');
+    } catch (e) { /* storage blocked */ }
+  },
+  // from the page menu or the game's Extra settings (fromGame: no echo back into the game)
+  set(on, fromGame) { this.on = !!on; this.changed(fromGame); },
+  setBright(v, fromGame) { this.bright = Math.max(0, Math.min(2, v | 0)); this.changed(fromGame); },
+  changed(fromGame) {
+    this.lut = null;
+    if (this.active()) this.build();
+    this.store();
+    const box = $('opt-lcd'), sel = $('opt-bright');
+    if (box) box.checked = this.on;
+    if (sel) sel.value = String(this.bright);
+    if (!fromGame) GSOpts.push();
   },
 };
 {
-  let saved = false;
-  try { saved = localStorage.getItem(K_OPT + 'lcd') === '1'; } catch (e) { /* storage blocked: default off */ }
+  let saved = false, bright = 0;
+  try { saved = localStorage.getItem(K_OPT + 'lcd') === '1'; bright = +(localStorage.getItem(K_OPT + 'bright') || 0); } catch (e) { /* storage blocked: defaults */ }
   if (params.get('lcd') !== null) saved = params.get('lcd') === '1';   // tests: ?lcd=1 / ?lcd=0 (not stored)
+  if (params.get('bright') !== null) bright = +params.get('bright');   // tests: ?bright=0/1/2 (not stored)
   lcd.on = saved;
-  if (saved) lcd.build();
+  lcd.bright = bright >= 0 && bright <= 2 ? bright | 0 : 0;
+  if (lcd.active()) lcd.build();
   const box = $('opt-lcd');
   if (box) { box.checked = saved; box.addEventListener('change', () => lcd.set(box.checked)); }
+  const sel = $('opt-bright');
+  if (sel) { sel.value = String(lcd.bright); sel.addEventListener('change', () => lcd.setBright(+sel.value)); }
 }
 window.GSLcd = lcd;
+
+// GS27: the option values the game's Extra settings screen shows and edits (port/pc/options.c). The page owns them
+// (storage, presentation); push() copies them into the running module, poll() picks up edits made in the game.
+const GSOpts = {
+  m: null,
+  gen: 0,
+  attach(m) {
+    this.m = m;
+    this.gen = m._Port_OptGeneration ? m._Port_OptGeneration() : 0;
+    this.push();
+  },
+  push() {
+    const m = this.m;
+    if (!m || !m._Port_OptSet) return;
+    m._Port_OptSet(OPT_LCD, lcd.on ? 1 : 0);
+    m._Port_OptSet(OPT_BRIGHT, lcd.bright);
+    if (window.GSWide) m._Port_OptSet(OPT_WIDE, GSWide.on ? 1 : 0);
+  },
+  poll() {
+    const m = this.m;
+    if (!m || !m._Port_OptGeneration) return;
+    const g = m._Port_OptGeneration();
+    if (g === this.gen) return;
+    this.gen = g;
+    const on = !!m._Port_OptGet(OPT_LCD), br = m._Port_OptGet(OPT_BRIGHT);
+    if (on !== lcd.on || br !== lcd.bright) { lcd.on = on; lcd.setBright(br, true); }
+    if (window.GSWide) { const w = !!m._Port_OptGet(OPT_WIDE); if (w !== GSWide.on) GSWide.set(w, true); }
+  },
+};
+window.GSOpts = GSOpts;
 
 // ---- offline play (GS-deploy, docs/OFFLINE.md; asked for by the user, so on by default): the service worker sw.js
 // keeps every site file in a cache named by the build, so once loaded the page, scripts, wasm and touch files work

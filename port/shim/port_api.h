@@ -22,4 +22,13 @@ void Port_BlitterBuilt(unsigned int gba, int widthShift, int heightShift, int fl
  * GS14, trap 41). */
 int Port_CodeIsOverlay(unsigned int fn);
 
+/* GS27 port/pc/options.c: the port's in-game "Extra settings" screen (R on the Pause menu or in Change settings;
+ * port/c_rules.tsv). PORT_PAUSE_EXTRA_SETTINGS is the Pause menu's result for it (past every real entry). */
+#define PORT_PAUSE_EXTRA_SETTINGS 0x40
+struct Window;
+void Port_ExtraSettings_Run(int seMove, int seConfirm, int seCancel);
+void Port_ExtraSettings_Hint(struct Window *help, int message, int windowWidth);
+void Port_ExtraSettings_HintClose(void);
+int Port_SettingsMenuResult(int result, int seMove, int seConfirm, int seCancel);
+
 #endif
