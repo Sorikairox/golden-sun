@@ -1,0 +1,8 @@
+# TLA7: after battle.keys: the first battle won for real. A closes "Ruffian appeared!" (28400), Fight (28500), RIGHT to
+# Psynergy (28560), A: Psynergy, A: Fume, A: the Ruffian (28600-28720), "Jenna casts Fume! Ruffian takes 53 damage",
+# then A through "You felled Ruffian!", experience, coins and the Herb (29000-29200): the field is back ~29240.
+# Inputs only.
+A@28400-28401,A@28500-28501,RIGHT@28560-28561,A@28600-28601,A@28660-28661,A@28720-28721
+A@29000-29200/40
+# then west past the beaten Ruffian (lying at 40,248) to trigger 1 (x 0): scene 6 (Suhalla Gate) entrance 5 ~29390
+DOWN@29300-29309,LEFT@29311-29370

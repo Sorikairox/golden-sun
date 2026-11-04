@@ -17,6 +17,8 @@
 #             Venus Lighthouse entrance), 16100 Jenna below the steps (step trigger 9 moved the statues)
 #   battle    (TLA6b) from down: the guards and Alex (16500, 20000, 24000), Kraden's talk 26800, the Ruffian's talk 28100,
 #             the first battle ("Ruffian appeared!") 28300 and 28700
+#   win       (TLA7) from battle: Fight, Psynergy, Fume on the Ruffian (28720 the target, 28880 the flames), "You felled
+#             Ruffian!" 29120, the field back 29240, west past the beaten Ruffian into Suhalla Gate (scene 6) 29500, 29800
 set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
@@ -37,6 +39,7 @@ CASES=(
   "continue|1800|300,1100,1300,1700|$R/continue.keys|--flash-in $W/save.sav"
   "down|16100|14800,15200,15700,16100|$R/new_game.keys,$R/opening.keys,$R/down.keys|"
   "battle|28700|16500,20000,24000,26800,28100,28300,28700|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys|"
+  "win|29800|28720,28880,29120,29240,29500,29800|$R/new_game.keys,$R/opening.keys,$R/down.keys,$R/battle.keys,$R/win.keys|"
 )
 want() { [ ${#SEL[@]} -eq 0 ] && return 0; local c; for c in "${SEL[@]}"; do [ "$c" = "$1" ] && return 0; done; return 1; }
 out=$W/got.tsv
