@@ -2,6 +2,35 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## TLA8b — 2026-11-04: the games' own transfer by hand (passwords, TLA link layer, route (a) stopped at GS1's bulk limit)
+
+- Read docs/TLA8.md and traps 80-82. One command: `tools/transfer_pw.sh [--twice]` (~30 s; needs
+  port_work/regress/ml_saturos_win.sav).
+- Cleared GS1 save (test only, 6.1 as approved): ml_saturos_win continued, warp probe to the File Screen at
+  FILE_SCREEN_FROM_TITLE, Yes, file 2 -> sendFlag set by Save_ToChosenFile (port_work/tla8/gs1_clear.sav, SHA-1 565fd2ec6264).
+- GS1's hidden Send by keys (R+Left while the menu is built); Gold/Silver/Bronze passwords read off GS1's screen
+  (tests/probes/password.cjs: the buffer is on the wasm stack, trap 80), typed into TLA's grid by keys
+  (tools/pw2keys.cjs): all accepted; tests/probes/transfer_check.cjs vs the vendor's rules: Gold 63/63, Silver 67/67,
+  Bronze 43/43 PASS. The clear flow saves and restores the whole state around the entry; Func_080ae410 keeps units
+  0-3, flags 0x800/0x820 (0x822 toggled), coins to work+0x28c (TLA8.md 4).
+- TLA link layer: port/pc/link.c at TLA's serial API (fn_overrides + pc_binds `replace`, hw2c skips those two raw
+  routines); GS1's link.c IR identical, GS1 build unchanged.
+- **Route (a)** (`node tests/transfer_a.cjs`): greetings meet ("0000"/"UVTS"), GS1 sends at f2105 but **GS1's link.c
+  BULK_MAX 4096 < 4100 puts 0 bytes on the wire** and TLA imports its stale buffer (garbage member). Needs a GS1 change
+  (BULK_MAX >= 4100, new GS1 game.wasm): **not made, reported**. `--virtual`: a stand-in with GS1's own 4100 bytes ->
+  TLA receives them, cable checks 52/52 PASS (Isaac/Ivan arrive down, as in the save).
+- Determinism: every route twice identical (digests in tests/regress/expected_transfer.tsv).
+- TLA save pointers (read only): yes, same mechanism as GS1 (GS1: gActorSnapshot.actors[i].script = 0x88d4c, a
+  relocated script): TLA's saved gSnapshotObjects (0x02001024, 32 x 0x80) .script (+0) and .update (+0x6c) can hold
+  module addresses / table indices; none in today's TLA save. Not fixed.
+- Checks: build calls/short K&R PASS, leak 0; D20 batch 219/0/986; diff_tla 30/30 neg 4/4; diff_hw 124/0/64 neg 4/4;
+  diff_mixer 300; diff_blitter 160/4800; test_arm 79/79; masked RAM + pictures of the 64,200-frame TLA route equal to
+  the previous build; expected_tla.tsv RAM rows rewritten (pictures/save unchanged), regress_tla 13/13; GS1
+  687968a7 / 895d45cc, regress --quick 9/9. TLA build 4ee60983 / 17dd6895. Not deployed.
+- Local only: port_work/tla8/contact.png, port_work/tla8/ (save, passwords, keys, dumps, shots).
+- **Next (TLA9):** the user's go-ahead for GS1's BULK_MAX >= 4100 (GS1 rebuild), then route (a) to the end and
+  compare with `--virtual`; then the page side (export, stand-in partner, Transfer Method hook, option, file choice).
+
 ## TLA8 — 2026-11-04: scene 7's vines; Felix on Idejima; the World Map; combined deploy script (dry run)
 
 - Read docs/TLA6.md sections 18-22 and traps 78-79.

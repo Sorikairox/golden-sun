@@ -14,6 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- TLA8b (2026-11-04): **the games' own transfer, by hand** (docs/TLA8.md): the test-only cleared GS1 save (6.1: warp to
+  the File Screen at FILE_SCREEN_FROM_TITLE, Yes, file 2); GS1's hidden Send (R+Left) by keys; **Gold/Silver/Bronze
+  passwords** read off GS1's screen and typed into TLA by keys, all accepted, TLA's party checked against the vendor's
+  rules 63/67/43 PASS; **TLA link layer** (link.c at TLA's serial API); **route (a)** (tests/transfer_a.cjs): greetings
+  meet, but **GS1's link.c sends the 4100-byte save part as 0 bytes (BULK_MAX 4096): a GS1 change, stopped and
+  reported**; the cable import with a GS1 stand-in carrying GS1's own bytes 52/52 PASS. tools/transfer_pw.sh, all
+  deterministic. TLA's save can hold build-dependent words (saved actor snapshot: script, update), none today.
+
 - TLA8 (2026-11-04): **real play to Felix on Idejima and the World Map**: scene 7's way down is two vines (not a port
   bug, trap 79), the third Ruffian battle won (Fume + Attack), the cave (a Punch Ant won), the island adrift, Felix
   under control, Kraden/Jenna/Sheba join, Alex's departure, the World Map (scene 2). regress_tla 13 cases.
@@ -669,3 +677,13 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     Suhalla Gate's prepare writes layer 1). Climbable vines are cell byte 3 bit 0x40 (byte 3 is 0 elsewhere), climbed
     by holding the direction into them; a cliff with no slope cells (kinds 3/4 are diagonal height splits, 7 a pixel
     mask) is not a port bug before the vines and layer-1 passages are checked.
+80. A vendor C local (a buffer on the GBA stack) lives on the wasm stack in the port, not in GBA RAM (TLA8: GS1's
+    password buffer in FileScreen_Run was at 0x19c580). A probe that looks for game data in 0x02000000-0x0203ffff
+    misses it: scan the whole linear memory, and identify the data by its own structure (tests/probes/password.cjs).
+81. TLA's scene overlays are linked and loaded at 0x02008000: a listing name Data_0200xxxx / gData_0200xxxx in an
+    overlay draft is RAM 0x0200xxxx + 0x8000 (the clear overlay's tables at 0x0200a490-0x0200a6c0). Absolute names
+    of the main image (gData_02000000, Data_02012f94) are not shifted.
+82. link.c's bulk limit (TLA8): GS1's BULK_MAX is 4096 and Serial_StartSend sends a larger buffer as 0 bytes. GS1's
+    clear-data send is 4100 bytes, so GS1 -> TLA by cable carries nothing (and TLA imports its stale buffer) until GS1's
+    BULK_MAX is raised (a GS1 build change). TLA's path (PORT_GAME_TLA) takes 4352. Shared port/pc files differ per game
+    only under PORT_GAME_TLA; check GS1's IR of the file is unchanged (emcc -S -emit-llvm before/after).

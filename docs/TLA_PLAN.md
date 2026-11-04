@@ -172,7 +172,7 @@ service worker.
 - **Cable.** `Save_ChooseAndLoadFile` reads the file's two 4096-byte parts (`Save_ReadPart(file)` and
   `Save_ReadPart(file + 3)`) into `gSaveBuffer` (0x02000000). The game then runs `Serial_Initialize`, sets its own
   payload to "0000" and waits until the partner's payload greeting is `'S','V','T','S'` (the first letter is
-  `FILE_SCREEN_LINK_LANGUAGE_TAG`: 'S' in English, 'E' German, 'F' French). It then calls
+  `FILE_SCREEN_LINK_LANGUAGE_TAG`: 'U' in English, 'E' German, 'F' French, 'S' Spanish; TLA8 corrected this, see docs/TLA8.md 7). It then calls
   **`Serial_StartSend(gSaveBuffer, 4100)`**, which sends **the cleared save file as stored**. The send times out
   after 600,000 frames, and 10 frames without the partner is an error.
 - **Password.** `FileScreen_PackPasswordData` → `FileScreen_CalculatePasswordCrc16` → `FileScreen_EncodePassword`
