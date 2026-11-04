@@ -1,5 +1,6 @@
 /* GS27: the port's own settings, shown in the game itself ("Extra settings", drawn with the game's windows, font,
- * pointing hand and Setup heading through the game's own window functions; no vendor code copied).
+ * pointing hand through the game's own window functions; no vendor code copied). GS29: no floating heading (the
+ * "Settings" picture GS27 showed above it; the game shows that heading on its own Change settings screen only).
  *
  * Reached from the game's Pause menu (START on the field): press R on the Pause menu, or R in "Change settings"
  * (whose help line shows "R: More" when it fits). port/c_rules.tsv adds those two key tests and the dispatch in
@@ -24,8 +25,6 @@ void Text_DrawString(const u8 *text, struct Window *window, s32 x, s32 y);
 void Text_MeasureMessage(s32 message, s32 *x, s32 *y);
 void WindowSprite_ClearList(void *sprites);
 struct WindowSprite *WindowSprite_Create(s32 slot, s32 oamFlags, struct Window *window, s32 offsetX, s32 offsetY);
-struct WindowSprite *MenuTitle_Create(s32 picture, struct Window *window, s32 x, s32 y);
-void MenuTitle_Bob(struct WindowSprite *obj);
 s32 VramCache_FindFreeEntry(void);
 s32 VramCache_Load(u32 no, u32 size, const void *src);
 void Sound_PlayFar(s32 id);
@@ -103,7 +102,6 @@ static s32 sSeMove, sSeConfirm, sSeCancel;
 
 void Port_ExtraSettings_Run(s32 seMove, s32 seConfirm, s32 seCancel) {
   struct Window *help, *w;
-  struct WindowSprite *title;
   s32 row = 0, i, slot, redraw = 1;
   sSeMove = seMove; sSeConfirm = seConfirm; sSeCancel = seCancel;
   help = Window_Create(WIN_X, 2, WIN_W, 3, WINDOW_FLAG_INSTANT);
@@ -126,7 +124,6 @@ void Port_ExtraSettings_Run(s32 seMove, s32 seConfirm, s32 seCancel) {
     sCursor.anchor = WindowSprite_Create(slot, OUTPUT_SIZE_16X16, w, 0, 0);
     MenuCursor_SetPositionImmediateFar(&sCursor, WIN_X * 8, (WIN_Y + 1) * 8 + 4);
   }
-  title = MenuTitle_Create(7, w, 64, -48);   /* the game's "Setup" heading, as Change settings shows it */
   wait(1);
   for (;;) {
     if (redraw) {
@@ -139,8 +136,6 @@ void Port_ExtraSettings_Run(s32 seMove, s32 seConfirm, s32 seCancel) {
     }
     if (sCursor.anchor)
       MenuCursor_AdvanceFar(&sCursor);
-    if (title)
-      MenuTitle_Bob(title);
     wait(1);
     if (gKeysPressed & (K_B | K_START)) {
       Sound_PlayFar(sSeCancel);
