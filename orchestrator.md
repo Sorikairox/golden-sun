@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- RTW3 (2026-11-05, main, pushed): **cartridge pictures** (standard 1.2 `picture`): official box art from art/ copied by
+  tools/rtw_publish.sh to retrowser/{gs1,tla}/cover.png, credit "Box art © Nintendo / Camelot · image from
+  libretro-thumbnails"; check --rom OK both; build ids GS1 6f88081d83ba2538, TLA f21de1f861ef6469; web byte-identical.
 - RTW2 (2026-11-05, main): **retrowser standard 1.2 for the rtw build** (docs/RTW.md sections 7-8, D25): GS1 online
   link battles through the host (`net: {players 2, model link}`, port/rtw/rtw_net.c: link.c's transport in C, hash
   desync guard on channel 1, link epoch reset at session start / comeback after a drop, 900-frame hold kept); options

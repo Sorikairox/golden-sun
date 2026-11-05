@@ -2,6 +2,22 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW3 — 2026-11-05: cartridge pictures (retrowser standard 1.2 `picture`)
+
+- Both manifests now carry `picture` (the host draws a GBA cartridge with it as the label): GS1
+  `retrowser/gs1/cover.png` (from the root retrowser.json), TLA `cover.png` (from retrowser/tla/retrowser.json),
+  credit "Box art © Nintendo / Camelot · image from libretro-thumbnails". Source art in `art/cover-gs1.png`
+  (sha256 e1e96c26..., 490788 B) and `art/cover-tla.png` (f406b6dd..., 476093 B): libretro-thumbnails Named_Boxarts,
+  512 x 512 PNG, kept as downloaded (no lossless optimiser installed). Box art approved by the user; title screens and
+  anything ROM-derived are not.
+- tools/rtw_publish.sh copies them on every publish (allowlist extended); templates in port/rtw/*.retrowser.json;
+  README retrowser section has the credit + "belongs to its owners, only used to identify the game".
+- Checks: ~/Code/retrowser `npm run build` at 82b624b; rtw_publish OK (GS1 6f88081d83ba2538, TLA f21de1f861ef6469;
+  modules byte-identical to before, only the manifests changed); `rtw.mjs check --rom` OK both; a corrupted cover fails
+  check (size + sha256). Web build byte-identical (GS1 65515102/ba95b828, TLA df7c39fb/d184cc2a, build/site unchanged).
+- Pushed to origin main (GitHub Sorikairox/golden-sun). The live host may not show the cartridge until retrowser's
+  1.2 picture deploy lands.
+
 ## RTW2 — 2026-11-05: retrowser standard 1.2 (GS1 online link battles; options rule)
 
 - Read docs/RTW.md sections 7-8 and orchestrator D25. On `main` (f8d4f4e link battles, 0a49081 options rule, then

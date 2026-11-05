@@ -26,6 +26,12 @@
       "size": 41520
     }
   },
+  "picture": {
+    "path": "retrowser/gs1/cover.png",
+    "sha256": "e1e96c261bea930a23c966ae2a5fc80a318e9f509af5480b450a6e6309bc2574",
+    "size": 490788,
+    "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails"
+  },
   "module": {
     "factory": "GoldenSunRtw",
     "loop": "asyncify"

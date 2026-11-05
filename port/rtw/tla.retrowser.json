@@ -9,6 +9,8 @@
     "wasm": { "path": "tla.wasm", "sha256": "", "size": 0 },
     "js": { "path": "tla.js", "sha256": "", "size": 0 }
   },
+  "picture": { "path": "cover.png", "sha256": "", "size": 0,
+               "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
   "module": { "factory": "GoldenSunTlaRtw", "loop": "asyncify" },
   "video": "framebuffer",
   "hz": 59.7275,

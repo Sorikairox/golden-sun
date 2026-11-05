@@ -3,6 +3,7 @@
 #   retrowser.json                 GS1's manifest (repo root; its paths are relative to the root)
 #   retrowser/gs1/gs1.{wasm,js}    GS1's module
 #   retrowser/tla/retrowser.json   The Lost Age's manifest, its files beside it: retrowser/tla/tla.{wasm,js}
+#   retrowser/{gs1,tla}/cover.png  the cartridge pictures (standard 1.2 `picture`): box art from art/cover-{gs1,tla}.png
 # Steps: tools/rtw_build.sh for GS1 and TLA (relinks the current web builds' objects with port/rtw; the web build's
 # game.wasm/game.js stay as they are, checked), copy, manifests from port/rtw/*.retrowser.json, then retrowser's own
 # tool: `rtw.mjs hash` (sha256 + size) and `rtw.mjs check --rom` (schema, hashes, exports/imports, and no run of the
@@ -26,10 +27,13 @@ rm -rf retrowser
 mkdir -p retrowser/gs1 retrowser/tla
 cp build/rtw/gs1.wasm build/rtw/gs1.js retrowser/gs1/
 cp build/rtw/tla.wasm build/rtw/tla.js retrowser/tla/
+# cartridge pictures: the box art (approved by the user; libretro-thumbnails), kept as source art in art/
+cp art/cover-gs1.png retrowser/gs1/cover.png
+cp art/cover-tla.png retrowser/tla/cover.png
 cp port/rtw/gs1.retrowser.json retrowser.json
 cp port/rtw/tla.retrowser.json retrowser/tla/retrowser.json
-# only our files: the two modules, their glue and TLA's manifest (no ROM, save or capture can slip in)
-bad=$(cd retrowser && find . -type f | sort | grep -Ev '^\./(gs1/gs1\.(wasm|js)|tla/tla\.(wasm|js)|tla/retrowser\.json)$' || true)
+# only our files: the two modules, their glue, TLA's manifest and the two covers (no ROM, save or capture can slip in)
+bad=$(cd retrowser && find . -type f | sort | grep -Ev '^\./(gs1/gs1\.(wasm|js)|tla/tla\.(wasm|js)|tla/retrowser\.json|(gs1|tla)/cover\.png)$' || true)
 [ -z "$bad" ] || { echo "unexpected files in retrowser/: $bad"; exit 1; }
 fails=0
 for d in . retrowser/tla; do

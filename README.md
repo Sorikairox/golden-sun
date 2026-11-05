@@ -21,6 +21,8 @@
 - Settings (screen colours, brightness, Golden Sun's map zoom and menus) are in the game itself: Golden Sun's Pause
   menu (START on the field), then R; in The Lost Age hold L + R and press SELECT.
 - retrowser runs this repository's own build (`retrowser.json`, `retrowser/`); it hosts no game code or ROMs.
+- Cartridge pictures: Box art © Nintendo / Camelot · image from libretro-thumbnails. The box art belongs to its
+  owners and is only used to identify the game.
 
 # golden-sun
 

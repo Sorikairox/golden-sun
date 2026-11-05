@@ -9,6 +9,8 @@
     "wasm": { "path": "retrowser/gs1/gs1.wasm", "sha256": "", "size": 0 },
     "js": { "path": "retrowser/gs1/gs1.js", "sha256": "", "size": 0 }
   },
+  "picture": { "path": "retrowser/gs1/cover.png", "sha256": "", "size": 0,
+               "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
   "module": { "factory": "GoldenSunRtw", "loop": "asyncify" },
   "video": "framebuffer",
   "hz": 59.7275,
