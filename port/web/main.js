@@ -24,6 +24,10 @@ const KEYMAP = {
 
 const $ = (id) => document.getElementById(id);
 const status = (s) => { $('status').textContent = s; };
+// iOS greys out files whose extension it has no type for (.sav, .gba) when a picker lists extensions, so there every
+// file is offered and the page checks what was picked (the ROM's SHA-1, the save's 64 KB size)
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+if (IOS) for (const id of ['opt-import-file', 'file']) { const el = document.getElementById(id); if (el) el.removeAttribute('accept'); }
 const params = new URLSearchParams(location.search);
 // TLA6: the site has both games (GS1 at /, The Lost Age at /tla/); window.GS_SITE_BOTH (build_id.js) adds the links
 if (GAME_TLA) {
