@@ -14,6 +14,15 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- RTW1 (2026-11-05, main): **retrowser.app build of both games** (docs/RTW.md, D24): `retrowser.json` (GS1, repo root,
+  files in retrowser/gs1/) and `retrowser/tla/retrowser.json` (+ tla.wasm/js) committed on main; standard 1.1, loop
+  asyncify, framebuffer, native 64 KB flash save, options (GS1 0-3, TLA 0-1; GS1's Extra settings -> rtw_option_changed);
+  link battles and TLA's party transfer left out (no host netplay / cross-game saves). Separate target
+  `tools/rtw_build.sh` (link.py rtw_link, web output untouched); `tools/rtw_publish.sh` rebuilds, copies, hashes, `rtw.mjs
+  check --rom` OK. tests/rtw_e2e.mjs in a local retrowser host: GS1 and TLA ALL PASS (boot, audio, in-game save by real
+  play = regress SHA-1s, input, options, reload + Continue, offline). Web build byte-identical (GS1 65515102 / ba95b828,
+  site c2b70da683895670; TLA df7c39fb / d184cc2a, 98bd0dc1a98414c4); regress full + regress_tla unchanged; not deployed.
+
 - GS34 (2026-11-05, main): **bug fix: full-screen menus showed borrowed tiles as the map in the zoomed margins**
   (docs/GS34.md, trap 97): the Status screen (and, less visibly, Djinn/Item and the World Map's Status/Djinn) borrows BG
   palettes 0-1 and char block 1 under its full-screen windows; the margins drew the grid with them. Renderer only: a
@@ -392,6 +401,14 @@ that edition's address map, not a port. Out of scope until asked.
   drafts for the same routines give 6 EQUIV of 22 (compile, link and semantic failures). **asm2c is the default** for all
   listing routines. A vendor draft replaces a translation only when it is D20 EQUIV and wanted for readability; a hand port
   only where asm2c cannot go (the 5 routines of TLA3.md 2, the hardware-bound hand `.s`, TLA4). Supersedes D6 for TLA.
+
+- **D24 retrowser.app build (RTW1, 2026-11-05):** besides the web site, both games are published as a retrowser
+  standard 1.1 build committed on main (docs/RTW.md): GS1's manifest at the repo root (files in `retrowser/gs1/`),
+  TLA's in `retrowser/tla/`. It is a separate link of the web build's objects with `port/rtw/` (`tools/rtw_build.sh`;
+  link.py writes game.js/game.wasm only without `PORT_RTW_OUT`), so the web build stays byte-identical. **After every
+  game or PC-layer change: `tools/rtw_publish.sh` (rebuild, hash, `rtw.mjs check --rom`) and commit `retrowser.json` +
+  `retrowser/`**; `tools/rtw_e2e.sh` tests both in a local retrowser host. Never commit anything ROM-derived there
+  (the publish script's allowlist, rtw.mjs `--rom` scan and leak_check.py guard it).
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 

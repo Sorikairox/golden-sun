@@ -2,6 +2,30 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW1 — 2026-11-05: retrowser.app build of GS1 and The Lost Age
+
+- Read docs/RTW.md and orchestrator D24. On `main`, **not deployed, not pushed, no remote** (README's links assume
+  GitHub `Sorikairox/golden-sun`).
+- Published on main: `retrowser.json` (GS1, root; files `retrowser/gs1/gs1.{wasm,js}`), `retrowser/tla/retrowser.json`
+  (+ `tla.{wasm,js}`); retrowser standard 1.1, loop asyncify, framebuffer, native 64 KB flash save, options (GS1: GBA
+  screen colours, Brightness, Map zoom, Menus; TLA: the first two), GS1's in-game Extra settings -> rtw_option_changed.
+  Build ids GS1 dcf975b85ce47033, TLA 55b6e0b2d4960e21. Not ported: online link battles (no host netplay), TLA's
+  party transfer from a GS1 save (needs a second module + the other game's save); passwords still work.
+- Code: port/rtw/ (rtw.c, rtw_glue.js, library_rtw.js, manifest templates); link.py `rtw_link` branch taken only with
+  PORT_RTW_OUT; tools/rtw_build.sh (one game, link stage only, ~15-40 s), **tools/rtw_publish.sh** (both + hash +
+  `rtw.mjs check --rom`), tests/rtw_e2e.mjs + tools/rtw_e2e.sh. deploy_web.sh / regress.sh / regress_tla.sh mention it.
+  README opens with the "Play on retrowser" badge (.github/play-on-retrowser.svg) and play instructions.
+- Rebuild after every game change: `tools/web_build.sh && tools/web_build.sh --game tla && tools/rtw_publish.sh`,
+  commit `retrowser.json retrowser/`. The check tool is ~/Code/retrowser/dist/tools/rtw.mjs (`npm run build` there).
+- Tests: rtw.mjs check --rom OK (both), leak_check PASS (4 files); tests/rtw_e2e.mjs in a local retrowser host (one
+  muted headless Chrome at a time): GS1 18/18, TLA 15/15 (boot, audio, an in-game save by real play whose SHA-1 =
+  tests/regress's 351e17a2 / c8b2e988, keys, options both ways, reload + Continue, offline reload). Web build
+  byte-identical after full rebuilds: GS1 65515102 / ba95b828 (site c2b70da683895670), TLA df7c39fb / d184cc2a
+  (98bd0dc1a98414c4); regress.sh all cases + link2 OK (chunked, REUSE=1), regress_tla 13/13 OK.
+- Process note: the tool's 10-minute limit moved one long `tools/regress.sh` into the background and it was killed;
+  run the full regress in chunks of case names (REUSE=1) in the foreground, each under 10 minutes.
+- Next: push to GitHub (user) and open the links on retrowser.app; then real-device checks (phone touch, gamepad).
+
 ## GS34 — 2026-11-05: bug fix: full-screen menus showed borrowed tiles as the map in the zoomed margins
 
 - Read docs/GS34.md and trap 97. On `main` (8442a83 margins, ae64e65 parked sprites, 374ff7f Djinn figures, then

@@ -1,6 +1,8 @@
 #!/bin/bash
 # Regression runs (GS9): replays the key node runs and compares RAM/picture digests (tests/probes/digest.cjs) with
 # tests/regress/expected.tsv (digests only, no images). Cases run on a private copy of the build (port_work/regress/bin).
+# RTW1: after a change that alters the game, also rerun tools/rtw_publish.sh and commit retrowser.json + retrowser/
+# (the retrowser.app build, docs/RTW.md); tools/rtw_e2e.sh tests it in a local retrowser host.
 #   tools/regress.sh            run all cases, print OK/DIFF per case, exit 1 on any DIFF
 #   tools/regress.sh --update   rewrite expected.tsv from this build (after a change that is meant to alter results)
 #   tools/regress.sh CASE...    run only these cases

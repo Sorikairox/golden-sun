@@ -264,10 +264,10 @@ try {
   await open(cont);
   const ms2 = await moduleSave();
   check('reload: the module holds the stored save', ms2.sha1 === ms.sha1, JSON.stringify(ms2));
-  await waitFrames(CFG.titleAt);   // with a save the game shows its title screen first (START there)
+  await waitFrames(CFG.titleAt);   // with a save: GS1 shows its title screen here (START at f1500); TLA its logos
   await shot('title_with_save');
   const tp = await picture();
-  check('boot: the title screen (with a save) has a picture', tp && tp.colours > 8, JSON.stringify(tp));
+  check(`boot with a save: picture at f${CFG.titleAt} (GS1 title, TLA logos)`, tp && tp.colours > 8, JSON.stringify(tp));
   await waitFrames(CFG.contDone);
   await shot('continued');
   if (game === 'gs1') {

@@ -4,6 +4,7 @@
 # SHA-1 with tests/regress/expected_tla.tsv (digests only: nothing of the game is stored). Runs on a private copy of
 # build/wasm-tla (port_work/regress_tla/bin), so a rebuild during a run does not mix builds.
 # Usage: tools/regress_tla.sh [--update] [CASE...]
+# RTW1: after a change that alters the game, also rerun tools/rtw_publish.sh and commit retrowser/ (docs/RTW.md).
 # Cases (milestone screens):
 #   new_game  logos (Nintendo 120, Camelot 250), title logo 380, Felix naming 450, the transfer question 600,
 #             Isaac naming 700
