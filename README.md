@@ -1,3 +1,23 @@
+<p align="center"><a href="https://retrowser.app/g/Sorikairox/golden-sun"><img src=".github/play-on-retrowser.svg" alt="Play on retrowser"></a></p>
+
+## Play in your browser
+
+- **Golden Sun**: open [retrowser.app/g/Sorikairox/golden-sun](https://retrowser.app/g/Sorikairox/golden-sun), or paste
+  this repository's link on [retrowser.app](https://retrowser.app).
+- Pick your own ROM: **Golden Sun (USA, Europe)**, a `.gba` file of 8 MiB, SHA-1
+  `5c4695205413df7db52b9a184815a07783999971`. It is checked in the browser and never leaves your device.
+- **Golden Sun: The Lost Age**: open
+  [retrowser.app/g/Sorikairox/golden-sun?path=retrowser/tla](https://retrowser.app/g/Sorikairox/golden-sun?path=retrowser/tla)
+  with **Golden Sun: The Lost Age (USA, Europe)**, a `.gba` file of 16 MiB, SHA-1
+  `b500663220cb9bf56b9f8e8c0c544f1d6fa3a824`.
+- Controls: keyboard (arrows, X = A, Z = B, A = L, S = R, Enter = Start, Backspace = Select; remappable), a gamepad,
+  or touch controls on phones.
+- Saves stay in your browser (the game's own 64 KB save; use **Export save** in the ☰ menu to keep a copy, it works
+  in other GBA emulators too).
+- After the first load the game also works offline.
+- Link battles (two players online) are only on the port's own site for now.
+- retrowser runs this repository's own build (`retrowser.json`, `retrowser/`); it hosts no game code or ROMs.
+
 # golden-sun
 
 A fan-made browser source port of **Golden Sun** (Game Boy Advance, 2001; "The Broken Seal"), with the
