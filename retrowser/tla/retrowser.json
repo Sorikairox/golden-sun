@@ -1,0 +1,67 @@
+{
+  "$schema": "https://retrowser.app/spec/retrowser.schema.json",
+  "retrowser": 1,
+  "id": "golden-sun-tla",
+  "title": "Golden Sun: The Lost Age (source port)",
+  "platform": "gba",
+  "rom": {
+    "accept": [
+      ".gba"
+    ],
+    "sha1": [
+      "b500663220cb9bf56b9f8e8c0c544f1d6fa3a824"
+    ],
+    "byteswap": "none",
+    "maxSize": 16777216
+  },
+  "files": {
+    "wasm": {
+      "path": "tla.wasm",
+      "sha256": "78e0ef849691bed387f3fa69b12b4c90e79fa420f7d7bd98d4c3771afc0bdd4e",
+      "size": 21830625
+    },
+    "js": {
+      "path": "tla.js",
+      "sha256": "c92b196121dcba00f2c46d4f67670b725ad40f6fbf8ec662f27f7ee8928cdb09",
+      "size": 34047
+    }
+  },
+  "module": {
+    "factory": "GoldenSunTlaRtw",
+    "loop": "asyncify"
+  },
+  "video": "framebuffer",
+  "hz": 59.7275,
+  "save": {
+    "kind": "flash",
+    "size": 65536
+  },
+  "options": [
+    {
+      "id": 0,
+      "label": "GBA screen colours",
+      "type": "bool",
+      "default": 0
+    },
+    {
+      "id": 1,
+      "label": "Brightness",
+      "type": "enum",
+      "default": 0,
+      "choices": [
+        {
+          "value": 0,
+          "label": "Normal"
+        },
+        {
+          "value": 1,
+          "label": "Bright"
+        },
+        {
+          "value": 2,
+          "label": "Brighter"
+        }
+      ]
+    }
+  ]
+}
