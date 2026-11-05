@@ -571,6 +571,8 @@ def run(objs, out, root, clang, jobs, stages):
         if os.path.basename(o).startswith((pre + 'pc__', pre + 'tla__hw__pc_')):
             rc, so, _ = sh([NM, '--defined-only', o])
             exports |= {p[2] for p in (l.split() for l in so.splitlines()) if len(p) == 3 and p[1] == 'T'}
+    if os.environ.get('PORT_RTW_OUT'):  # the retrowser.app build (tools/rtw_build.sh): its own output, game.js untouched
+        return rtw_link(objects, exports, root)
     flags = LINK_FLAGS + ['--js-library', os.path.join(root, 'port/web/port_lib.js'),
                           '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(exports))]
     rc, so, err = sh(['emcc'] + objects + flags + ['-o', os.path.join(out, 'game.js')])
@@ -585,6 +587,48 @@ def run(objs, out, root, clang, jobs, stages):
     print(f'link: game.wasm {size} bytes; {len(warns)} linker warnings')
     for l in warns[:10]:
         print('  ' + l[:200])
+    return True
+
+
+# The retrowser.app build (docs/RTW.md): the exports of the retrowser standard 1.1 (port/rtw/rtw.c) and that file's
+# hooks for its worker glue (port/rtw/rtw_glue.js)
+RTW_EXPORTS = ['rtw_rom_buffer', 'rtw_save_load', 'rtw_start', 'rtw_pause', 'rtw_input', 'rtw_mouse', 'rtw_resize',
+               'rtw_audio_rate', 'rtw_audio_drain', 'rtw_audio_buffer', 'rtw_save_ptr', 'rtw_save_size',
+               'rtw_save_generation', 'rtw_option', 'rtw_fb', 'rtw_fb_width', 'rtw_fb_height',
+               'port_rtw_frame', 'port_rtw_paused', 'port_rtw_frames', 'port_rtw_audio_frames', 'port_rtw_audio_nonzero']
+
+
+def rtw_link(objects, exports, root):
+    """The rtw target (env PORT_RTW_OUT=DIR, set by tools/rtw_build.sh): the same objects as the web build plus
+    port/rtw/rtw.c, linked for retrowser's sandbox worker: a classic-script factory (GoldenSunRtw / GoldenSunTlaRtw),
+    ENVIRONMENT worker (node too, for local smoke runs), no eval, the rtw_* exports, port/rtw/library_rtw.js (host
+    imports) and port/rtw/rtw_glue.js (pre-js: the frame wait and the picture/keys/options hand-over). Writes
+    DIR/gs1.{js,wasm} or DIR/tla.{js,wasm}; the web build's game.js/game.wasm are not written."""
+    d = os.path.abspath(os.environ['PORT_RTW_OUT'])
+    os.makedirs(d, exist_ok=True)
+    tla = game.C.game == 'tla'
+    name, factory = ('tla', 'GoldenSunTlaRtw') if tla else ('gs1', 'GoldenSunRtw')
+    rtw_o = os.path.join(d, 'rtw.o')
+    rc, _, err = sh(['emcc', '-O2', '-c'] + (['-DPORT_GAME_TLA=1'] if tla else []) +
+                    ['-o', rtw_o, os.path.join(root, 'port/rtw/rtw.c')])
+    if rc:
+        print('rtw: rtw.c failed:', err[-1500:])
+        return False
+    flags = [f for f in LINK_FLAGS if not f.startswith(('-sENVIRONMENT=', '-sEXPORT_NAME='))] + [
+        '-sENVIRONMENT=worker,node', f'-sEXPORT_NAME={factory}', '-sDYNAMIC_EXECUTION=0',
+        '--js-library', os.path.join(root, 'port/web/port_lib.js'),
+        '--js-library', os.path.join(root, 'port/rtw/library_rtw.js'),
+        '--pre-js', os.path.join(root, 'port/rtw/rtw_glue.js'),
+        '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(set(exports) | set(RTW_EXPORTS)))]
+    rc, so, err = sh(['emcc'] + objects + [rtw_o] + flags + ['-o', os.path.join(d, name + '.js')])
+    if rc:
+        errs = [l for l in err.splitlines() if 'error' in l or 'undefined symbol' in l]
+        print(f'rtw link FAILED ({len(errs)} errors):')
+        for l in errs[:25]:
+            print('  ' + l[:200])
+        return False
+    os.remove(rtw_o)
+    print(f'rtw link: {name}.wasm {os.path.getsize(os.path.join(d, name + ".wasm"))} bytes, factory {factory}')
     return True
 
 
