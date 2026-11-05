@@ -9,6 +9,8 @@
 #   tools/web_build.sh && tools/web_build.sh --game tla && tools/deploy_web.sh   (builds current; commit first)
 #   tools/deploy_web.sh --dry-run    everything (leak checks, site, allowlist, staging, _headers, size report) except
 #                                    the npm install of the function's dependencies, the upload and the live checks
+# RTW1: the retrowser.app build (docs/RTW.md) is not part of this site: after a game or PC-layer change rerun
+# tools/rtw_publish.sh (both rtw targets, hash, check --rom) and commit retrowser.json + retrowser/ on main.
 # Staging lives outside the repo (~/golden-sun-site): publish/ = the files sent, fn/ = the function bundled with
 # @netlify/blobs installed by npm from port/netlify/package.json (node_modules is never committed nor published).
 set -euo pipefail
@@ -86,6 +88,7 @@ if ! cmp -s port/netlify/package.json "$F/package.json" || [ ! -d "$F/node_modul
 fi
 if [ $DRY = 1 ]; then
   echo "dry run: would deploy $n files + function room to $URL (site $SITE_ID); nothing uploaded"
+  echo "note: the retrowser build is separate: tools/rtw_publish.sh, then commit retrowser.json + retrowser/ (docs/RTW.md)"
   echo "DEPLOY_DRY_RUN: OK"
   exit 0
 fi
@@ -106,4 +109,5 @@ live() { # PATH-PREFIX LOCAL-DIR: BUILD.txt, game.wasm type and size, manifest t
 live "" build/site
 if [ $TLA = 1 ]; then live /tla build/site/tla; fi
 # the room server answers (a bad request gives a JSON error; nothing is stored)
+echo "note: the retrowser build is separate: tools/rtw_publish.sh, then commit retrowser.json + retrowser/ (docs/RTW.md)"
 echo "api/room: $(curl -s -X POST -H 'content-type: application/json' -d '{"op":"host","code":"QQQQQ","secret":"x"}' $URL/api/room)"
