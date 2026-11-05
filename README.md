@@ -15,7 +15,11 @@
 - Saves stay in your browser (the game's own 64 KB save; use **Export save** in the ☰ menu to keep a copy, it works
   in other GBA emulators too).
 - After the first load the game also works offline.
-- Link battles (two players online) are only on the port's own site for now.
+- Link battles (Golden Sun, two players online): one player opens the 🌐 Online button and creates a room, the other
+  joins with its code, the first presses Start; both then go to the Battle Arena (File Screen > Battle). Each keeps
+  their own save.
+- Settings (screen colours, brightness, Golden Sun's map zoom and menus) are in the game itself: Golden Sun's Pause
+  menu (START on the field), then R; in The Lost Age hold L + R and press SELECT.
 - retrowser runs this repository's own build (`retrowser.json`, `retrowser/`); it hosts no game code or ROMs.
 
 # golden-sun
