@@ -46,8 +46,9 @@
   #net-code-show { font-size: 1.8em; letter-spacing: .25em; color: var(--accent); font-weight: 700; }
   #net-status { color: var(--dim); } #net-status.ok { color: #9fd18b; } #net-status.bad { color: #e8806b; }
   #net-warn { color: #e8c46b; } #net small { color: var(--dim); }
-  #opt-title { min-height: 44px; padding: 0 1.1em; border-radius: 8px; border: 0; font: inherit; background: #2c2b30;
+  #opt-title, .opt-save { min-height: 44px; padding: 0 1.1em; border-radius: 8px; border: 0; font: inherit; background: #2c2b30;
     color: var(--fg); cursor: pointer; } #opt-title.armed { background: #8a3a2c; }
+  label.opt-save { display: inline-flex; align-items: center; } label.opt-save input { display: none; }
   #update { position: fixed; top: 8px; right: 8px; z-index: 50; display: flex; gap: .5em; align-items: center;
     background: #1b1a1f; border: 1px solid #3a3940; border-radius: 8px; padding: .3em .4em .3em .8em; font-size: .85em; }
   #update[hidden] { display: none; }
@@ -81,7 +82,9 @@
     <label class="opt-big" id="opt-menus-row" title="While the map is zoomed: menus and messages at the picture's edges (Edges) or where the GBA's screen sits in it (Centre)">Menus <select id="opt-menus"><option value="1">Edges</option><option value="0">Centre</option></select></label>
     <small id="opt-ingame">In the game: START, then R opens these picture settings too.</small>
     <label class="opt-big" title="Keep the page on this device so the game starts with no network (your ROM and saves are always kept)"><input id="opt-offline" type="checkbox" checked> Offline play</label> <span id="opt-offline-state"></span></div>
-  <div id="opts-game" hidden><button id="opt-title" title="Restart the game (like switching it off and on); the save is kept">Return to title</button></div>
+  <div id="opts-game" hidden><button id="opt-title" title="Restart the game (like switching it off and on); the save is kept">Return to title</button>
+    <button id="opt-export" class="opt-save" title="Download the cartridge save (64 KB .sav): works on retrowser.app (☰ → Import save) and in GBA emulators">Export save</button>
+    <label id="opt-import" class="opt-save" title="Load a 64 KB .sav (from retrowser.app's Export save or an emulator); it replaces this save and restarts the game">Import save…<input id="opt-import-file" type="file" accept=".sav,.fla,.srm,.bin"></label></div>
   <details id="net" hidden><summary>Link battle online</summary>
     <small>Two players, each with their own cartridge and a save with a Djinn found, meet in the Battle Arena
       (File Screen &gt; Battle). One hosts, the other joins with the room code. Direct connection only (no relay server):

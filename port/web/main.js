@@ -215,10 +215,10 @@ async function start(rom) {
   // Since GS11 the game's own soft reset works too (A+B+Select+Start on keys, pad or touch: port_lib.js
   // port_soft_reset); the menu keeps the power cycle because it also recovers a run that has stopped.
   window.GSPage = {
-    restart() {
+    restart(replace) {   // replace: a 64 KB save image to boot with instead of the current one (Import save)
       if (!m) return null;
       const f = m._Port_FlashMemory();
-      const flash = m.HEAPU8.slice(f, f + 65536);
+      const flash = replace || m.HEAPU8.slice(f, f + 65536);
       pendingTick = null;
       if (window.GSNet && GSNet.active()) GSNet.leave();
       frames = 0; next = performance.now();
@@ -243,6 +243,32 @@ async function start(rom) {
     const disarm = () => { clearTimeout(armed); armed = 0; tb.classList.remove('armed'); tb.textContent = 'Return to title'; };
     $('opts-game').hidden = false;
   }
+  // Export / Import save: the raw 64 KB flash image, the same file retrowser.app's ☰ exports and imports
+  // (save kind "flash", 65536 bytes), so a save moves between this site, retrowser and GBA emulators
+  const saveName = GAME_TLA ? 'golden-sun-tla.sav' : 'golden-sun.sav';
+  const eb = $('opt-export');
+  if (eb) eb.onclick = async () => {
+    const f = m ? m.HEAPU8.slice(m._Port_FlashMemory(), m._Port_FlashMemory() + 65536) : await dbGet(K_FLASH);
+    if (!f || f.length !== 65536) { status('There is no save yet.'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([f], { type: 'application/octet-stream' }));
+    a.download = saveName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  };
+  const fi = $('opt-import-file');
+  if (fi) fi.onchange = async () => {
+    const file = fi.files && fi.files[0];
+    fi.value = '';
+    if (!file) return;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (bytes.length !== 65536) { status(`That file is ${bytes.length} bytes; a Golden Sun save is 65536 bytes (64 KB).`); return; }
+    if (window.GSNet && GSNet.active()) { status('Leave the link battle before importing a save.'); return; }
+    await dbPut(K_FLASH, bytes);
+    status('Save imported. Restarting...');
+    GSPage.restart(bytes);
+    if (window.GSTouch && GSTouch.back) GSTouch.back();
+  };
   $('status').addEventListener('click', () => { if (window.GSNet) GSNet.clearNote(); });
   // TLA9: a cleared Golden Sun file is read by GS1's own code before the TLA module is made (one module at a time)
   if (window.GSTransfer) { status('Looking for a Golden Sun save...'); await GSTransfer.prepare(dbGet); }
