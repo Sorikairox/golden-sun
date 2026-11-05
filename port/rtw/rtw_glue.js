@@ -4,8 +4,9 @@
 // hands the frame to port_rtw_frame (keys, options, picture) and returns a promise that settles when the next frame is
 // due at the GBA's 59.7275 Hz on the worker's timer, so the game is suspended there (ASYNCIFY) as on the page. While
 // the host has paused the game (rtw_pause) the promise waits. Saves, audio and the picture are pulled by the host.
-// Not here (no host interface): the online link battle (port/web/net.js), The Lost Age's one-"Yes" party transfer from
-// a Golden Sun save on the same site (port/web/transfer.js).
+// GS1's online link battle (RTW2) is all C (port/rtw/rtw_net.c): the host calls its rtw_net_* exports between frames
+// and they only queue packets, so nothing here resumes the game for the network. Not here: The Lost Age's one-"Yes"
+// party transfer from a Golden Sun save on the same site (port/web/transfer.js).
 // Test hook (tests/rtw_e2e.mjs): globalThis.__rtwGs reads frames/audio and can hold keys by game frame, as main.js's
 // window.__gsScript does for the page tests; nothing uses it in play.
 (function () {
@@ -41,6 +42,16 @@
     Module,
     frames: () => frames,
     script(spans) { script = spans; },
+    // RTW2 (GS1, tests/rtw_net_e2e.mjs): the link session as port/rtw/rtw_net.c sees it
+    net() {
+      const f = Module['_port_rtw_net_info'];
+      if (!f) return null;
+      const k = ['on', 'me', 'peerState', 'connected', 'hashOk', 'hashBad', 'sent0', 'sent1', 'recv0', 'recv1', 'refused',
+        'dropped', 'bad', 'battle', 'turn', 'hpOwn', 'hpEnemy', 'firstBad', 'resets', 'sessions', 'rtt', 'sinceHeard', 'bulkIn', 'bulkOut'];
+      const o = {};
+      k.forEach((n, i) => { o[n] = f(i); });
+      return o;
+    },
     audio: () => ({ frames: Module['_port_rtw_audio_frames']() >>> 0, nonZero: Module['_port_rtw_audio_nonzero']() >>> 0 }),
   };
 })();

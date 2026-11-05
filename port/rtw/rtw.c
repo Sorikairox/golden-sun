@@ -1,4 +1,4 @@
-/* retrowser.app build (docs/RTW.md): the rtw_* exports of the retrowser standard 1.1 (~/Code/retrowser
+/* retrowser.app build (docs/RTW.md): the rtw_* exports of the retrowser standard 1.2 (~/Code/retrowser
  * spec/retrowser-v1.md) over the PC layer, for GS1 and (with -DPORT_GAME_TLA) The Lost Age. Linked only into the rtw
  * target (tools/rtw_build.sh -> tools/wasm/link.py with PORT_RTW_OUT); the web build never compiles this file, so its
  * game.wasm/game.js are unchanged.
@@ -20,6 +20,7 @@
 
 typedef uint32_t u32;
 typedef int16_t s16;
+typedef uint16_t u16;
 typedef uint8_t u8;
 
 /* port/pc */
@@ -152,12 +153,17 @@ static void poll_game_options(void) {
 }
 #endif
 
+#ifndef PORT_GAME_TLA
+#include "rtw_net.c" /* RTW2: online link battles (standard 1.2, model "link") */
+#endif
+
 /* ---------------- the frame end (port/rtw/rtw_glue.js Module.onFrame, once per game frame at line 160) ---------------- */
 /* `extra`: keys of a test script by game frame (rtw_glue.js, tests/rtw_e2e.mjs only; 0 otherwise) */
 RTW int port_rtw_frame(int extra) {
   sFrames++;
 #ifndef PORT_GAME_TLA
   poll_game_options();
+  net_frame();
 #endif
   present();
   Port_SetKeys((sPad | (u32)extra) & 0x3FF);

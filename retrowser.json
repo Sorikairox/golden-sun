@@ -17,13 +17,13 @@
   "files": {
     "wasm": {
       "path": "retrowser/gs1/gs1.wasm",
-      "sha256": "e6f12bccee5897c18fd4d9171873786fe3e791bc78e269ed1af2464c46f6f897",
-      "size": 4562373
+      "sha256": "401c08e8105789e4ed27926a9a54fa3a7d230dd81ed43fff81a9a140cc3eda2a",
+      "size": 4567633
     },
     "js": {
       "path": "retrowser/gs1/gs1.js",
-      "sha256": "0f8518dd4df5ff64616401f3d980a160e748884fe5c19dfb4022c942a10044f4",
-      "size": 41036
+      "sha256": "c68d597ae99b44144c4853522d9e9c7b5eb0aa88ffb6cacdc145bf0a04b032ea",
+      "size": 41520
     }
   },
   "module": {
@@ -35,6 +35,10 @@
   "save": {
     "kind": "flash",
     "size": 65536
+  },
+  "net": {
+    "players": 2,
+    "model": "link"
   },
   "options": [
     {

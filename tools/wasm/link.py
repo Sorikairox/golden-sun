@@ -596,6 +596,8 @@ RTW_EXPORTS = ['rtw_rom_buffer', 'rtw_save_load', 'rtw_start', 'rtw_pause', 'rtw
                'rtw_audio_rate', 'rtw_audio_drain', 'rtw_audio_buffer', 'rtw_save_ptr', 'rtw_save_size',
                'rtw_save_generation', 'rtw_option', 'rtw_fb', 'rtw_fb_width', 'rtw_fb_height',
                'port_rtw_frame', 'port_rtw_paused', 'port_rtw_frames', 'port_rtw_audio_frames', 'port_rtw_audio_nonzero']
+# RTW2: GS1's online link battles (standard 1.2, port/rtw/rtw_net.c); The Lost Age has no net
+RTW_NET_EXPORTS = ['rtw_net_session', 'rtw_net_peer', 'rtw_net_buffer', 'rtw_net_recv', 'port_rtw_net_info']
 
 
 def rtw_link(objects, exports, root):
@@ -619,7 +621,8 @@ def rtw_link(objects, exports, root):
         '--js-library', os.path.join(root, 'port/web/port_lib.js'),
         '--js-library', os.path.join(root, 'port/rtw/library_rtw.js'),
         '--pre-js', os.path.join(root, 'port/rtw/rtw_glue.js'),
-        '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(set(exports) | set(RTW_EXPORTS)))]
+        '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(set(exports) | set(RTW_EXPORTS) |
+                                                                    (set() if tla else set(RTW_NET_EXPORTS))))]
     rc, so, err = sh(['emcc'] + objects + [rtw_o] + flags + ['-o', os.path.join(d, name + '.js')])
     if rc:
         errs = [l for l in err.splitlines() if 'error' in l or 'undefined symbol' in l]

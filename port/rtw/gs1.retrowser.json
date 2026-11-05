@@ -13,6 +13,7 @@
   "video": "framebuffer",
   "hz": 59.7275,
   "save": { "kind": "flash", "size": 65536 },
+  "net": { "players": 2, "model": "link" },
   "options": [
     { "id": 0, "label": "GBA screen colours", "type": "bool", "default": 0 },
     { "id": 1, "label": "Brightness", "type": "enum", "default": 0,
