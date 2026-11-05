@@ -13,7 +13,9 @@
 //     hook, so the run is the same as tools/regress.sh's): the host stores the flash image and its SHA-1 equals
 //     tests/regress's (GS1 prologue_save, TLA save);
 //   4 input: host keyboard keys reach the game (KEYINPUT while held; GS1: the leader walks);
-//   5 reload: the save comes back (the module's flash = the stored image) and the game's Continue loads it
+//   options (RTW2): the host menu shows no game option; the game's own menu changes them and the host stores each
+//     change (GS1 Extra settings: Screen colours, Map zoom; TLA: the module's menu on L + R + SELECT);
+//   5 reload: the save comes back, the stored in-game option comes back (the module's flash = the stored image) and the game's Continue loads it
 //     (GS1: the leader stands where it was saved);
 //   6 offline: network cut (page, sandbox frame, workers), reload: the game opens from the stored ROM and runs,
 //     the save still there.
@@ -133,29 +135,7 @@ const picture = () => inWorker(() => {
 const keyinput = () => inWorker(() => { const H = globalThis.__rtwGs.Module.HEAPU8; return (~(H[0x04000130] | H[0x04000131] << 8)) & 0x3ff; });
 const shot = async (name) => { await page.screenshot({ path: join(OUT, `${game}_${name}.png`) }); };
 
-// the host's own menu: option ID to V (checkbox or select), then back to the game (the host pauses it meanwhile)
-async function hostOption(id, v) {
-  await page.click('[data-action=menu]');
-  const row = page.locator(`[data-option="${id}"]`);
-  await row.waitFor({ timeout: 5000 });
-  const box = row.locator('input[type=checkbox]');
-  if (await box.count()) { if ((await box.isChecked()) !== !!v) await box.click(); }
-  else await row.locator('select').selectOption(String(v));
-  await page.waitForTimeout(300);
-  await page.click('[data-action=close-menu]').catch(() => {});
-  await page.waitForTimeout(500);
-}
 const hostStored = () => page.evaluate((id) => JSON.parse(localStorage.getItem(`rtw:options:${id}`) || '{}'), CFG.id);
-const hostMenuValue = async (id) => {
-  await page.click('[data-action=menu]');
-  const row = page.locator(`[data-option="${id}"]`);
-  await row.waitFor({ timeout: 5000 });
-  const box = row.locator('input[type=checkbox]');
-  const v = (await box.count()) ? ((await box.isChecked()) ? 1 : 0) : Number(await row.locator('select').inputValue());
-  await page.click('[data-action=close-menu]').catch(() => {});
-  await page.waitForTimeout(300);
-  return v;
-};
 const press = async (code, n = 1) => { for (let i = 0; i < n; i++) { await page.keyboard.down(code); await page.waitForTimeout(100); await page.keyboard.up(code); await page.waitForTimeout(450); } };
 
 async function open(script) {
@@ -232,38 +212,66 @@ try {
   if (game === 'gs1') check('input: the leader walks', before && after && (before.x !== after.x || before.z !== after.z), `${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
   else check('input: the picture changes', picBefore.hash !== picAfter.hash, `${picBefore.hash} -> ${picAfter.hash}`);
 
-  // options: the host's menu sets them in the module (rtw_option); GS1's own Extra settings tell the host
-  // (rtw_option_changed, standard 1.1)
+  // options (RTW2, standard 1.2's options rule): every option is "inGame", so the host's menu shows none; the game's
+  // own menu changes them (GS1: Extra settings from the Pause menu; TLA: the module's menu on L + R + SELECT) and each
+  // change reaches the host's stored values (rtw_option_changed); after the reload below the host hands them back
   const raw = () => inWorker(() => { const M = globalThis.__rtwGs.Module; return M._rtw_fb() >>> 0 === M._Port_FrameBuffer() >>> 0; });
-  await hostOption(0, 1);
-  const lcdPic = await picture(), lcdRaw = await raw();
-  await shot('option_lcd');
-  await hostOption(0, 0);
-  check('options: host "GBA screen colours" changes the picture (and back)', lcdRaw === false && (await raw()) === true && lcdPic.hash !== (await picture()).hash, `lcd ${lcdPic.hash}`);
+  await page.click('[data-action=menu]');
+  await page.waitForTimeout(500);
+  const rows = await page.locator('[data-option]').count();
+  await shot('host_menu');
+  await page.click('[data-action=close-menu]').catch(() => {});
+  await page.waitForTimeout(500);
+  check('options: the host menu shows no game option (all are set in the game)', rows === 0, `${rows} option rows`);
+  const plain = await picture();
   if (game === 'gs1') {
-    await hostOption(2, 2);
-    const z = await picture();
-    await shot('option_zoom_most');
-    check('options: host "Map zoom" Most -> 336 x 224 field picture', z.w === 336 && z.h === 224, `${z.w} x ${z.h}`);
-    // in the game: START (Pause menu), R (Extra settings), Down Down (Map zoom), Left (Most -> More), B, B
+    // START (Pause menu), R (Extra settings, row 0 Screen colours), Right (GBA LCD)
     await press('Enter'); await page.waitForTimeout(600);
     await press('KeyS'); await page.waitForTimeout(600);
     await shot('extra_settings');
-    await press('ArrowDown', 2); await press('ArrowLeft');
+    await press('ArrowRight');
+    const lcdRaw = await raw(), st1 = await hostStored();
+    check('options: Extra settings "Screen colours" -> GBA LCD: the picture goes through the LUT, the host stores it', lcdRaw === false && st1['0'] === 1, `raw ${lcdRaw}, stored ${JSON.stringify(st1)}`);
+    await press('ArrowDown', 2); await press('ArrowRight', 2);   // Map zoom: Most
     await press('KeyZ'); await page.waitForTimeout(400); await press('KeyZ'); await page.waitForTimeout(800);
-    const z2 = await picture(), st = await hostStored(), mv = await hostMenuValue(2);
-    check('options: the in-game Extra settings change reaches the host (stored + menu)', z2.w === 288 && st['2'] === 1 && mv === 1, `picture ${z2.w} x ${z2.h}, stored ${JSON.stringify(st)}, menu ${mv}`);
-    await hostOption(2, 0);
-    const z3 = await picture();
-    check('options: host "Map zoom" back to Normal', z3.w === 240, `${z3.w} x ${z3.h}`);
+    const z = await picture(), st2 = await hostStored();
+    await shot('option_zoom_most');
+    check('options: Extra settings "Map zoom" Most -> 336 x 224 field picture, stored 2', z.w === 336 && z.h === 224 && st2['2'] === 2, `${z.w} x ${z.h}, stored ${JSON.stringify(st2)}`);
+    await press('Enter'); await page.waitForTimeout(600);
+    await press('KeyS'); await page.waitForTimeout(600);
+    await press('ArrowDown', 2); await press('ArrowLeft', 2);   // Map zoom: More, Normal
+    await press('KeyZ'); await page.waitForTimeout(400); await press('KeyZ'); await page.waitForTimeout(800);
+    const z2 = await picture(), st3 = await hostStored();
+    check('options: Map zoom back to Normal (240 x 160), stored 0; Screen colours stays GBA LCD for the reload', z2.w === 240 && st3['2'] === 0 && st3['0'] === 1, `${z2.w} x ${z2.h}, stored ${JSON.stringify(st3)}`);
+  } else {
+    const menu = () => inWorker(() => [0, 1, 2].map((k) => globalThis.__rtwGs.Module._port_rtw_menu(k)));
+    await page.keyboard.down('KeyA'); await page.keyboard.down('KeyS'); await page.waitForTimeout(150);
+    await page.keyboard.down('Backspace'); await page.waitForTimeout(200);
+    await page.keyboard.up('Backspace'); await page.keyboard.up('KeyS'); await page.keyboard.up('KeyA'); await page.waitForTimeout(400);
+    const m1 = await menu(), mp = await picture();
+    await shot('extra_settings');
+    await page.keyboard.down('KeyX'); await page.waitForTimeout(150);
+    const swallowed = await keyinput();
+    await page.keyboard.up('KeyX'); await page.waitForTimeout(400);   // A: Screen colours -> GBA LCD
+    const lcdRaw = await raw(), st1 = await hostStored();
+    check('options: L + R + SELECT opens the Extra settings over the picture; the game gets no keys meanwhile', m1[0] === 1 && mp.hash !== plain.hash && swallowed === 0, `menu ${m1}, keys 0x${(swallowed ?? -1).toString(16)}`);
+    check('options: "Screen colours" -> GBA LCD: the picture goes through the LUT, the host stores it', lcdRaw === false && st1['0'] === 1, `raw ${lcdRaw}, stored ${JSON.stringify(st1)}`);
+    await press('ArrowDown'); await press('ArrowRight');
+    const st2 = await hostStored();
+    await press('ArrowLeft');
+    const st3 = await hostStored();
+    await press('KeyZ');
+    const m2 = await menu(), after = await picture();
+    check('options: Brightness Bright then Normal (stored 1, 0); B closes the menu', st2['1'] === 1 && st3['1'] === 0 && m2[0] === 0 && m2[2] === 3, `stored ${JSON.stringify(st2)} -> ${JSON.stringify(st3)}, menu ${m2}`);
+    check('options: Screen colours stays GBA LCD for the reload', after && (await raw()) === false);
   }
-
   // ---- 5: reload, the save is loaded, Continue
   await page.reload();
   const cont = spans(CFG.cont);
   await open(cont);
   const ms2 = await moduleSave();
   check('reload: the module holds the stored save', ms2.sha1 === ms.sha1, JSON.stringify(ms2));
+  check('reload: the host hands the stored in-game option back (Screen colours GBA LCD: the LUT picture)', (await raw()) === false);
   await waitFrames(CFG.titleAt);   // with a save: GS1 shows its title screen here (START at f1500); TLA its logos
   await shot('title_with_save');
   const tp = await picture();

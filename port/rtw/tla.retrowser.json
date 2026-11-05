@@ -14,8 +14,8 @@
   "hz": 59.7275,
   "save": { "kind": "flash", "size": 65536 },
   "options": [
-    { "id": 0, "label": "GBA screen colours", "type": "bool", "default": 0 },
-    { "id": 1, "label": "Brightness", "type": "enum", "default": 0,
+    { "id": 0, "label": "GBA screen colours", "type": "bool", "default": 0, "inGame": true },
+    { "id": 1, "label": "Brightness", "type": "enum", "default": 0, "inGame": true,
       "choices": [ { "value": 0, "label": "Normal" }, { "value": 1, "label": "Bright" }, { "value": 2, "label": "Brighter" } ] }
   ]
 }

@@ -17,13 +17,13 @@
   "files": {
     "wasm": {
       "path": "tla.wasm",
-      "sha256": "78e0ef849691bed387f3fa69b12b4c90e79fa420f7d7bd98d4c3771afc0bdd4e",
-      "size": 21830625
+      "sha256": "fe2d0dd7c6e0cf71c240961712d9c17b128c96237d51c4cd916e096298b5e086",
+      "size": 21832767
     },
     "js": {
       "path": "tla.js",
-      "sha256": "8e2d34a4ba230a9b634c9680bd84aa5bfd05185d33f9e64842ac84d5fbb3b21a",
-      "size": 34383
+      "sha256": "ec4a0bb25d2390fd2935fef070afcba1645fcb2f0440a3801b8f1433af3b90fb",
+      "size": 34651
     }
   },
   "module": {
@@ -41,13 +41,15 @@
       "id": 0,
       "label": "GBA screen colours",
       "type": "bool",
-      "default": 0
+      "default": 0,
+      "inGame": true
     },
     {
       "id": 1,
       "label": "Brightness",
       "type": "enum",
       "default": 0,
+      "inGame": true,
       "choices": [
         {
           "value": 0,

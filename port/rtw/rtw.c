@@ -11,10 +11,14 @@
  *   - Input: GBA KEYINPUT bits (active-high) from port 0, latched into the keypad at each frame end.
  *   - Audio: the APU's 32768 Hz stereo ring (port/pc/apu.c), drained by the host.
  *   - Options (ids = port/pc/options.c rows): 0 GBA screen colours, 1 Brightness (both presentation only: a LUT on the
- *     picture, main.js `lcd`), GS1 also 2 Map zoom and 3 Menus (the renderer's, Port_OptSet). GS1's in-game "Extra
- *     settings" screen changes them too: they reach the host through rtw_option_changed (standard 1.1). */
+ *     picture, main.js `lcd`), GS1 also 2 Map zoom and 3 Menus (the renderer's, Port_OptSet). RTW2 (standard 1.2's
+ *     options rule): all are "inGame" in the manifests, so the host's menu doesn't show them; they are set in the
+ *     game's own menu (GS1: GS27's Extra settings; TLA: port/rtw/rtw_tla_menu.c, L + R + SELECT), every change reaches
+ *     the host through rtw_option_changed, and the host hands the stored values back with rtw_option at start.
+ *   - Online link battles (GS1, RTW2): port/rtw/rtw_net.c. */
 #include <math.h>
 #include <stdint.h>
+#include <string.h>
 
 #define RTW __attribute__((used, visibility("default")))
 
@@ -44,9 +48,7 @@ u32 Port_OptGeneration(void);
 #endif
 
 /* host import (standard 1.1): the game's own menu changed a manifest option (port/rtw/library_rtw.js) */
-#ifndef PORT_GAME_TLA
 extern int rtw_option_changed(int id, int value);
-#endif
 
 #define ROM_BASE 0x08000000u
 #define ROM_MAX (32u << 20)
@@ -100,6 +102,14 @@ static void build_lut(void) {
 
 static int lut_active(void) { return sOpt[OPT_LCD] || sOpt[OPT_BRIGHT]; }
 
+#ifdef PORT_GAME_TLA
+#include "rtw_tla_menu.c" /* RTW2: The Lost Age's Extra settings, drawn by the module (L + R + SELECT) */
+static int menu_open(void) { return sMenuOpen; }
+#else
+static int menu_open(void) { return 0; }
+#endif
+static int own_picture(void) { return lut_active() || menu_open(); }
+
 static int frame_w(void) {
 #ifndef PORT_GAME_TLA
   return Port_FrameWidth();
@@ -118,18 +128,25 @@ static int frame_h(void) {
 static void present(void) {
   const u32 *src;
   int i, n;
-  if (!lut_active())
+  if (!own_picture())
     return;
-  if (sLutOn != sOpt[OPT_LCD] || sLutBright != sOpt[OPT_BRIGHT])
-    build_lut();
   src = Port_FrameBuffer();
   n = frame_w() * frame_h();
   if (n > (int)(sizeof sPicture / sizeof sPicture[0]))
     n = sizeof sPicture / sizeof sPicture[0];
-  for (i = 0; i < n; i++) {
-    u32 v = src[i];
-    sPicture[i] = sLut[(v >> 3 & 31) | (v >> 11 & 31) << 5 | (v >> 19 & 31) << 10];
-  }
+  if (lut_active()) {
+    if (sLutOn != sOpt[OPT_LCD] || sLutBright != sOpt[OPT_BRIGHT])
+      build_lut();
+    for (i = 0; i < n; i++) {
+      u32 v = src[i];
+      sPicture[i] = sLut[(v >> 3 & 31) | (v >> 11 & 31) << 5 | (v >> 19 & 31) << 10];
+    }
+  } else
+    memcpy(sPicture, src, (size_t)n * 4);
+#ifdef PORT_GAME_TLA
+  if (sMenuOpen)
+    menu_draw();
+#endif
 }
 
 /* ---------------- options ---------------- */
@@ -165,8 +182,12 @@ RTW int port_rtw_frame(int extra) {
   poll_game_options();
   net_frame();
 #endif
-  present();
+#ifdef PORT_GAME_TLA
+  Port_SetKeys(menu_keys((sPad | (u32)extra) & 0x3FF)); /* first: the menu may open or change a value this frame */
+#else
   Port_SetKeys((sPad | (u32)extra) & 0x3FF);
+#endif
+  present();
   return 0;
 }
 RTW int port_rtw_paused(void) { return sPaused; }
@@ -236,7 +257,7 @@ RTW int rtw_audio_drain(void) {
   return (int)n;
 }
 
-RTW int rtw_fb(void) { return (int)(uintptr_t)(lut_active() ? sPicture : Port_FrameBuffer()); }
+RTW int rtw_fb(void) { return (int)(uintptr_t)(own_picture() ? sPicture : Port_FrameBuffer()); }
 RTW int rtw_fb_width(void) { return frame_w(); }
 RTW int rtw_fb_height(void) { return frame_h(); }
 

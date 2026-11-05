@@ -17,8 +17,8 @@
   "files": {
     "wasm": {
       "path": "retrowser/gs1/gs1.wasm",
-      "sha256": "401c08e8105789e4ed27926a9a54fa3a7d230dd81ed43fff81a9a140cc3eda2a",
-      "size": 4567633
+      "sha256": "a238c860438114fa4d2d149eadacb30afc05644cbc6a5ba53a53de03cfa3a767",
+      "size": 4567686
     },
     "js": {
       "path": "retrowser/gs1/gs1.js",
@@ -45,13 +45,15 @@
       "id": 0,
       "label": "GBA screen colours",
       "type": "bool",
-      "default": 0
+      "default": 0,
+      "inGame": true
     },
     {
       "id": 1,
       "label": "Brightness",
       "type": "enum",
       "default": 0,
+      "inGame": true,
       "choices": [
         {
           "value": 0,
@@ -72,6 +74,7 @@
       "label": "Map zoom (field maps and World Map)",
       "type": "enum",
       "default": 0,
+      "inGame": true,
       "choices": [
         {
           "value": 0,
@@ -92,6 +95,7 @@
       "label": "Menus while the map is zoomed",
       "type": "enum",
       "default": 1,
+      "inGame": true,
       "choices": [
         {
           "value": 0,

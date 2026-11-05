@@ -61,7 +61,7 @@ build plus the rtw ones. The glue never fetches the wasm (the host passes `wasmB
 | Input | `rtw_input(0, buttons)`: GBA KEYINPUT bits, active-high, latched into the keypad at each frame end like the page's keys (`Port_SetKeys`). The host's keyboard, gamepads and touch pad all arrive here; no extra buttons. The game's own soft reset (A+B+Select+Start) works. |
 | Audio | pull: `rtw_audio_rate` = 32768; `rtw_audio_drain` reads the APU ring (port/pc/apu.c, 16384 frames) into an int16 stereo buffer. |
 | Save | native 64 KB flash image at 0x0E000000 (`kind: flash`, `size: 65536`; GBA `.sav` for emulators); `rtw_save_generation` = `Port_FlashGeneration` (bumped on every program/erase); `rtw_save_load` = `Port_KeepFlash` (the image the host copied survives power-on). Saves are build-independent (GS28/TLA9a), so updates keep them. |
-| Options | ids = port/pc/options.c rows. GS1: 0 GBA screen colours (bool, 0), 1 Brightness (Normal/Bright/Brighter, 0), 2 Map zoom (Normal/More/Most, 0), 3 Menus while the map is zoomed (Centre/Edges, 1 = Edges, the web default). TLA: 0 and 1 (its renderer has no Map zoom/Menus, as on the page). Host -> `rtw_option` -> `Port_OptSet` (no echo). GS1's in-game Extra settings (START, R) -> `Port_OptGeneration` polled each frame -> `rtw_option_changed(id, value)` (standard 1.1), so the host's menu and stored value follow. |
+| Options | ids = port/pc/options.c rows. GS1: 0 GBA screen colours (bool, 0), 1 Brightness (Normal/Bright/Brighter, 0), 2 Map zoom (Normal/More/Most, 0), 3 Menus while the map is zoomed (Centre/Edges, 1 = Edges, the web default). TLA: 0 and 1 (its renderer has no Map zoom/Menus, as on the page). **RTW2: all `"inGame": true`** (standard 1.2's options rule, section 8): the host's ☰ shows none; the game's own menu sets them (GS1's Extra settings, START then R -> `Port_OptGeneration` polled each frame; TLA: the module's own Extra settings on L + R + SELECT) and every change goes to the host with `rtw_option_changed(id, value)`; the host hands the stored values back with `rtw_option` at start -> `Port_OptSet` (no echo). |
 | `net` (1.2) | GS1: `{ "players": 2, "model": "link" }`, the Battle Arena's link battle (section 7). TLA: none (its online link battle was never built, TLA10). |
 | `rtw_wheel`, `rtw_rstick`, `rtw_mouse`, `fileInputs` | not used: the web build zooms from its menu and the game's own settings, not by wheel; no camera, no mouse, no files the player hands to the game. |
 | `rtw_export_file` | not used: the page lets the player download nothing (saves are exported by the host itself). |
@@ -94,7 +94,7 @@ headless Chrome. The ROM goes only to the host's file input. Checks:
    tests/regress's (`351e17a2...` GS1 prologue_save, `c8b2e988...` TLA save): the rtw build plays exactly as the node
    runs;
 4. input: host keys reach KEYINPUT; GS1 the leader walks a cell; TLA the picture changes;
-5. options: host "GBA screen colours" switches the picture to the LUT copy and back; GS1 host "Map zoom" Most gives
+5. options (RTW1; RTW2 replaced it, section 8): host "GBA screen colours" switches the picture to the LUT copy and back; GS1 host "Map zoom" Most gives
    336 x 224; the game's Extra settings (START, R, Map zoom Left) give 288 x 192 and the host's stored value and menu
    show 1 (rtw_option_changed); back to Normal 240 x 160;
 6. reload: the module holds the stored save; the route's Continue loads it (GS1: the leader on the saved cell; TLA:
@@ -169,3 +169,37 @@ All three ALL PASS.
 2. After the only other player left (state 0), the remaining player stays in the ended session: the Online panel
    shows "Player 2: left" and only "Leave the session"; Create/Join appear only after Leave. Suggested fix: end the
    session automatically when every other peer is gone (or say so and offer "New room" in the panel).
+
+## 8. RTW2: the options rule (standard 1.2)
+
+The host's ☰ now shows only start-up options (settings that must be applied before the game starts); every other
+setting belongs in the game's own menu, declared `"inGame": true` so the host keeps the value the game reports and
+passes it back at the next start. Each option was checked against the code:
+
+| Game | Option | Before start? | Now |
+|---|---|---|---|
+| GS1 | 0 GBA screen colours | no: a LUT on the picture, rebuilt whenever the value changes (rtw.c `present`) | inGame (Extra settings row "Screen colours") |
+| GS1 | 1 Brightness | no: the same LUT | inGame (Extra settings "Brightness") |
+| GS1 | 2 Map zoom | no: ppu.c reads it at each frame's first line, the field culling follows the frame (options.c, GS29) | inGame (Extra settings "Map zoom") |
+| GS1 | 3 Menus while zoomed | no: renderer only, read per frame (GS33) | inGame (Extra settings "Menus") |
+| TLA | 0 GBA screen colours | no: the LUT | inGame (the module's Extra settings) |
+| TLA | 1 Brightness | no: the LUT | inGame (the module's Extra settings) |
+
+None must be set before the game starts, so the host menu shows no game option for either game; none is dropped.
+All are display-only (game memory, saves and link sessions are never affected), so the link model's "each player
+keeps their own options" needs no sync.
+
+- **GS1** already had the setting screen in the game (GS27's Extra settings: START on the field, then R; also R in
+  Change settings) and rtw.c already reported every change (`Port_OptGeneration` polled each frame ->
+  `rtw_option_changed`).
+- **The Lost Age** had none (the web page puts its two options in the page's own menu; TLA's Pause menu code is
+  unnamed decomp and its objects are shared with the web build, which must stay byte-identical). RTW2 adds
+  `port/rtw/rtw_tla_menu.c` (TLA rtw build only): an "Extra settings" menu the module draws over the picture with its
+  own 5 x 7 font (no ROM data): **L + R + SELECT** opens/closes it, UP/DOWN pick the row, LEFT/RIGHT/A change the
+  value, B closes; the game gets no keys while it is open (it keeps running underneath) and none after it closes
+  until all keys are released. Every change calls `rtw_option_changed`. Test hook `port_rtw_menu(k)`.
+- tests/rtw_e2e.mjs step 5 now checks: the host menu shows 0 option rows; GS1 Extra settings Screen colours -> the
+  LUT picture and the host stores `{"0":1}`, Map zoom Most -> 336 x 224 stored 2, back to Normal stored 0; TLA
+  L + R + SELECT opens the menu over the picture with the game's keys held at 0, A -> GBA LCD stored 1, Brightness
+  Bright then Normal stored 1 then 0, B closes; after the reload the host hands Screen colours back (the LUT picture
+  from the first frame). Results: GS1 ALL PASS (19 checks), TLA ALL PASS (20 checks).

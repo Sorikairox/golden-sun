@@ -598,6 +598,8 @@ RTW_EXPORTS = ['rtw_rom_buffer', 'rtw_save_load', 'rtw_start', 'rtw_pause', 'rtw
                'port_rtw_frame', 'port_rtw_paused', 'port_rtw_frames', 'port_rtw_audio_frames', 'port_rtw_audio_nonzero']
 # RTW2: GS1's online link battles (standard 1.2, port/rtw/rtw_net.c); The Lost Age has no net
 RTW_NET_EXPORTS = ['rtw_net_session', 'rtw_net_peer', 'rtw_net_buffer', 'rtw_net_recv', 'port_rtw_net_info']
+# RTW2: The Lost Age's Extra settings drawn by the module (port/rtw/rtw_tla_menu.c), its test hook
+RTW_TLA_EXPORTS = ['port_rtw_menu']
 
 
 def rtw_link(objects, exports, root):
@@ -622,7 +624,7 @@ def rtw_link(objects, exports, root):
         '--js-library', os.path.join(root, 'port/rtw/library_rtw.js'),
         '--pre-js', os.path.join(root, 'port/rtw/rtw_glue.js'),
         '-sEXPORTED_FUNCTIONS=' + ','.join('_' + e for e in sorted(set(exports) | set(RTW_EXPORTS) |
-                                                                    (set() if tla else set(RTW_NET_EXPORTS))))]
+                                                                    (set(RTW_TLA_EXPORTS) if tla else set(RTW_NET_EXPORTS))))]
     rc, so, err = sh(['emcc'] + objects + [rtw_o] + flags + ['-o', os.path.join(d, name + '.js')])
     if rc:
         errs = [l for l in err.splitlines() if 'error' in l or 'undefined symbol' in l]
