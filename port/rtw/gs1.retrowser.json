@@ -11,6 +11,7 @@
   },
   "picture": { "path": "retrowser/gs1/cover.png", "sha256": "", "size": 0,
                "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
+  "icon": { "path": "retrowser/gs1/icon.png", "sha256": "", "size": 0 },
   "module": { "factory": "GoldenSunRtw", "loop": "asyncify" },
   "video": "framebuffer",
   "hz": 59.7275,

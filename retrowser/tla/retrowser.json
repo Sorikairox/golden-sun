@@ -32,6 +32,11 @@
     "size": 476093,
     "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails"
   },
+  "icon": {
+    "path": "icon.png",
+    "sha256": "92e65b34751d9a2143e5bb807519d0170fc019dc4de52560227be46cb8c60625",
+    "size": 7463
+  },
   "module": {
     "factory": "GoldenSunTlaRtw",
     "loop": "asyncify"

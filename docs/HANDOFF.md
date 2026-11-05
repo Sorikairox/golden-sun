@@ -2,6 +2,22 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW4 — 2026-11-06: game icons (retrowser standard 1.2 `icon`)
+
+- Both manifests now carry `icon` (retrowser commit 21a5fab, spec §2.2: PNG, square, 192–1024 px, ≤ 256 KiB): the
+  host uses it as the tab icon on the game page and as the home-screen app icon. GS1 `retrowser/gs1/icon.png` (from
+  the root retrowser.json), TLA `icon.png` (from retrowser/tla/retrowser.json). Both are a copy of the page's own drawn
+  sun `port/web/icon-512.png` (512 x 512 PNG, 7463 B, sha256 92e65b34751d9a21...), our art, no credit needed.
+- tools/rtw_publish.sh copies it on every publish (allowlist now `(gs1|tla)/(cover|icon).png`); `icon` entries in
+  port/rtw/*.retrowser.json (rtw.mjs hash fills sha256/size).
+- Checks: ~/Code/retrowser `npm run build` at 21a5fab; rtw_publish OK (GS1 3355fa10e1489cc9, TLA 93de71fe1b37218e;
+  modules byte-identical, only the manifests changed); `rtw.mjs check --rom` OK both. Note: the bundled
+  dist/tools/rtw.mjs `check` prints only `OK ... build id ...` (its rtw-cli.ts has no picture/icon suffix); the source
+  `node ~/Code/retrowser/tools/rtw-check.ts <dir> --rom <rom>` prints `... picture png 512×512  icon 512×512` for both,
+  and `rtw.mjs check --json` reports icon 512 x 512. Web build byte-identical (GS1 65515102/ba95b828, TLA
+  df7c39fb/d184cc2a, build/site unchanged).
+- Pushed to origin main; raw.githubusercontent.com manifests and icons sha256 compared.
+
 ## RTW3 — 2026-11-05: cartridge pictures (retrowser standard 1.2 `picture`)
 
 - Both manifests now carry `picture` (the host draws a GBA cartridge with it as the label): GS1

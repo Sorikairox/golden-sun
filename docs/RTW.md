@@ -15,6 +15,7 @@ the retrowser standard v1 with the 1.1 and 1.2 additions (`~/Code/retrowser/spec
 | `retrowser/tla/tla.wasm`, `tla.js` | The Lost Age's module and glue (factory `GoldenSunTlaRtw`) |
 | `retrowser/gs1/cover.png`, `retrowser/tla/cover.png` | the cartridge pictures (standard 1.2 `picture`, credit "Box art © Nintendo / Camelot · image from libretro-thumbnails"); copied by the publish script from `art/` |
 | `art/cover-gs1.png`, `art/cover-tla.png` | source art: the official box art (libretro-thumbnails Nintendo_-_Game_Boy_Advance, Named_Boxarts "Golden Sun (USA, Europe)" / "Golden Sun - The Lost Age (USA, Europe)"), 512 x 512 PNG, approved by the user; outside retrowser/, which the publish script rebuilds |
+| `retrowser/gs1/icon.png`, `retrowser/tla/icon.png` | RTW4: the game icons (standard 1.2 `icon`: tab icon on the game page and home-screen app icon), both a copy of the page's own drawn sun `port/web/icon-512.png` (512 x 512 PNG, our art); copied by the publish script |
 | `port/rtw/rtw.c` | the `rtw_*` exports over the PC layer (both games; `-DPORT_GAME_TLA` for TLA) |
 | `port/rtw/rtw_net.c` | RTW2 (GS1 only, included by rtw.c): online link battles through the host (standard 1.2, section 7) |
 | `port/rtw/rtw_glue.js` | `--pre-js`: the frame wait in the worker (Module.onFrame), test hook `__rtwGs` |
