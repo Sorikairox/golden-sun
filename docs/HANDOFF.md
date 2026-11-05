@@ -2,6 +2,28 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW2 — 2026-11-05: retrowser standard 1.2 (GS1 online link battles; options rule)
+
+- Read docs/RTW.md sections 7-8 and orchestrator D25. On `main` (f8d4f4e link battles, 0a49081 options rule, then
+  docs), **not deployed, not pushed, no remote**.
+- Link battles (GS1 only; TLA has no online link battle, TLA10): manifest `net {players 2, model link}`;
+  port/rtw/rtw_net.c = link.c's transport over rtw_net_send/recv (frames ch 0, bulks ch 1), player id = me (0 = room
+  host = parent), connected = peer state 1 or 2 (link.c's 900-frame hold), epoch reset at rtw_net_session and on a
+  comeback after the game saw the link drop, per-turn hash on ch 1 (tag 0xA7). Nothing resumes the game from
+  rtw_net_recv (queues only).
+- Options rule: all 6 options are display-only and live-changeable -> `"inGame": true`, host ☰ shows none, none
+  dropped. GS1: its Extra settings (START, R). TLA: new module-drawn Extra settings (L + R + SELECT; rtw only).
+- Tests: tools/rtw_net_e2e.sh (under the shared Chrome lock; ~2 min per run): battle (20/20 hashes both sides, same
+  result, bulks 12/12, then tab close -> cable unplugged), drop (mid-battle tab close -> battle ends, lobby; solo
+  59.7 fps), leave (Online panel Leave seen in 0.1 s; second session relinks both lobbies) ALL PASS; tools/rtw_e2e.sh
+  GS1 19/19, TLA 20/20 (new options checks + offline); rtw_publish OK (GS1 e191ff715f283489, TLA 91d6a459f1d67ca1);
+  web byte-identical (GS1 65515102/ba95b828 site c2b70da683895670, TLA df7c39fb/d184cc2a 98bd0dc1a98414c4);
+  regress.sh all 67 cases + link2 OK (5 chunks + kolima_grind alone, REUSE=1), regress_tla 13/13.
+- Host gaps (retrowser, not edited; RTW.md section 7): a closed tab is seen only after the 15 s silence timeout (no
+  bye on pagehide); after the partner left, the remaining player stays in the ended session until Leave.
+- Next: user pushes to GitHub; real two-network session on retrowser.app; TLA10 (TLA link battle) if wanted; a test of
+  the silent -> back path (needs a way to stall one peer's channel in the host).
+
 ## RTW1 — 2026-11-05: retrowser.app build of GS1 and The Lost Age
 
 - Read docs/RTW.md and orchestrator D24. On `main`, **not deployed, not pushed, no remote** (README's links assume

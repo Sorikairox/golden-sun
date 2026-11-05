@@ -14,6 +14,14 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- RTW2 (2026-11-05, main): **retrowser standard 1.2 for the rtw build** (docs/RTW.md sections 7-8, D25): GS1 online
+  link battles through the host (`net: {players 2, model link}`, port/rtw/rtw_net.c: link.c's transport in C, hash
+  desync guard on channel 1, link epoch reset at session start / comeback after a drop, 900-frame hold kept); options
+  rule: all game options `inGame` (none must be set before start), GS1's Extra settings as before, TLA gets a
+  module-drawn Extra settings menu (L + R + SELECT, port/rtw/rtw_tla_menu.c). tests/rtw_net_e2e.mjs (two players in
+  the local host + room server): battle/drop/leave ALL PASS (20/20 turn hashes on both sides); rtw_e2e GS1 19/19, TLA
+  20/20; web build byte-identical; regress all + link2 OK, regress_tla 13/13; build ids GS1 e191ff715f283489, TLA
+  91d6a459f1d67ca1; not deployed, no remote. TLA online link battle still not built (TLA10).
 - RTW1 (2026-11-05, main): **retrowser.app build of both games** (docs/RTW.md, D24): `retrowser.json` (GS1, repo root,
   files in retrowser/gs1/) and `retrowser/tla/retrowser.json` (+ tla.wasm/js) committed on main; standard 1.1, loop
   asyncify, framebuffer, native 64 KB flash save, options (GS1 0-3, TLA 0-1; GS1's Extra settings -> rtw_option_changed);
@@ -409,6 +417,13 @@ that edition's address map, not a port. Out of scope until asked.
   game or PC-layer change: `tools/rtw_publish.sh` (rebuild, hash, `rtw.mjs check --rom`) and commit `retrowser.json` +
   `retrowser/`**; `tools/rtw_e2e.sh` tests both in a local retrowser host. Never commit anything ROM-derived there
   (the publish script's allowlist, rtw.mjs `--rom` scan and leak_check.py guard it).
+- **D25 retrowser 1.2 (RTW2, 2026-11-05):** GS1's rtw build plays link battles online through the host (model
+  `link`: no reboot, each player keeps their own save and options); port/pc/link.c and the web build's net.js are
+  unchanged: port/rtw/rtw_net.c implements link_transport.h in C for the rtw module only (a C definition wins over
+  port_lib.js's). Connected = peer state 1 or 2 (link.c's 900-frame hold decides, so short drops still resume);
+  rooms, hello/build checks, roles, bye and the watchdog are the host's. Options rule: the host menu shows only
+  start-up options; game options are `"inGame": true` and set in the game's own menu (TLA's is drawn by the module,
+  rtw build only). Test: `tools/rtw_net_e2e.sh` under the shared Chrome lock.
 
 ## 5. Method (from Conker/GoldenEye, adapted)
 
