@@ -242,7 +242,7 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 3. **Repos stay private.** Nothing is ever pushed to upstream projects (alchemy, gsret, Coaltergeist, pret...).
    No GitHub remote until the user asks.
 4. **No `git stash`.** Never `pkill`/`pgrep`; kill only PIDs you started.
-5. **Muted headless Chrome, one at a time.**
+5. Muted headless Chrome. Several Chromes may run in parallel (user, 2026-11-05), except timing-sensitive runs (audio, multi-player sync/hash runs, anything measuring frame timing), which take the shared lock `/private/tmp/claude-501/-Users-sorikairo/f93e1b8f-e755-4b7d-bb6c-314b0fa26874/scratchpad/chrome_lock.sh run <name> -- <cmd>` when another agent may be running. A test that fails while other Chromes ran is re-run alone before it counts as a real failure.
 6. **No system installs without approval** (Docker is OK). Any other download needs approval: report it (source,
    size), don't do it.
 7. **Every feature beyond the original game is optional** (a toggle, default off unless the user says otherwise),
