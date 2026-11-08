@@ -47,7 +47,7 @@
       // always through a timer task, also when the frame is already due, so the host's messages (input, pause,
       // drains) are handled between frames even when the game runs behind
       const tick = () => {
-        if (!pending) return;  // a display frame started it
+        if (pending !== resolve) return;  // this frame already started (a display frame or an earlier tick)
         const now = performance.now();
         if (Module['_port_rtw_paused']()) { next = 0; setTimeout(tick, 50); return; }
         if (!next) next = now;

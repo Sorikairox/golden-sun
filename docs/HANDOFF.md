@@ -2,6 +2,17 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW5b — 2026-11-08: fix: RTW5's frame wait leaked timer chains (phone heating up)
+
+- User: "It seems like retrowser golden sun make my phone warm up a lot" / "seems like a lot of cpu for an old gba
+  game". RTW5's `tick` stopped on `!pending`, but `pending` is already the next frame's resolve when an old chain
+  fires, so every frame left a timer chain running: ~62,000 `tick` wake-ups/s in the worker (Chrome count; WebKit's
+  sample: the worker in DOMTimer install/fire and the timer heap). Now each chain stops when its own frame started
+  (`pending !== resolve`): 60 + 60 timers/s. WKWebView WebContent CPU 37 % -> 30 % of a Mac core; what is left is the
+  game's wasm (worker ~11 % busy), the loader's drawing (main ~6 %), audio (~2 %).
+- Pacing unchanged: Chrome 58.0 drawn / 58.0 shown, game 59.4–60.3 frames/s. rtw_e2e ALL PASS (gs1 19, tla 20),
+  rtw_net_e2e battle ALL PASS. Build ids GS1 365174475354f4a4, TLA 90f33ed9857e15b8.
+
 ## RTW5 — 2026-11-08: 60 fps on retrowser (frames paced on the host's display frames)
 
 - User: "Golden Sun on retrowser runs at 27-30fps. I want it to run smoothly at 60fps". Two causes, measured:
