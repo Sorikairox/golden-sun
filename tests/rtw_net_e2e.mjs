@@ -136,7 +136,8 @@ const cable = (p) => inWorker(p, () => { const H = globalThis.__rtwGs.Module.HEA
 async function shot(p, name) { await p.page.screenshot({ path: join(OUT, `p${p.n}_${name}.png`) }).catch(() => {}); }
 async function open(p) {
   await p.page.goto(`${site}/g/${REPO}`);
-  await p.page.click('[data-action=download]', { timeout: 60000 });
+  // the game page's cartridge (retrowser since 2026-11-07; it floats, so force) or the older Download button
+  await p.page.click('[data-action=cartridge], [data-action=download]', { timeout: 60000, force: true });
   await p.page.locator('[data-field=rom]').setInputFiles(ROM, { timeout: 180000 });
   await p.page.waitForFunction(() => Number(document.querySelector('[data-state=playing]')?.getAttribute('data-frames') ?? 0) > 10, null, { timeout: 180000 });
   await p.page.click('[data-state=persist-warning] button', { timeout: 1000 }).catch(() => {});
@@ -242,7 +243,8 @@ try {
   await shot(A, 'after_drop');
   if (LEAVE) {   // a second session in the same running games (both wait in the Battle Arena lobby): linked again
     await A.page.click('[data-action=online]').catch(() => {});
-    await A.page.click('[data-action=net-leave]');   // the host keeps P1 in the ended session until it leaves too
+    // older hosts keep P1 in the ended session until it leaves too; retrowser d681fc2 ends it by itself
+    await A.page.click('[data-action=net-leave]', { timeout: 3000 }).catch(() => {});
     await A.page.click('[data-action=net-create]');
     await A.page.waitForSelector('[data-field=room-code]');
     const code2 = (await A.page.textContent('[data-field=room-code]')).trim();

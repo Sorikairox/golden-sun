@@ -17,13 +17,13 @@
   "files": {
     "wasm": {
       "path": "retrowser/gs1/gs1.wasm",
-      "sha256": "a238c860438114fa4d2d149eadacb30afc05644cbc6a5ba53a53de03cfa3a767",
-      "size": 4567686
+      "sha256": "f86e304468a238faa84e90903020b813cf9cef382b95e898be56b211efb4bcfa",
+      "size": 4567738
     },
     "js": {
       "path": "retrowser/gs1/gs1.js",
-      "sha256": "c68d597ae99b44144c4853522d9e9c7b5eb0aa88ffb6cacdc145bf0a04b032ea",
-      "size": 41520
+      "sha256": "8bd3903c3e61e4a022b4be5265c582885fd9d28afcfd14fb900314edd682b46f",
+      "size": 42040
     }
   },
   "picture": {

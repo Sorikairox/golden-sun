@@ -17,13 +17,13 @@
   "files": {
     "wasm": {
       "path": "tla.wasm",
-      "sha256": "fe2d0dd7c6e0cf71c240961712d9c17b128c96237d51c4cd916e096298b5e086",
-      "size": 21832767
+      "sha256": "66c610585928a937cf2d07cc120e9c8f08c2a0dc4ebb708c829a53b46d692ded",
+      "size": 21832830
     },
     "js": {
       "path": "tla.js",
-      "sha256": "ec4a0bb25d2390fd2935fef070afcba1645fcb2f0440a3801b8f1433af3b90fb",
-      "size": 34651
+      "sha256": "0ad35f6afb77565e38bf37603579a088198c022b6b53e95b399555e8298a980f",
+      "size": 35171
     }
   },
   "picture": {

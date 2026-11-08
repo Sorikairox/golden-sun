@@ -141,12 +141,15 @@ const press = async (code, n = 1) => { for (let i = 0; i < n; i++) { await page.
 async function open(script) {
   const q = CFG.path ? `?path=${encodeURIComponent(CFG.path)}` : '';
   await page.goto(`${hostUrl}/g/${REPO}${q}`);
-  const download = page.locator('[data-action=download]'), stored = page.locator('[data-action=use-stored]');
+  // the game page's cartridge (retrowser since 2026-11-07; it floats, so force) or the older Download button
+  const download = page.locator('[data-action=cartridge], [data-action=download]').first(), stored = page.locator('[data-action=use-stored]');
   const rompick = page.locator('[data-field=rom]'), playing = page.locator('[data-state=playing]');
   await Promise.race([download.waitFor({ timeout: 60000 }), playing.waitFor({ timeout: 60000 }), stored.waitFor({ timeout: 60000 }), rompick.waitFor({ timeout: 60000 })]);
-  if (await download.isVisible().catch(() => false)) { say('download'); await download.click(); }
-  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ timeout: 180000 })]);
-  if (await stored.first().isVisible().catch(() => false)) { say('the stored ROM'); await stored.first().click(); }
+  if (await download.isVisible().catch(() => false)) { say('download'); await download.click({ force: true }); }
+  // a remembered ROM starts the game straight from the cartridge (retrowser since 2026-11-07)
+  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ timeout: 180000 }), playing.waitFor({ timeout: 180000 })]);
+  if (await playing.isVisible().catch(() => false)) say('the remembered ROM (started from the cartridge)');
+  else if (await stored.first().isVisible().catch(() => false)) { say('the stored ROM'); await stored.first().click(); }
   else { say('ROM through the file input'); await rompick.setInputFiles(CFG.rom); }
   // the test script (keys by game frame) as soon as the worker has the glue: before the route's first key
   if (script) {

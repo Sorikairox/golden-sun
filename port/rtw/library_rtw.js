@@ -4,6 +4,10 @@
 // through. Only what port/rtw/rtw.c uses is linked (both: rtw_option_changed; GS1 also, RTW2, rtw_net_send /
 // rtw_net_stat of standard 1.2 (port/rtw/rtw_net.c)).
 addToLibrary({
+  // RTW5: rtw_input(0, ...) came: a display frame (rtw_glue.js paces the game on these)
+  port_rtw_host_frame: () => {
+    if (Module['onHostFrame']) Module['onHostFrame']();
+  },
   // standard 1.1: the game's own Extra settings changed a manifest option; the host's stored value follows
   rtw_option_changed: (id, value) => {
     const host = Module['rtw'];

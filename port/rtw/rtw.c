@@ -227,10 +227,15 @@ RTW int rtw_resize(int w, int h, int dpr) {
   (void)w, (void)h, (void)dpr; /* the host scales the GBA picture into its own box */
   return 0;
 }
+/* RTW5: the host calls rtw_input once per display frame (standard 4.4): port 0's call is the frame clock of
+   rtw_glue.js (Module.onHostFrame), so each game frame starts on a display frame */
+void port_rtw_host_frame(void);
 RTW int rtw_input(int port, int buttons, int sx, int sy) {
   (void)sx, (void)sy;
-  if (port == 0)
+  if (port == 0) {
     sPad = (u32)buttons & 0x3FF;
+    port_rtw_host_frame();
+  }
   return 0;
 }
 RTW int rtw_mouse(int dx, int dy, int buttons) {

@@ -2,6 +2,28 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW5 — 2026-11-08: 60 fps on retrowser (frames paced on the host's display frames)
+
+- User: "Golden Sun on retrowser runs at 27-30fps. I want it to run smoothly at 60fps". Two causes, measured:
+  1. **retrowser (fixed there, not deployed):** WebKit (every iPhone browser, Safari) runs an untapped cross-origin
+     frame's requestAnimationFrame at 30 Hz, and retrowser stepped and drew the game on its sandbox frame's rAF. In a
+     WKWebView (iPhone Chrome UA): host rAF 60, Golden Sun "240×160 · 30 fps". retrowser now ticks the sandbox from the
+     host page and, in WebKit, has it draw into a host canvas: "60 fps". See ~/Code/retrowser plan.md (2026-11-08).
+  2. **here:** the game paced itself on the worker's timer at 59.7275 Hz, which beats against a 60 Hz display: in
+     Chrome on the intro (the game draws 59.6 distinct pictures/s there) only 56/s were shown. Now port 0's
+     `rtw_input` call (the host makes it once per display frame, spec 4.4) is the clock: rtw.c ->
+     `port_rtw_host_frame` (library_rtw.js) -> `Module.onHostFrame` (rtw_glue.js) starts a due frame (up to half a
+     frame early); the timer still runs frames when behind by half a frame or when no display frames come for 100 ms.
+     The resume happens on a microtask after the export returns (never inside it). After: Chrome 58.0 drawn / 58.0
+     shown; WebKit with the fixed host 58–58.5 shown; game speed 59.3–60.4 frames/s per 2 s window (mean ≈ 59.7). With
+     the old host and a 30 Hz sandbox (WebKit today) the game still runs 59.3–59.9 frames/s (the timer catches up).
+- Both games (rtw.c and the glue are shared). Web build byte-identical (rtw_publish: "web build unchanged").
+- Tests: tools/rtw_e2e.sh ALL PASS (gs1 19, tla 20 checks), tools/rtw_net_e2e.sh battle/drop/leave ALL PASS (20/20
+  turn hashes). The e2e scripts follow retrowser's new game page: the cartridge button (force click: it floats), a
+  remembered ROM starting the game at once, the session ending by itself when the partner leaves (retrowser d681fc2).
+- Build ids: GS1 c194cbf17bb445cc, TLA e2773182cfc0bcb2.
+- Measuring tools are in the session scratchpad only (wkrun WKWebView runner, gsfps/run.sh).
+
 ## RTW4 — 2026-11-06: game icons (retrowser standard 1.2 `icon`)
 
 - Both manifests now carry `icon` (retrowser commit 21a5fab, spec §2.2: PNG, square, 192–1024 px, ≤ 256 KiB): the
