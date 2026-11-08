@@ -4,17 +4,15 @@
   "id": "golden-sun-tla",
   "title": "Golden Sun: The Lost Age (source port)",
   "platform": "gba",
-  "rom": { "accept": [".gba"], "sha1": ["b500663220cb9bf56b9f8e8c0c544f1d6fa3a824"], "byteswap": "none", "maxSize": 16777216 },
+  "rom": { "sha1": ["b500663220cb9bf56b9f8e8c0c544f1d6fa3a824"] },
   "files": {
     "wasm": { "path": "tla.wasm", "sha256": "", "size": 0 },
-    "js": { "path": "tla.js", "sha256": "", "size": 0 }
+    "js": { "path": "tla.js", "sha256": "", "size": 0, "factory": "GoldenSunTlaRtw" }
   },
   "picture": { "path": "cover.png", "sha256": "", "size": 0,
                "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
   "icon": { "path": "icon.png", "sha256": "", "size": 0 },
-  "module": { "factory": "GoldenSunTlaRtw", "loop": "asyncify" },
   "video": "framebuffer",
-  "hz": 59.7275,
   "save": { "kind": "flash", "size": 65536 },
   "options": [
     { "id": 0, "label": "GBA screen colours", "type": "bool", "default": 0, "inGame": true },

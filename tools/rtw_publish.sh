@@ -3,8 +3,8 @@
 #   retrowser.json                 GS1's manifest (repo root; its paths are relative to the root)
 #   retrowser/gs1/gs1.{wasm,js}    GS1's module
 #   retrowser/tla/retrowser.json   The Lost Age's manifest, its files beside it: retrowser/tla/tla.{wasm,js}
-#   retrowser/{gs1,tla}/cover.png  the cartridge pictures (standard 1.2 `picture`): box art from art/cover-{gs1,tla}.png
-#   retrowser/{gs1,tla}/icon.png   the game icons (standard 1.2 `icon`): the site's own sun, port/web/icon-512.png
+#   retrowser/{gs1,tla}/cover.png  the cartridge pictures (`picture`): box art from art/cover-{gs1,tla}.png
+#   retrowser/{gs1,tla}/icon.png   the game icons (`icon`): the site's own sun, port/web/icon-512.png
 # Steps: tools/rtw_build.sh for GS1 and TLA (relinks the current web builds' objects with port/rtw; the web build's
 # game.wasm/game.js stay as they are, checked), copy, manifests from port/rtw/*.retrowser.json, then retrowser's own
 # tool: `rtw.mjs hash` (sha256 + size) and `rtw.mjs check --rom` (schema, hashes, exports/imports, and no run of the

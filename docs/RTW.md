@@ -1,7 +1,7 @@
 # RTW1 (2026-11-05): the retrowser.app build of both games (RTW2: GS1 online link battles, section 7)
 
 A build of GS1 and The Lost Age that [retrowser.app](https://retrowser.app) can load from this repository, following
-the retrowser standard v1 with the 1.1 and 1.2 additions (`~/Code/retrowser/spec/retrowser-v1.md`, author guide
+the retrowser standard (`~/Code/retrowser/spec/retrowser.md`, simplified 2026-11-09: RTW6, author guide
 `spec/guide.md`, skill `skills/retrowser-setup/SKILL.md`). Reference ports: GoldenEye (`~/goldeneye` branch
 `web-rtw`) and Conker (`~/conker-wt/web` branch `eu`, `port/web/rtw/`), read only.
 
@@ -13,11 +13,11 @@ the retrowser standard v1 with the 1.1 and 1.2 additions (`~/Code/retrowser/spec
 | `retrowser/gs1/gs1.wasm`, `gs1.js` | GS1's module and its Emscripten glue (factory `GoldenSunRtw`) |
 | `retrowser/tla/retrowser.json` | The Lost Age's manifest; its paths are relative to `retrowser/tla/` |
 | `retrowser/tla/tla.wasm`, `tla.js` | The Lost Age's module and glue (factory `GoldenSunTlaRtw`) |
-| `retrowser/gs1/cover.png`, `retrowser/tla/cover.png` | the cartridge pictures (standard 1.2 `picture`, credit "Box art © Nintendo / Camelot · image from libretro-thumbnails"); copied by the publish script from `art/` |
+| `retrowser/gs1/cover.png`, `retrowser/tla/cover.png` | the cartridge pictures (`picture`, credit "Box art © Nintendo / Camelot · image from libretro-thumbnails"); copied by the publish script from `art/` |
 | `art/cover-gs1.png`, `art/cover-tla.png` | source art: the official box art (libretro-thumbnails Nintendo_-_Game_Boy_Advance, Named_Boxarts "Golden Sun (USA, Europe)" / "Golden Sun - The Lost Age (USA, Europe)"), 512 x 512 PNG, approved by the user; outside retrowser/, which the publish script rebuilds |
-| `retrowser/gs1/icon.png`, `retrowser/tla/icon.png` | RTW4: the game icons (standard 1.2 `icon`: tab icon on the game page and home-screen app icon), both a copy of the page's own drawn sun `port/web/icon-512.png` (512 x 512 PNG, our art); copied by the publish script |
+| `retrowser/gs1/icon.png`, `retrowser/tla/icon.png` | RTW4: the game icons (`icon`: tab icon on the game page and home-screen app icon), both a copy of the page's own drawn sun `port/web/icon-512.png` (512 x 512 PNG, our art); copied by the publish script |
 | `port/rtw/rtw.c` | the `rtw_*` exports over the PC layer (both games; `-DPORT_GAME_TLA` for TLA) |
-| `port/rtw/rtw_net.c` | RTW2 (GS1 only, included by rtw.c): online link battles through the host (standard 1.2, section 7) |
+| `port/rtw/rtw_net.c` | RTW2 (GS1 only, included by rtw.c): online link battles through the host (section 7) |
 | `port/rtw/rtw_glue.js` | `--pre-js`: the frame wait in the worker (Module.onFrame), test hook `__rtwGs` |
 | `port/rtw/library_rtw.js` | `--js-library`: the host imports `rtw_option_changed`, `rtw_net_send`, `rtw_net_stat` (GS1) |
 | `port/rtw/gs1.retrowser.json`, `tla.retrowser.json` | manifest templates (no hashes); copied and hashed by the publish script |
@@ -58,14 +58,14 @@ build plus the rtw ones. The glue never fetches the wasm (the host passes `wasmB
 
 | Standard | This port |
 |---|---|
-| `module.loop` | `asyncify`: `rtw_start` calls `main()`, which never returns; at each frame end (line 160) `port_frame_ready` (port_lib.js) calls `Module.onFrame` (rtw_glue.js): `port_rtw_frame` (keys, options, picture), then a promise that settles when the next frame is due at 59.7275 Hz: **RTW5** on the host's next display frame (its `rtw_input(0, …)` call, once per display frame, spec 4.4: rtw.c -> `port_rtw_host_frame` -> `Module.onHostFrame`; up to half a frame early), else on the worker's timer (behind by half a frame, or no display frames for 100 ms: an older host, paused; always through a timer task, so the host's messages run between frames). `rtw_pause(1)` holds that promise. Same shape as the page (port/web/main.js). |
+| Loop | self-running (no `rtw_frame` export; `files.js.factory` names the glue's factory): `rtw_start` calls `main()`, which never returns; at each frame end (line 160) `port_frame_ready` (port_lib.js) calls `Module.onFrame` (rtw_glue.js): `port_rtw_frame` (keys, options, picture), then a promise that settles when the next frame is due at 59.7275 Hz: **RTW5** on the host's next display frame (its `rtw_input(0, …)` call, once per display frame, spec 4.4: rtw.c -> `port_rtw_host_frame` -> `Module.onHostFrame`; up to half a frame early), else on the worker's timer (behind by half a frame, or no display frames for 100 ms: an older host, paused; always through a timer task, so the host's messages run between frames). `rtw_pause(1)` holds that promise. Same shape as the page (port/web/main.js). |
 | `video` | `framebuffer`: `rtw_fb` = the renderer's RGBA frame (`Port_FrameBuffer`), 240 x 160, or with GS1's Map zoom 288 x 192 / 336 x 224 on field maps and the World Map (`Port_FrameWidth/Height`; the host scales it into its fixed box). With GBA screen colours or Brightness on, `rtw_fb` is a copy through a 32768-entry LUT (main.js `lcd.build`, ported to C). |
 | ROM | `rtw_rom_buffer(size)` = 0x08000000, the identity map's cartridge region (D5), up to 32 MB. `rom.sha1` = the one supported cartridge per game (a wrong ROM gets the host's warning). |
 | Input | `rtw_input(0, buttons)`: GBA KEYINPUT bits, active-high, latched into the keypad at each frame end like the page's keys (`Port_SetKeys`). The host's keyboard, gamepads and touch pad all arrive here; no extra buttons. The game's own soft reset (A+B+Select+Start) works. |
 | Audio | pull: `rtw_audio_rate` = 32768; `rtw_audio_drain` reads the APU ring (port/pc/apu.c, 16384 frames) into an int16 stereo buffer. |
 | Save | native 64 KB flash image at 0x0E000000 (`kind: flash`, `size: 65536`; GBA `.sav` for emulators); `rtw_save_generation` = `Port_FlashGeneration` (bumped on every program/erase); `rtw_save_load` = `Port_KeepFlash` (the image the host copied survives power-on). Saves are build-independent (GS28/TLA9a), so updates keep them. |
 | Options | ids = port/pc/options.c rows. GS1: 0 GBA screen colours (bool, 0), 1 Brightness (Normal/Bright/Brighter, 0), 2 Map zoom (Normal/More/Most, 0), 3 Menus while the map is zoomed (Centre/Edges, 1 = Edges, the web default). TLA: 0 and 1 (its renderer has no Map zoom/Menus, as on the page). **RTW2: all `"inGame": true`** (standard 1.2's options rule, section 8): the host's ☰ shows none; the game's own menu sets them (GS1's Extra settings, START then R -> `Port_OptGeneration` polled each frame; TLA: the module's own Extra settings on L + R + SELECT) and every change goes to the host with `rtw_option_changed(id, value)`; the host hands the stored values back with `rtw_option` at start -> `Port_OptSet` (no echo). |
-| `net` (1.2) | GS1: `{ "players": 2, "model": "link" }`, the Battle Arena's link battle (section 7). TLA: none (its online link battle was never built, TLA10). |
+| `net` | GS1: `{ "players": 2, "model": "link" }`, the Battle Arena's link battle (section 7). TLA: none (its online link battle was never built, TLA10). |
 | `rtw_wheel`, `rtw_rstick`, `rtw_mouse`, `fileInputs` | not used: the web build zooms from its menu and the game's own settings, not by wheel; no camera, no mouse, no files the player hands to the game. |
 | `rtw_export_file` | not used: the page lets the player download nothing (saves are exported by the host itself). |
 | `rtw_log` | not imported: Emscripten's `print`/`printErr` already go to the host's log (the factory's `print`). |
@@ -206,3 +206,14 @@ keeps their own options" needs no sync.
   L + R + SELECT opens the menu over the picture with the game's keys held at 0, A -> GBA LCD stored 1, Brightness
   Bright then Normal stored 1 then 0, B closes; after the reload the host hands Screen colours back (the LUT picture
   from the first frame). Results: GS1 ALL PASS (19 checks), TLA ALL PASS (20 checks).
+
+## RTW6 (2026-11-09): the simplified standard
+
+retrowser's standard lost its versions and some fields (user: "Simplify the retrowser standard and it's documentation
+... Don't forget to update golden sun so it keeps working"). Only the two manifest templates changed: `rom.accept`
+(the GBA default), `rom.byteswap`, `rom.maxSize` and `hz` (59.7275 is now the GBA default) are gone, and `module`
+went away: the loop is read from the module (no `rtw_frame` export = self-running) and the factory moved into
+`files.js` (`"factory": "GoldenSunRtw"` / `"GoldenSunTlaRtw"`). The wasm and glue are unchanged (same hashes); new
+build ids GS1 a5aaf4b75df3dc6f, TLA 1876b69a818bc93a. Needs the retrowser deploy that carries the new standard: the
+live host (before it) refuses these manifests, so push this commit together with that deploy.
+

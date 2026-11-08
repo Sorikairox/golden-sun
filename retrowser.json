@@ -5,14 +5,9 @@
   "title": "Golden Sun (source port)",
   "platform": "gba",
   "rom": {
-    "accept": [
-      ".gba"
-    ],
     "sha1": [
       "5c4695205413df7db52b9a184815a07783999971"
-    ],
-    "byteswap": "none",
-    "maxSize": 8388608
+    ]
   },
   "files": {
     "wasm": {
@@ -23,7 +18,8 @@
     "js": {
       "path": "retrowser/gs1/gs1.js",
       "sha256": "01a40767dfbcbb83c19add533f10d29158156819446b861f17a9885079e4143d",
-      "size": 42173
+      "size": 42173,
+      "factory": "GoldenSunRtw"
     }
   },
   "picture": {
@@ -37,12 +33,7 @@
     "sha256": "92e65b34751d9a2143e5bb807519d0170fc019dc4de52560227be46cb8c60625",
     "size": 7463
   },
-  "module": {
-    "factory": "GoldenSunRtw",
-    "loop": "asyncify"
-  },
   "video": "framebuffer",
-  "hz": 59.7275,
   "save": {
     "kind": "flash",
     "size": 65536

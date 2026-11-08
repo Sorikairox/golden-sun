@@ -2,6 +2,17 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## RTW6 — 2026-11-09: manifests follow retrowser's simplified standard (docs/RTW.md RTW6)
+
+- User: "Simplify the retrowser standard and it's documentation ... Don't forget to update golden sun so it keeps
+  working". Only port/rtw/{gs1,tla}.retrowser.json changed (no `module`, `factory` in `files.js`, no
+  `rom.accept`/`byteswap`/`maxSize`, no `hz`); wasm and glue unchanged. Build ids GS1 a5aaf4b75df3dc6f, TLA
+  1876b69a818bc93a.
+- Tests: `tools/rtw_publish.sh --no-build` (rtw.mjs check --rom OK for both) against retrowser 66418df; `tools/rtw_e2e.sh`
+  gs1 19 + tla 20 ALL PASS.
+- **Not pushed:** the live retrowser.app (before the deploy of 66418df) refuses these manifests. Push right after
+  that deploy, with the user's approval.
+
 ## GS35 — 2026-11-08: fix: Ivan never learned Reveal from Hama (docs/GS35.md)
 
 - User: "I talked to the master in Lama to get reveal, but Ivan doesn't have the skill". Party_LearnAbility called the

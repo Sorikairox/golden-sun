@@ -5,14 +5,9 @@
   "title": "Golden Sun: The Lost Age (source port)",
   "platform": "gba",
   "rom": {
-    "accept": [
-      ".gba"
-    ],
     "sha1": [
       "b500663220cb9bf56b9f8e8c0c544f1d6fa3a824"
-    ],
-    "byteswap": "none",
-    "maxSize": 16777216
+    ]
   },
   "files": {
     "wasm": {
@@ -23,7 +18,8 @@
     "js": {
       "path": "tla.js",
       "sha256": "996dbe07fbb72b55e1debe5ebd0551eda24c5711ed8b7992f8187a0643c993d3",
-      "size": 35180
+      "size": 35180,
+      "factory": "GoldenSunTlaRtw"
     }
   },
   "picture": {
@@ -37,12 +33,7 @@
     "sha256": "92e65b34751d9a2143e5bb807519d0170fc019dc4de52560227be46cb8c60625",
     "size": 7463
   },
-  "module": {
-    "factory": "GoldenSunTlaRtw",
-    "loop": "asyncify"
-  },
   "video": "framebuffer",
-  "hz": 59.7275,
   "save": {
     "kind": "flash",
     "size": 65536

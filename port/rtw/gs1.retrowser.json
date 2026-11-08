@@ -4,17 +4,15 @@
   "id": "golden-sun",
   "title": "Golden Sun (source port)",
   "platform": "gba",
-  "rom": { "accept": [".gba"], "sha1": ["5c4695205413df7db52b9a184815a07783999971"], "byteswap": "none", "maxSize": 8388608 },
+  "rom": { "sha1": ["5c4695205413df7db52b9a184815a07783999971"] },
   "files": {
     "wasm": { "path": "retrowser/gs1/gs1.wasm", "sha256": "", "size": 0 },
-    "js": { "path": "retrowser/gs1/gs1.js", "sha256": "", "size": 0 }
+    "js": { "path": "retrowser/gs1/gs1.js", "sha256": "", "size": 0, "factory": "GoldenSunRtw" }
   },
   "picture": { "path": "retrowser/gs1/cover.png", "sha256": "", "size": 0,
                "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
   "icon": { "path": "retrowser/gs1/icon.png", "sha256": "", "size": 0 },
-  "module": { "factory": "GoldenSunRtw", "loop": "asyncify" },
   "video": "framebuffer",
-  "hz": 59.7275,
   "save": { "kind": "flash", "size": 65536 },
   "net": { "players": 2, "model": "link" },
   "options": [
