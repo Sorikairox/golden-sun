@@ -14,6 +14,10 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS35 (2026-11-08, main): **bug fix: Ivan never learned Reveal from Hama** (docs/GS35.md, trap 75): Party_LearnAbility
+  passed no words to Unit_LearnPsynergyFar in wasm (K&R call, 0s); c_rules gives it `unit, ability`; saves past the scene
+  (flag 0x895) without Reveal get it at the next scene entry (Port_RepairRevealLesson, save_compat.c); GS1 build now runs
+  short_knr.py. Tested by calling the game's routines (boot.cjs probe); regress, rtw_e2e ALL PASS; GS1 rtw ce0da6acf2b72e09.
 - RTW3 (2026-11-05, main, pushed): **cartridge pictures** (standard 1.2 `picture`): official box art from art/ copied by
   tools/rtw_publish.sh to retrowser/{gs1,tla}/cover.png, credit "Box art © Nintendo / Camelot · image from
   libretro-thumbnails"; check --rom OK both; build ids GS1 6f88081d83ba2538, TLA f21de1f861ef6469; web byte-identical.
@@ -753,6 +757,9 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     condition tested flag 0 and the Venus Lighthouse statues never moved. TLA7: 11 more given their words (c_rules,
     docs/TLA6.md 15); the build's `calls` stage runs tools/wasm/short_knr.py, which fails on any adapter that drops words
     unless port/tla/short_knr_allow.tsv says why that is right (5 rows). Read the caller in port_work/tla1/*.elf (Thumb).
+    GS35: GS1 never ran the check, and had one: Party_LearnAbility's `Unit_LearnPsynergyFar()` (unit, ability in r0-r1),
+    so Hama's lesson said "Ivan learned Reveal!" and taught nothing. Both games now run it (build stage `knr`; GS1's
+    allow list port/short_knr_allow.tsv, empty).
 76. A D20 run that draws all routines' inputs from one random stream is order dependent: adding a routine to the
     report or one routine stopping early moves EQUIV/NOINPUT elsewhere (TLA6b: 251 -> 248 with no translation
     changed). The batch and diff_hw seed each routine by name, and the batch restores the same memory before each.

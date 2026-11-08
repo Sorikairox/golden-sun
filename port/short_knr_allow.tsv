@@ -1,0 +1,5 @@
+# GS35: GS1's K&R calls that pass fewer words than their target takes, kept as they are (tools/wasm/short_knr.py,
+# trap 75; the TLA list is port/tla/short_knr_allow.tsv). adapter: link.py's NAME$c<signature>; reason: what r0-r3
+# hold at the call on the ARM and why the adapter's 0 is right or harmless. None so far: give the call its words
+# (port/c_rules.tsv), as GS35 did for Party_LearnAbility.
+adapter	reason

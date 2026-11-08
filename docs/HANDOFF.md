@@ -2,6 +2,16 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS35 — 2026-11-08: fix: Ivan never learned Reveal from Hama (docs/GS35.md)
+
+- User: "I talked to the master in Lama to get reveal, but Ivan doesn't have the skill". Party_LearnAbility called the
+  K&R `Unit_LearnPsynergyFar()` with no words (r0-r1 pass through on the ARM; wasm passed 0, trap 75): the message
+  showed, nothing was learned. c_rules gives the call `unit, ability`; Port_RepairRevealLesson (save_compat.c, at
+  FieldSequence_Run) teaches Ivan Reveal in saves past the scene (flag 0x895) that lack it. GS1's build now runs the
+  short K&R check (stage `knr`, port/short_knr_allow.tsv empty; GS1 0 adapters drop words).
+- Tests: probe Party_LearnAbility(2,144) 0 -> 1; flag + warp repair 0 -> 1; regress full 68/68 OK; rtw_e2e gs1 19 +
+  tla 20 ALL PASS. Build ids GS1 ce0da6acf2b72e09, TLA 90f33ed9857e15b8 (unchanged). Web (Netlify) build not deployed.
+
 ## RTW5b — 2026-11-08: fix: RTW5's frame wait leaked timer chains (phone heating up)
 
 - User: "It seems like retrowser golden sun make my phone warm up a lot" / "seems like a lot of cpu for an old gba

@@ -292,3 +292,22 @@ void Port_TlaObjectsRestoreLeave(void) {
   heldCount = 0;
 }
 #endif
+
+#ifndef PORT_GAME_TLA
+/* GS35: saves made before GS35 lack Hama's Reveal. Party_LearnAbility (the event "X learned Y!") taught nothing in
+ * wasm (port/c_rules.tsv, trap 75), and its one caller is Hama's lesson in Lama Temple, which ends by setting
+ * FLAG_XIAN_HEARD_HSU_TRAPPED; on the GBA Ivan knows Reveal from then on (no class change or item drops it). So a game
+ * with that flag whose Ivan lacks Reveal was made by the bug: the field sequence's start (FieldSequence_Run: after
+ * Continue, among others) teaches it as the event would have. A no-op on every other game. */
+#define FLAG_XIAN_HEARD_HSU_TRAPPED 0x895
+#define UNIT_IVAN 2
+#define ABILITY_REVEAL 144
+s32 GameFlag_Get(s32 flag);
+s32 Unit_KnowsPsynergy(s32 unitId, s32 abilityId);
+s32 Unit_LearnPsynergy(s32 unitId, s32 value);
+
+void Port_RepairRevealLesson(void) {
+  if (GameFlag_Get(FLAG_XIAN_HEARD_HSU_TRAPPED) && !Unit_KnowsPsynergy(UNIT_IVAN, ABILITY_REVEAL))
+    Unit_LearnPsynergy(UNIT_IVAN, ABILITY_REVEAL);
+}
+#endif

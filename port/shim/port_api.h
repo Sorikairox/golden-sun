@@ -35,6 +35,7 @@ void Port_ExtraSettings_HintClose(void);
 extern int gPortZoomL, gPortZoomR, gPortZoomT, gPortZoomB;
 void Port_ZoomFieldStamp(void);
 void Port_ZoomFieldSequence(int on);
+void Port_RepairRevealLesson(void); /* GS35: port/pc/save_compat.c */
 int Port_SettingsMenuResult(int result, int seMove, int seConfirm, int seCancel);
 
 /* GS28 port/pc/save_compat.c: the actor snapshot (saved with the game) holds GBA addresses, not wasm ones

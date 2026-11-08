@@ -250,6 +250,7 @@ def main():
     if game.C.game == 'tla':
         stages.insert(3, 'asm2c')
         stages.insert(stages.index('link') + 1, 'calls')  # TLA4b: constant call targets (trap 66)
+    stages.insert(stages.index('link') + 1, 'knr')  # TLA7 (trap 75), GS1 since GS35: short K&R calls
     if a.only:
         stages = a.only.split(',')
     if 'audit' in stages:  # vendor tests of code addresses by range/bits: every hit audited (GS14, trap 41)
@@ -278,7 +279,7 @@ def main():
         print((so or se).strip())
         if rc:
             sys.exit(1)
-        # TLA7 (trap 75): K&R calls that pass fewer words than their target takes, each allowed with a reason
+    if 'knr' in stages:  # TLA7 (trap 75): K&R calls that pass fewer words than their target takes, each allowed with a reason
         rc, so, se = run([sys.executable, os.path.join(ROOT, 'tools/wasm/short_knr.py'), '--out', OUT])
         print((so or se).strip())
         if rc:
