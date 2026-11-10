@@ -12,8 +12,8 @@
   "files": {
     "wasm": {
       "path": "retrowser/gs1/gs1.wasm",
-      "sha256": "086fbbbab4e4d9457dbaee81e20436d837d62edbad8530cc0483b32ab19f288c",
-      "size": 4567829
+      "sha256": "ae3c85df4745700f79a60da3086f5ae0899cb91ab991b511c7afdd4b74c159c1",
+      "size": 4567845
     },
     "js": {
       "path": "retrowser/gs1/gs1.js",

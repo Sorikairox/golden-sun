@@ -14,6 +14,8 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS36 (2026-11-10, main, pushed): **Venus Lighthouse crash** (docs/GS36.md, trap 98): RouteLight on an empty socket
+  read through a null pillar; the light now goes out as on the GBA (c_rules). GS1 rtw 9e87cc6fa774c8ad.
 - GS35 (2026-11-08, main): **bug fix: Ivan never learned Reveal from Hama** (docs/GS35.md, trap 75): Party_LearnAbility
   passed no words to Unit_LearnPsynergyFar in wasm (K&R call, 0s); c_rules gives it `unit, ability`; saves past the scene
   (flag 0x895) without Reveal get it at the next scene entry (Port_RepairRevealLesson, save_compat.c); GS1 build now runs
@@ -854,3 +856,6 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     tiles/palette while the window layer covers the screen: ppu.c keeps the last uncovered zoomed frame's BG VRAM and
     palette (cover_frame). Window corner tiles leave one transparent pixel each, so "covered" allows a few holes.
     tests/probes/margins.cjs checks it.
+98. (GS36) **null pointers the GBA survives**: a vendor read through NULL lands in the BIOS on the GBA (open-bus values,
+    no fault) but in our own wasm memory, and the next pointer it yields runs out of bounds. Guard it with a c_rule that
+    takes the branch the GBA's values take (VenusLighthouse_RouteLight: no pillar -> the light goes out).

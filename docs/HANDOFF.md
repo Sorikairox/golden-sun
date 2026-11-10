@@ -2,6 +2,12 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS36 — 2026-11-10: Venus Lighthouse crash fixed (docs/GS36.md)
+
+- A light reaching an empty socket read through a null pillar (harmless BIOS reads on the GBA, out of bounds in wasm);
+  c_rules rule: the light goes out, as on the GBA. Probe tests/probes/venus_light.cjs. regress quick + rtw_e2e ALL PASS.
+  GS1 rtw 9e87cc6fa774c8ad, pushed. Left untracked: tests/probes/quartz.cjs, revive_roll.cjs (earlier session).
+
 ## RTW6 — 2026-11-09: manifests follow retrowser's simplified standard (docs/RTW.md RTW6)
 
 - User: "Simplify the retrowser standard and it's documentation ... Don't forget to update golden sun so it keeps
