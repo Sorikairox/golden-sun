@@ -75,11 +75,8 @@ build plus the rtw ones. The glue never fetches the wasm (the host passes `wasmB
 
 - ~~The online link battle~~: ported in RTW2 (section 7) for GS1. The Lost Age has none (as on the web page: TLA10
   was never done), so its module has no `net`: link.c never connects there, as with no cable plugged in.
-- **The Lost Age's one-"Yes" party transfer from a Golden Sun save** (port/web/transfer.js, TLA9): it runs a second,
-  headless GS1 module over the GS1 save that the page keeps in the same origin's IndexedDB. In retrowser each game is
-  a separate module and the host gives a game only its own save; the standard's `shares` (save payloads moving between
-  games) is not specified far enough to use. The game's own **passwords** still work (GS1's Send, R+Left; TLA's
-  password entry), as on the cartridge.
+- ~~The Lost Age's one-"Yes" party transfer from a Golden Sun save~~: ported in GS37 (docs/GS37.md) through retrowser's
+  `saveFrom` (spec 4.11): the host hands TLA's module GS1's save from the same device and the module does the rest.
 - The page's own "GBA screen colours"/"Brightness" are presentation in the page's canvas; here they are applied in the
   module (same LUT), so the host's screenshots show them too.
 

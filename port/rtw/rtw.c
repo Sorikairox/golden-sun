@@ -15,7 +15,8 @@
  *     options rule): all are "inGame" in the manifests, so the host's menu doesn't show them; they are set in the
  *     game's own menu (GS1: GS27's Extra settings; TLA: port/rtw/rtw_tla_menu.c, L + R + SELECT), every change reaches
  *     the host through rtw_option_changed, and the host hands the stored values back with rtw_option at start.
- *   - Online link battles (GS1, RTW2): port/rtw/rtw_net.c. */
+ *   - Online link battles (GS1, RTW2): port/rtw/rtw_net.c.
+ *   - TLA: the party from the Golden Sun save on this device (GS37, manifest saveFrom): port/rtw/rtw_tla_party.c. */
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -173,6 +174,9 @@ static void poll_game_options(void) {
 #ifndef PORT_GAME_TLA
 #include "rtw_net.c" /* RTW2: online link battles (standard 1.2, model "link") */
 #endif
+#ifdef PORT_GAME_TLA
+#include "rtw_tla_party.c" /* GS37: the party from a Golden Sun save (manifest saveFrom) */
+#endif
 
 /* ---------------- the frame end (port/rtw/rtw_glue.js Module.onFrame, once per game frame at line 160) ---------------- */
 /* `extra`: keys of a test script by game frame (rtw_glue.js, tests/rtw_e2e.mjs only; 0 otherwise) */
@@ -270,6 +274,9 @@ RTW int rtw_fb_height(void) { return frame_h(); }
 RTW int rtw_start(void) {
   if (sStarted)
     return 0;
+#ifdef PORT_GAME_TLA
+  party_start(); /* before sStarted: rtw_save_from is refused after it */
+#endif
   sStarted = 1;
 #ifndef PORT_GAME_TLA
   sOptGen = Port_OptGeneration();

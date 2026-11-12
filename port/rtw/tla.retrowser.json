@@ -13,6 +13,7 @@
                "credit": "Box art © Nintendo / Camelot · image from libretro-thumbnails" },
   "icon": { "path": "icon.png", "sha256": "", "size": 0 },
   "video": "framebuffer",
+  "saveFrom": [{ "dir": "" }],
   "save": { "kind": "flash", "size": 65536 },
   "options": [
     { "id": 0, "label": "GBA screen colours", "type": "bool", "default": 0, "inGame": true },

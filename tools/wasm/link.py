@@ -599,7 +599,9 @@ RTW_EXPORTS = ['rtw_rom_buffer', 'rtw_save_load', 'rtw_start', 'rtw_pause', 'rtw
 # RTW2: GS1's online link battles (standard 1.2, port/rtw/rtw_net.c); The Lost Age has no net
 RTW_NET_EXPORTS = ['rtw_net_session', 'rtw_net_peer', 'rtw_net_buffer', 'rtw_net_recv', 'port_rtw_net_info']
 # RTW2: The Lost Age's Extra settings drawn by the module (port/rtw/rtw_tla_menu.c), its test hook
-RTW_TLA_EXPORTS = ['port_rtw_menu']
+# GS37: the party from a Golden Sun save (port/rtw/rtw_tla_party.c): retrowser's saveFrom export and the glue's hooks
+RTW_TLA_EXPORTS = ['port_rtw_menu', 'rtw_save_from', 'port_rtw_party', 'port_rtw_party_info', 'Port_TlaAutoTransferHits',
+                   'Port_TlaAutoTransferArm']
 
 
 def rtw_link(objects, exports, root):

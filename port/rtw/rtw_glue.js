@@ -6,8 +6,12 @@
 // suspended there (ASYNCIFY) as on the page. While
 // the host has paused the game (rtw_pause) the promise waits. Saves, audio and the picture are pulled by the host.
 // GS1's online link battle (RTW2) is all C (port/rtw/rtw_net.c): the host calls its rtw_net_* exports between frames
-// and they only queue packets, so nothing here resumes the game for the network. Not here: The Lost Age's one-"Yes"
-// party transfer from a Golden Sun save on the same site (port/web/transfer.js).
+// and they only queue packets, so nothing here resumes the game for the network.
+// GS37: The Lost Age's one-"Yes" party transfer from the Golden Sun save on this device (retrowser's saveFrom): rtw.c
+// (port/rtw/rtw_tla_party.c) reads GS1's save and arms the Transfer Method menu to answer Link cable; here, once it
+// has, a virtual Golden Sun plays FileScreen_Run's side of the cable on link.c's wire format (port/web/transfer.js's
+// VirtualGs1, the same exchange: payload "0000" each frame, TLA's "UVTS" greeting awaited, 20 frames, one 4,100-byte
+// bulk), as Module.linkTransport (port/web/port_lib.js). 600 frames after TLA took the bytes it leaves, armed again.
 // Test hook (tests/rtw_e2e.mjs): globalThis.__rtwGs reads frames/audio and can hold keys by game frame, as main.js's
 // window.__gsScript does for the page tests; nothing uses it in play.
 (function () {
@@ -39,8 +43,58 @@
     if (!next) next = now;
     if (now + FRAME_MS / 2 >= next) go(now);
   };
+  function VirtualGs1(bytes) {
+    let f = 0, peerEpoch = 0, greetedAt = 0, sent = false;
+    const inbox = [[], []];
+    const payload = new Uint8Array(24);
+    for (let i = 0; i < 4; i++) payload[4 + 2 * i] = 0x30;   // u16 '0','0','0','0' at payload+4
+    const self = {
+      done: false,
+      send(ch, b) {   // TLA -> GS1
+        if (ch !== 0) return;
+        peerEpoch = b[1];
+        if (!greetedAt && String.fromCharCode(b[16], b[18], b[20], b[22]) === 'UVTS') greetedAt = f;
+        if (sent && !self.done && b[2] === 1 && (b[4] | b[5] << 8) >= 1) self.done = true;
+      },
+      recv(ch) { return inbox[ch].length ? inbox[ch].shift() : null; },
+      step() {   // GS1 -> TLA, one frame
+        if (greetedAt && !sent && f >= greetedAt + 20) {   // wait(10) after the greeting, the window, wait(10)
+          const msg = new Uint8Array(8 + bytes.length), dv = new DataView(msg.buffer);
+          msg[0] = 2; msg[1] = 1; dv.setUint16(2, 1, true); dv.setUint32(4, bytes.length, true); msg.set(bytes, 8);
+          inbox[1].push(msg); sent = true;
+        }
+        const fr = new Uint8Array(36), dv = new DataView(fr.buffer);
+        fr[0] = 1; fr[1] = 1; fr[2] = peerEpoch; dv.setUint32(8, ++f, true); fr.set(payload, 12);
+        inbox[0].push(fr);
+        if (inbox[0].length > 8) inbox[0].shift();   // the frame channel is unreliable: keep the newest few
+      },
+    };
+    return self;
+  }
+  const party = { hits: 0, partner: null, after: 0, bytes: null };
+  Module['linkTransport'] = {   // only The Lost Age's transfer uses it (GS1's online link is rtw_net.c, in C)
+    connected: () => !!party.partner,
+    playerId: () => 1,
+    send: (ch, b) => party.partner && party.partner.send(ch, b),
+    recv: (ch) => (party.partner ? party.partner.recv(ch) : null),
+  };
+  function partyFrame() {
+    const ptr = Module['_port_rtw_party'] && Module['_port_rtw_party']();
+    if (!ptr) return;
+    const h = Module['_Port_TlaAutoTransferHits']();
+    if (h !== party.hits) {   // the Transfer Method menu answered Link cable: Golden Sun joins
+      party.hits = h;
+      party.bytes = party.bytes || Module.HEAPU8.slice(ptr, ptr + 4100);
+      party.partner = VirtualGs1(party.bytes);
+    }
+    const p = party.partner;
+    if (!p) return;
+    p.step();
+    if (p.done && ++party.after > 600) { party.partner = null; party.after = 0; Module['_Port_TlaAutoTransferArm'](1); }
+  }
   Module['onFrame'] = () => {
     frames++;
+    partyFrame();
     Module['_port_rtw_frame'](scriptKeys(frames));
     return new Promise((resolve) => {
       pending = resolve;
@@ -72,6 +126,8 @@
       k.forEach((n, i) => { o[n] = f(i); });
       return o;
     },
+    party: () => (Module['_port_rtw_party_info'] ? { file: Module['_port_rtw_party_info'](0), level: Module['_port_rtw_party_info'](1),
+      given: Module['_port_rtw_party_info'](2), hits: party.hits, done: !!(party.partner && party.partner.done) || party.after > 0 } : null),
     audio: () => ({ frames: Module['_port_rtw_audio_frames']() >>> 0, nonZero: Module['_port_rtw_audio_nonzero']() >>> 0 }),
   };
 })();

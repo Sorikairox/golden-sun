@@ -12,13 +12,13 @@
   "files": {
     "wasm": {
       "path": "tla.wasm",
-      "sha256": "66c610585928a937cf2d07cc120e9c8f08c2a0dc4ebb708c829a53b46d692ded",
-      "size": 21832830
+      "sha256": "d4638a9ed7eca2ffcd5c82c68c13d3dbc812c4df2691be1a5e701cd5a08e7ae8",
+      "size": 21834265
     },
     "js": {
       "path": "tla.js",
-      "sha256": "996dbe07fbb72b55e1debe5ebd0551eda24c5711ed8b7992f8187a0643c993d3",
-      "size": 35180,
+      "sha256": "b50515aeee9966ac3da753a76c169c7fea8ee36a9926b2403522321afb726599",
+      "size": 37231,
       "factory": "GoldenSunTlaRtw"
     }
   },
@@ -34,6 +34,11 @@
     "size": 7463
   },
   "video": "framebuffer",
+  "saveFrom": [
+    {
+      "dir": ""
+    }
+  ],
   "save": {
     "kind": "flash",
     "size": 65536

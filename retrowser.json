@@ -17,8 +17,8 @@
     },
     "js": {
       "path": "retrowser/gs1/gs1.js",
-      "sha256": "01a40767dfbcbb83c19add533f10d29158156819446b861f17a9885079e4143d",
-      "size": 42173,
+      "sha256": "7ef038f1880e2062afc95d7335c33a1176e1e5c76673365c4a63e5dccaa478ba",
+      "size": 43944,
       "factory": "GoldenSunRtw"
     }
   },

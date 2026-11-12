@@ -2,6 +2,14 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS37 — 2026-11-12: The Lost Age takes the GS1 party on retrowser (docs/GS37.md)
+
+- retrowser saveFrom (deployed, Worker 147d9fec) + port/rtw/rtw_tla_party.c + rtw_glue.js virtual GS1. party_check 0 bytes
+  differ vs GS1's code (3 saves), rtw_party_e2e ALL PASS with a cleared test save. **Pushed before** the route (a)
+  check (user: "Push now so I can try"): still to run `node tests/rtw_party_e2e.mjs OUT` with port_work/tla8/gs1_clear.sav
+  (needs the regress chain to ml_saturos_win, then transfer_pw.sh's step 1). port_work/ had been emptied before this
+  session; the chain is being rebuilt (LIMIT=1200: vault_grind takes > 240 s under load).
+
 ## GS36 — 2026-11-10: Venus Lighthouse crash fixed (docs/GS36.md)
 
 - A light reaching an empty socket read through a null pillar (harmless BIOS reads on the GBA, out of bounds in wasm);
