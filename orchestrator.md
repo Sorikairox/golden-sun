@@ -16,7 +16,7 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 - GS37 (2026-11-12, main, pushed): **TLA takes the GS1 party on retrowser with one Yes** (docs/GS37.md): retrowser's
   saveFrom gives TLA's module GS1's save; port/rtw/rtw_tla_party.c builds GS1's 4,100-byte cable send from the flash
-  (= GS1's own code, tests/party_check.cjs), rtw_glue.js plays GS1's side. Route (a) SHA check still pending.
+  (= GS1's own code, tests/party_check.cjs), rtw_glue.js plays GS1's side. Route (a) SHA-1s equal (rtw_party_e2e).
 - GS36 (2026-11-10, main, pushed): **Venus Lighthouse crash** (docs/GS36.md, trap 98): RouteLight on an empty socket
   read through a null pillar; the light now goes out as on the GBA (c_rules). GS1 rtw 9e87cc6fa774c8ad.
 - GS35 (2026-11-08, main): **bug fix: Ivan never learned Reveal from Hama** (docs/GS35.md, trap 75): Party_LearnAbility
