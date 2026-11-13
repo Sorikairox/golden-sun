@@ -29,6 +29,7 @@ for _i, _a in enumerate(sys.argv):
     elif _a.startswith('--game='):
         os.environ['PORT_GAME'] = _a.split('=', 1)[1]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import asm2c  # noqa: E402
 import game  # noqa: E402
 V = os.path.join(ROOT, 'vendor/alchemy')
 TBS = game.C.vendor
@@ -106,7 +107,7 @@ def split_asm2c(path, n):
     lines = open(path, encoding='utf-8').read().split('\n')
     head = re.compile(r'^/\* \S+ 0x[0-9a-f]{8} \((thumb|arm)\) \*/$')
     first = next(i for i, l in enumerate(lines) if head.match(l))
-    disp = next(i for i, l in enumerate(lines) if l.startswith('void a2c_dispatch(u32 t) {'))
+    disp = next(i for i, l in enumerate(lines) if l == asm2c.DISPATCH_MARK)
     prefix, body, tail = lines[:first], lines[first:disp], lines[disp:]
     starts = [i for i, l in enumerate(body) if head.match(l)] + [len(body)]
     per = (sum(len(l) for l in body) + n - 1) // n  # by bytes

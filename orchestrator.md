@@ -14,6 +14,8 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS38 (2026-11-13, main): **TLA no longer kills the page on iPhone** (docs/GS38.md): asm2c's a2c_dispatch in 45
+  groups (JSC's OMG compile of the 93.6 KB switch took ~2 GB in WebKit); trap 99.
 - GS37 (2026-11-12, main, pushed): **TLA takes the GS1 party on retrowser with one Yes** (docs/GS37.md): retrowser's
   saveFrom gives TLA's module GS1's save; port/rtw/rtw_tla_party.c builds GS1's 4,100-byte cable send from the flash
   (= GS1's own code, tests/party_check.cjs), rtw_glue.js plays GS1's side. Route (a) SHA-1s equal (rtw_party_e2e).
@@ -862,3 +864,8 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 98. (GS36) **null pointers the GBA survives**: a vendor read through NULL lands in the BIOS on the GBA (open-bus values,
     no fault) but in our own wasm memory, and the next pointer it yields runs out of bounds. Guard it with a c_rule that
     takes the branch the GBA's values take (VenusLighthouse_RouteLight: no pillar -> the light goes out).
+99. (GS38) **no generated wasm function between ~10 KB and 100 KB that gets hot**: JavaScriptCore (every iOS browser)
+    OMG-compiles hot functions under maximumOMGCandidateCost (100000) and its register allocation can take GBs on a big
+    switch full of Asyncify'd calls: iOS kills the page (a reload). Split such code into small functions, and call them
+    through a pointer: wasm-opt -O2 inlines a function with a single direct caller. No table of consecutive indices or
+    addresses in data (the leak check matches them against ROM tables). Profile in a WKWebView (docs/GS38.md).

@@ -2,6 +2,15 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS38 — 2026-11-13: TLA no longer kills the page on iPhone (docs/GS38.md)
+
+- User: TLA reloads ~30 s into the first cinematic (iPhone). Cause as Conker P387: a2c_dispatch (93.6 KB, under JSC's
+  OMG limit) OMG-compiled once hot, WebContent 2.5 GB (WKWebView on macOS). asm2c now emits it in 45 groups behind a
+  comparison tree + one function pointer (direct calls were re-inlined by wasm-opt; data tables matched ROM bytes).
+  WebKit peak 399 MB / 307 MB over 300 s. regress_tla pictures equal, masked RAM old == new (72 rows), expectations
+  updated; rtw_e2e tla ALL PASS 20. TLA rtw d0be9e22adea9c8f. Netlify site not redeployed (needs the user).
+- port_work/ inputs restored from the golden-sun-ref volume: tla1 (make compare-tla-en relink, OK), tla2/gen, g1.
+
 ## GS37 — 2026-11-12: The Lost Age takes the GS1 party on retrowser (docs/GS37.md)
 
 - retrowser saveFrom (deployed, Worker 147d9fec) + port/rtw/rtw_tla_party.c + rtw_glue.js virtual GS1. party_check 0 bytes

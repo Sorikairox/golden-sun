@@ -12,12 +12,12 @@
   "files": {
     "wasm": {
       "path": "tla.wasm",
-      "sha256": "d4638a9ed7eca2ffcd5c82c68c13d3dbc812c4df2691be1a5e701cd5a08e7ae8",
-      "size": 21834265
+      "sha256": "09f381688847d40c34f3ba3fa9a635850e70f073d7933393f801b52eb8f0a530",
+      "size": 21844541
     },
     "js": {
       "path": "tla.js",
-      "sha256": "b50515aeee9966ac3da753a76c169c7fea8ee36a9926b2403522321afb726599",
+      "sha256": "ea4246fc2b7ac33293e9f00128f70b89b251d4085f83a8de3c9216e6c0fcd84d",
       "size": 37231,
       "factory": "GoldenSunTlaRtw"
     }

@@ -39,6 +39,10 @@ CONDC = {'eq': 'z', 'ne': '!z', 'cs': 'c', 'hs': 'c', 'cc': '!c', 'lo': '!c', 'm
 REGS = {**{f'r{i}': f'r{i}' for i in range(13)}, 'sp': 'sp', 'r13': 'sp', 'lr': 'lr', 'r14': 'lr', 'pc': 'pc',
         'r15': 'pc', 'ip': 'r12', 'fp': 'r11', 'sl': 'r10', 'sb': 'r9'}
 RNAMES = [f'r{i}' for i in range(13)] + ['sp', 'lr', 'pc']
+# GS38: the line before the dispatch (tools/wasm/build.py split_asm2c puts it and what follows in the last unit), and
+# the calls per dispatch group
+DISPATCH_MARK = '/* a2c_dispatch: every translated routine by GBA address */'
+DISPATCH_GROUP = 32
 
 
 class Unsupported(Exception):
@@ -1385,25 +1389,54 @@ def main():
         o.write('\n')
         for b in bodies:
             o.write('\n'.join(b) + '\n')
-        # dispatch: every translated routine by GBA address (overlay routines by the loaded overlay)
-        o.write('void a2c_dispatch(u32 t) {\n  switch (t & ~1u) {\n')
+        # dispatch: every translated routine by GBA address (overlay routines by the loaded overlay). GS38: in groups
+        # of about DISPATCH_GROUP calls (a2c_dispatch_gN, by address): as one switch (1362
+        # cases, 97 KB after Asyncify) it was under JavaScriptCore's maximumOMGCandidateCost, and its OMG compile
+        # took ~400 MB (B3 Air's register allocator), enough for iOS to kill the page once the dispatch got hot
+        o.write(DISPATCH_MARK + '\n')
         byaddr = {}
         for L, name, addr, mode in ok:
             byaddr.setdefault(addr, []).append((L.ovl, tr.cname(L.ovl, addr)))
+        groups, cur, calls = [], [], 0
         for addr in sorted(byaddr):
-            fns = byaddr[addr]
-            mains = [c for ov, c in fns if not ov]
-            ovs = [(ov, c) for ov, c in fns if ov]
-            o.write(f'  case 0x{addr:x}u:')
-            if ovs:
-                o.write(' switch (a2c_overlay_current()) {')
-                for ov, c in ovs:
-                    o.write(f' case 0x{ov}: {c}(); return;')
-                o.write(' default: break; }')
-            if mains:
-                o.write(f' {mains[0]}(); return;')
-            o.write(' break;\n')
-        o.write('  }\n  a2c_call(t);\n}\n')
+            n = len(byaddr[addr])
+            if cur and calls + n > DISPATCH_GROUP:
+                groups.append(cur)
+                cur, calls = [], 0
+            cur.append(addr)
+            calls += n
+        if cur:
+            groups.append(cur)
+        for g, addrs in enumerate(groups):
+            o.write(f'__attribute__((noinline)) static int a2c_dispatch_g{g}(u32 a) {{\n  switch (a) {{\n')
+            for addr in addrs:
+                fns = byaddr[addr]
+                mains = [c for ov, c in fns if not ov]
+                ovs = [(ov, c) for ov, c in fns if ov]
+                o.write(f'  case 0x{addr:x}u:')
+                if ovs:
+                    o.write(' switch (a2c_overlay_current()) {')
+                    for ov, c in ovs:
+                        o.write(f' case 0x{ov}: {c}(); return 1;')
+                    o.write(' default: break; }')
+                if mains:
+                    o.write(f' {mains[0]}(); return 1;')
+                o.write(' break;\n')
+            o.write('  }\n  return 0;\n}\n')
+        # the group by a comparison tree on the groups' first addresses, called through one function pointer:
+        # wasm-opt's -O2 at link inlines a function with one direct caller (noinline is not seen there) and so
+        # rebuilt the one switch. The tree sets the pointer in code: as a table in data the pointers (consecutive
+        # table indices) equal 16 bytes of ROM data, and the leak check refused the build
+        def tree(lo, hi, ind):
+            if hi - lo == 1:
+                return [f'{ind}g = a2c_dispatch_g{lo};']
+            mid = (lo + hi) // 2
+            return ([f'{ind}if (a < 0x{groups[mid][0]:x}u) {{'] + tree(lo, mid, ind + '  ') + [f'{ind}}} else {{'] +
+                    tree(mid, hi, ind + '  ') + [f'{ind}}}'])
+        o.write('void a2c_dispatch(u32 t) {\n  u32 a = t & ~1u;\n  int (*g)(u32) = 0;\n')
+        if groups:
+            o.write('\n'.join(tree(0, len(groups), '  ')) + '\n')
+        o.write('  if (!g || !g(a))\n    a2c_call(t);\n}\n')
         o.write('const struct { u32 addr; u32 overlay; void (*fn)(void); } a2c_codemap[] = {\n')
         for L, name, addr, mode in ok:
             o.write(f'  {{0x{addr | (1 if mode == "thumb" else 0):x}u, 0x{L.ovl or "0"}, {tr.cname(L.ovl, addr)}}}, /* {name} */\n')
