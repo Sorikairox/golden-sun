@@ -2,6 +2,12 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS41 — 2026-11-16: TLA Djinni never joined; every battle returned 0 (docs/GS41.md)
+
+- User: winning a Djinni battle does not add the Djinni. Battle_RunEncounterFar's veneer returned 0 (target declared
+  void by another C caller); link.py: veneers to asm2c routines return r0. Kandorean cave: "Felix found the Mercury
+  Djinni Fog!". regress_tla pictures equal, RAM = sequenceResult only (rewritten). GS1 byte-identical.
+
 ## GS40 — 2026-11-16: TLA Djinn battles never started (docs/GS40.md)
 
 - User: a Djinn that wants to fight jumps on the party, nothing happens (Kandorean cave). Encounter_GetDjinnEnemyGroup had

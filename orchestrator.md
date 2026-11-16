@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS41 (2026-11-16, main): **TLA Djinni never joined; every battle returned 0** (docs/GS41.md): link.py's veneer to an
+  asm2c routine declared void elsewhere returned 0 (Battle_RunEncounterFar); such veneers now return r0 (61); trap 102.
+  TLA rtw 131182bb49d36f30; GS1 byte-identical.
 - GS40 (2026-11-16, main): **TLA Djinn battles never started** (docs/GS40.md): Encounter_GetDjinnEnemyGroup has no return
   (r0 on the ARM), 0 in wasm; c_rules return the getter's result (+ stops.c); trap 101. TLA rtw 5d1b54c80e1e6c4f. Open:
   audit of the other -Wreturn-type hits (GS40.md), GS1 unchecked.
@@ -882,3 +885,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
 101. (GS40) **a non-void function without a return is r0 on the ARM, 0 (or anything) in wasm**: the vendor marks some
     (`UB: no return`, fix behind UBFIX); our -w hides the rest. Encounter_GetDjinnEnemyGroup's lost value stopped every
     Djinn battle. Give each one whose value is used the ARM's r0 (c_rules); list them with -Wreturn-type (GS40.md).
+102. (GS41) **a veneer to an asm2c routine returns its r0, whatever a C prototype says**: link.py took the target's
+    signature from another C caller's declaration (`void Func_081197f0(s32)`), so Battle_RunEncounterFar returned 0 for
+    every battle (no Djinni joined, defeats looked like wins). Check a veneer's glue (build/wasm-tla/gen/glue.ll) when a
+    result goes missing.
