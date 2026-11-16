@@ -2,6 +2,12 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS43 — 2026-11-16: TLA crashed on Blitz (docs/GS43.md)
+
+- User: using Blitz aborts (Port_ResolveCode 0x03005380). asm2c's direct calls of the blitter builder skipped
+  Port_TlaBuildBlitter; asm2c routes them through a2c_call_port. Blitz works; regress_tla ALL OK; rtw_e2e tla ALL PASS.
+  Open: the world map L/R crash needs the user's save.
+
 ## GS42 — 2026-11-16: TLA Isaac joined the party on the Dehkan Plateau (docs/GS42.md)
 
 - User: after a Mars Djinni hop, Isaac is in the party. The asm Func_02002698(21, 25, 0x210) got no words through its K&R

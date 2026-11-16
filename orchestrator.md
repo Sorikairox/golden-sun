@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS43 (2026-11-16, main): **TLA crashed on Blitz** (docs/GS43.md): asm2c's direct calls of Func_08196404 skipped
+  its binding (Port_TlaBuildBlitter), so built blitters had no C alias; such calls now go through a2c_call_port (41);
+  trap 104. TLA rtw 06b443fa86426aca. Open: world map L/R crash (no repro yet, needs the user's save).
 - GS42 (2026-11-16, main): **TLA Isaac joined on the Dehkan Plateau** (docs/GS42.md): a K&R call adapter to an asm2c
   routine dropped the caller's words (Func_02002698(21, 25, 0x210) set flag 0 = Isaac); such adapters now enter the
   routine with the caller's words and return r0 (171; 20 dropped words, 35 lost r0); trap 103. TLA rtw 905ea87d9b6c8a1f.
@@ -896,3 +899,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     called the routine's wrapper as declared (`void f();`: no words), so the Dehkan Djinni's GameFlag_SetBit(r2) set
     flag 0 and Isaac joined. To find who sets a flag, a test-only c_rule `if (flag == N) __builtin_trap();` in
     GameFlag_SetBit gives a named wasm stack in node.
+104. (GS43) **a routine bound in port/tla/hw/pc_binds.tsv is reached by asm too**: asm2c turned `bl` into a direct
+    call of the translation, skipping the port function (Func_08196404's blitter alias: Blitz jumped into IWRAM
+    code). asm2c now routes those calls through a2c_call_port. To find an abort's asm call site, read the saved lr
+    of the a2c register file from Module.onAbort (scan static memory for a 0x08xxxxxx odd word).
