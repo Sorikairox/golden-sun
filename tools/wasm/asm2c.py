@@ -759,12 +759,16 @@ class Fn:
         return self.tail(t, bool(k & 1))
 
     def call(self, t, thumb):
+        if (t & ~1) in self.tr.port_bound:  # GS43: the PC layer's function, with its translation inside
+            return [f'A2C_CALLK(a2c_call_port(0x{t | (1 if thumb else 0):x}u));']
         cn = self.tr.known(self.L.ovl, t)
         if cn:
             return [f'A2C_CALLK({cn}());']
         return [f'A2C_CALLK(a2c_call(0x{t | (1 if thumb else 0):x}u));']
 
     def tail(self, t, thumb=True):
+        if (t & ~1) in self.tr.port_bound:
+            return [f'A2C_TAILK(a2c_call_port(0x{t | (1 if thumb else 0):x}u));']
         cn = self.tr.known(self.L.ovl, t)
         c = f'{cn}()' if cn else f'a2c_call(0x{t | (1 if thumb else 0):x}u)'
         return [f'A2C_TAILK({c});']
@@ -1134,6 +1138,7 @@ typedef int8_t s8; typedef int16_t s16; typedef int32_t s32; typedef int64_t s64
 typedef struct { u32 r[16]; u32 n, z, c, v; } A2cRegs;
 extern A2cRegs a2c_r;
 void a2c_call(u32 addr);          /* code that is not translated here (C, BIOS, hand ports): Port_ResolveCode */
+void a2c_call_port(u32 addr);     /* GS43: a routine the PC layer binds (pc_binds.tsv): its port function */
 u32 a2c_overlay_current(void);    /* the loaded scene overlay's resource id (0 if none) */
 void a2c_dispatch(u32 addr);
 void a2c_badreturn(u32 addr, u32 expected);
@@ -1244,6 +1249,18 @@ class Translator:
         self.listings = []
         self.fnaddr = {}    # (ovl or '', addr) -> cname of translated routines
         self.failed = {}
+        # GS43: main-image routines a PC-layer function answers for while keeping their translation
+        # (port/tla/hw/pc_binds.tsv rows without `replace`, e.g. Func_08196404 -> Port_TlaBuildBlitter). A direct
+        # call would run the bare translation and skip the port's work (the blitter alias: Blitz's effect jumped to
+        # its built ARM code in IWRAM), so translated callers enter the port function as C callers do.
+        self.port_bound = set()
+        binds = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'port/tla/hw/pc_binds.tsv')
+        if os.path.exists(binds):
+            for line in open(binds, encoding='utf-8'):
+                f = line.rstrip('\n').split('\t')
+                m = re.fullmatch(r'Func_([0-9a-f]{8})', f[0])
+                if m and not line.startswith('#') and not (len(f) > 3 and f[3] == 'replace'):
+                    self.port_bound.add(int(m.group(1), 16))
 
     def cname(self, ovl, addr):
         return f'a2c_ov{ovl}_{addr:08x}' if ovl else f'a2c_{addr:08x}'

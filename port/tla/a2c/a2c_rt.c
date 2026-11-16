@@ -97,6 +97,18 @@ void a2c_call(u32 addr) {
   }
 }
 
+/* GS43: a routine the PC layer binds while keeping its translation (port/tla/hw/pc_binds.tsv, no `replace`):
+   asm2c's direct calls come here, so the port function runs (it calls the translation itself) as for C callers.
+   Func_08196404's callers in the battle effects reached the bare builder and never got the blitter alias. */
+void a2c_call_port(u32 addr) {
+  A2cRegs save = a2c_r;
+  const u32 *st = (const u32 *)(uintptr_t)(save.r[13] & ~3u);
+  A2cFn f = (A2cFn)Port_ResolveCode((void *)(uintptr_t)addr);
+  u32 r = f(save.r[0], save.r[1], save.r[2], save.r[3], st[0], st[1], st[2], st[3]);
+  save.r[0] = r;
+  a2c_r = save;
+}
+
 /* TLA4b: the address the last translated routine returned to (asm2c's A2C_RETJUMP, A2C_CALLK, A2C_TAILK). */
 u32 a2c_ret_to;
 
