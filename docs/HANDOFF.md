@@ -7,8 +7,9 @@ Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs
 - User (iPhone): villages, caves, towers on the World Map drawn as a big mosaic while walking; monks' heads in a temple
   cutscene. Trig_Cos was GS1's C twin reading TLA's different sine table; now Port_TlaTrigCos (TLA's own Trig_Sin +
   0x4000). Daila checked frame by frame; regress_tla 71/72 (battle f24000 = the fix, updated). TLA rtw 24a392d67acc0ce6.
-- Open: tools/rtw_e2e.sh fails for GS1 and TLA at retrowser's new cartridge page (`use-stored` never shows; retrowser
-  changed 2026-11-15): update tests/rtw_e2e.mjs. Not pushed.
+- rtw e2e tests follow retrowser's 2026-11-15 game page (data-start, 3D cartridge, hidden ROM input): rtw_e2e gs1 19 +
+  tla 20 ALL PASS; party/net e2e same change, not run. Pushed. Open: user report: a Djinn that wants to fight jumps on
+  the party and nothing happens (Kandorean cave).
 
 ## GS38 — 2026-11-13: TLA no longer kills the page on iPhone (docs/GS38.md)
 

@@ -138,16 +138,26 @@ const shot = async (name) => { await page.screenshot({ path: join(OUT, `${game}_
 const hostStored = () => page.evaluate((id) => JSON.parse(localStorage.getItem(`rtw:options:${id}`) || '{}'), CFG.id);
 const press = async (code, n = 1) => { for (let i = 0; i < n; i++) { await page.keyboard.down(code); await page.waitForTimeout(100); await page.keyboard.up(code); await page.waitForTimeout(450); } };
 
+// retrowser since 2026-11-15: <main class="game" data-start="tap|auto"> once the game is opened; the cartridge waits
+// for a tap only with "tap" (a remembered ROM goes in by itself), as retrowser's own e2e insertCartridge(). Older
+// hosts: no data-start, the floating cartridge (2026-11-07) or the Download button, clicked at once.
+async function insertCartridge(pg) {
+  await pg.waitForSelector('main.game[data-start], [data-action=download]', { timeout: 60000 });
+  const start = await pg.getAttribute('main.game', 'data-start').catch(() => null);
+  if (start === 'auto') return false;
+  // the click goes to the element itself: the 3D cartridge (2026-11-15) turns, a click at its box's centre can miss it
+  await pg.locator('[data-action=cartridge], [data-action=download]').first().dispatchEvent('click', {}, { timeout: 60000 });
+  return true;
+}
 async function open(script) {
   const q = CFG.path ? `?path=${encodeURIComponent(CFG.path)}` : '';
   await page.goto(`${hostUrl}/g/${REPO}${q}`);
-  // the game page's cartridge (retrowser since 2026-11-07; it floats, so force) or the older Download button
-  const download = page.locator('[data-action=cartridge], [data-action=download]').first(), stored = page.locator('[data-action=use-stored]');
+  const stored = page.locator('[data-action=use-stored]');
+  // the ROM file input: hidden inside the drop zone since retrowser 2026-11-15, so waited for as attached, not visible
   const rompick = page.locator('[data-field=rom]'), playing = page.locator('[data-state=playing]');
-  await Promise.race([download.waitFor({ timeout: 60000 }), playing.waitFor({ timeout: 60000 }), stored.waitFor({ timeout: 60000 }), rompick.waitFor({ timeout: 60000 })]);
-  if (await download.isVisible().catch(() => false)) { say('download'); await download.click({ force: true }); }
+  if (await insertCartridge(page)) say('cartridge');
   // a remembered ROM starts the game straight from the cartridge (retrowser since 2026-11-07)
-  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ timeout: 180000 }), playing.waitFor({ timeout: 180000 })]);
+  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ state: 'attached', timeout: 180000 }), playing.waitFor({ timeout: 180000 })]);
   if (await playing.isVisible().catch(() => false)) say('the remembered ROM (started from the cartridge)');
   else if (await stored.first().isVisible().catch(() => false)) { say('the stored ROM'); await stored.first().click(); }
   else { say('ROM through the file input'); await rompick.setInputFiles(CFG.rom); }

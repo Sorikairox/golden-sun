@@ -16,7 +16,7 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 - GS39 (2026-11-16, main): **TLA World Map objects / rotated sprites blown up** (docs/GS39.md): Trig_Cos was GS1's C twin
   reading TLA's different sine table (cos 4x small off the axes); now TLA's own (Port_TlaTrigCos); trap 100. TLA rtw
-  24a392d67acc0ce6. rtw_e2e fails for both games on retrowser's new cartridge page (test needs updating).
+  24a392d67acc0ce6. rtw e2e tests follow retrowser's new game page: gs1 19 + tla 20 ALL PASS. Pushed.
 - GS38 (2026-11-13, main): **TLA no longer kills the page on iPhone** (docs/GS38.md): asm2c's a2c_dispatch in 45
   groups (JSC's OMG compile of the 93.6 KB switch took ~2 GB in WebKit); trap 99.
 - GS37 (2026-11-12, main, pushed): **TLA takes the GS1 party on retrowser with one Yes** (docs/GS37.md): retrowser's

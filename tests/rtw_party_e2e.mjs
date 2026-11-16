@@ -95,15 +95,25 @@ const state = () => inWorker(() => {
   return Promise.all([hex(0x02000520, 8 * 0x14c), hex(0x02000040, 0x200)]).then(([units, flags]) => ({
     party: globalThis.__rtwGs.party(), hits: M._Port_TlaAutoTransferHits(), menu: M._Port_TlaTransferMenuShown(), rx: M._Port_LinkStat(2), units, flags }));
 });
+// retrowser since 2026-11-15: <main class="game" data-start="tap|auto"> once the game is opened; the cartridge waits
+// for a tap only with "tap" (a remembered ROM goes in by itself), as retrowser's own e2e insertCartridge(). Older
+// hosts: no data-start, the floating cartridge (2026-11-07) or the Download button, clicked at once.
+async function insertCartridge(pg) {
+  await pg.waitForSelector('main.game[data-start], [data-action=download]', { timeout: 60000 });
+  const start = await pg.getAttribute('main.game', 'data-start').catch(() => null);
+  if (start === 'auto') return false;
+  // the click goes to the element itself: the 3D cartridge (2026-11-15) turns, a click at its box's centre can miss it
+  await pg.locator('[data-action=cartridge], [data-action=download]').first().dispatchEvent('click', {}, { timeout: 60000 });
+  return true;
+}
 async function open(script) {
   await page.goto(`${hostUrl}/g/${REPO}?path=${encodeURIComponent(CFG.path)}`);
-  const cart = page.locator('[data-action=cartridge]'), stored = page.locator('[data-action=use-stored]');
+  const stored = page.locator('[data-action=use-stored]');
   const rompick = page.locator('[data-field=rom]'), playing = page.locator('[data-state=playing]');
-  await cart.waitFor({ timeout: 60000 });
-  await cart.click({ force: true });
-  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ timeout: 180000 }), playing.waitFor({ timeout: 180000 })]);
+  await insertCartridge(page);
+  await Promise.race([stored.first().waitFor({ timeout: 180000 }), rompick.waitFor({ state: 'attached', timeout: 180000 }), playing.waitFor({ timeout: 180000 })]);
   if (await stored.first().isVisible().catch(() => false)) await stored.first().click();
-  else if (await rompick.isVisible().catch(() => false)) await rompick.setInputFiles(CFG.rom);
+  else if (await rompick.count() > 0) /* hidden in the drop zone since retrowser 2026-11-15 */ await rompick.setInputFiles(CFG.rom);
   const until = Date.now() + 120000;
   let f = null;
   while (Date.now() < until) {
