@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS42 (2026-11-16, main): **TLA Isaac joined on the Dehkan Plateau** (docs/GS42.md): a K&R call adapter to an asm2c
+  routine dropped the caller's words (Func_02002698(21, 25, 0x210) set flag 0 = Isaac); such adapters now enter the
+  routine with the caller's words and return r0 (171; 20 dropped words, 35 lost r0); trap 103. TLA rtw 905ea87d9b6c8a1f.
 - GS41 (2026-11-16, main): **TLA Djinni never joined; every battle returned 0** (docs/GS41.md): link.py's veneer to an
   asm2c routine declared void elsewhere returned 0 (Battle_RunEncounterFar); such veneers now return r0 (61); trap 102.
   TLA rtw 131182bb49d36f30; GS1 byte-identical.
@@ -889,3 +892,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     signature from another C caller's declaration (`void Func_081197f0(s32)`), so Battle_RunEncounterFar returned 0 for
     every battle (no Djinni joined, defeats looked like wins). Check a veneer's glue (build/wasm-tla/gen/glue.ll) when a
     result goes missing.
+103. (GS42) **a K&R call to an asm2c routine passes its words, whatever the C declaration says**: link.py's adapter
+    called the routine's wrapper as declared (`void f();`: no words), so the Dehkan Djinni's GameFlag_SetBit(r2) set
+    flag 0 and Isaac joined. To find who sets a flag, a test-only c_rule `if (flag == N) __builtin_trap();` in
+    GameFlag_SetBit gives a named wasm stack in node.

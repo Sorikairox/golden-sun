@@ -2,6 +2,12 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS42 — 2026-11-16: TLA Isaac joined the party on the Dehkan Plateau (docs/GS42.md)
+
+- User: after a Mars Djinni hop, Isaac is in the party. The asm Func_02002698(21, 25, 0x210) got no words through its K&R
+  adapter and set flag 0; link.py: K&R adapters to asm2c routines pass the caller's words, return r0. User's save: flags
+  0x210/0x216 set, no Isaac. regress_tla pictures equal, 2 RAM rows (party) rewritten; rtw_e2e tla ALL PASS.
+
 ## GS41 — 2026-11-16: TLA Djinni never joined; every battle returned 0 (docs/GS41.md)
 
 - User: winning a Djinni battle does not add the Djinni. Battle_RunEncounterFar's veneer returned 0 (target declared
