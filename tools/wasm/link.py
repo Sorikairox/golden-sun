@@ -480,6 +480,16 @@ def run(objs, out, root, clang, jobs, stages):
                 args = ', '.join(f'{t} %a{i}' for i, t in enumerate(params))
                 call = f'call {ret} @"{target}"({args})'
                 body = f'  %r = {call}\n  ret {ret} %r' if ret != 'void' else f'  {call}\n  ret void'
+            elif target in a2c:
+                # GS41: the target is an asm2c routine: on the GBA the veneer jumps to it and its caller gets the
+                # routine's r0, whatever the target's C prototype says (Battle_RunEncounterFar -> Func_081197f0,
+                # declared void by its other C caller, returned 0 for every battle: no Djinni joined). Enter the
+                # routine's wrapper with the caller's words and return r0, as a2c_wrapper does for a direct call.
+                lines.append(a2c_wrapper(name, ret, params, a2c[target], a2c_stats))
+                a2c_stats['veneer to asm2c (r0 kept)'] += 1
+                final_sig[name] = (ret, params)
+                veneers += 1
+                continue
             else:
                 body = adapter(ret, params, tret, tparams, target)
             lines.append(f'define {ret} @"{name}"({plist}) {{\n{body}\n}}')
