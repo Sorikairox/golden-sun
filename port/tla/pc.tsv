@@ -5,7 +5,7 @@
 # port/tla/hw/bindings.tsv (kind gs1, TLA4b hook H3): their functions are kept, every other definition dropped.
 file	use	why
 apu	yes	DirectSound FIFOs and PSG: hardware
-asm_small	twins	Trig_Cos, umul3232H32, RelocatedQ16DotProduct (GS1 twins, bindings.tsv gs1)
+asm_small	twins	umul3232H32, RelocatedQ16DotProduct (GS1 twins, bindings.tsv gs1)
 battle_asm	no	tbs battle ARM routines
 bios	yes	BIOS calls from GBATEK: hardware
 blitter	yes	battle effect blitters (code generation, trap 29): GS1's C blitter, aliased by TLA's builder hook (port/tla/hw/pc_tla.c Port_TlaBuildBlitter, TLA7)

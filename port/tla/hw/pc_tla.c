@@ -20,6 +20,13 @@ void Port_BiosSoundGetJumpList(void **table) {
     table[i] = 0;
 }
 
+/* Trig_Cos (src/system/trig.s): adds a quarter turn and falls through into Trig_Sin. TLA's Trig_Sin is not GS1's
+ * (a signed 1024-entry table over the whole turn, << 2; GS1: a 0.16 quarter-turn table with an on-axis branch), so
+ * GS1's C Trig_Cos must not stand in for it: it read TLA's table in GS1's layout (cos off the axes 4 times too small,
+ * world map objects blown up as soon as the view rolls, trap 100). This calls TLA's own Trig_Sin (asm2c, D20 EQUIV). */
+s32 Trig_Sin(s32 angle);
+s32 Port_TlaTrigCos(s32 angle) { return Trig_Sin((s32)((u32)angle + 0x4000)); }
+
 /* Trap 65: TLA's overlay loader is Resource_LoadCode (src/system/resource/resource.c, vendor C; GS1's is
  * port/pc/decompress.c). A c_rules.tsv hook calls this after it has decoded resource `index` to `destination` and
  * run the Thumb-branch patcher: a scene overlay decoded into the overlay area (0x02008000) now answers for the

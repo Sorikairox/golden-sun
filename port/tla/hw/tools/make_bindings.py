@@ -32,6 +32,7 @@ BINDS = {
     'Bios_SoundDriverMode': ('Port_BiosNop', 'swi 0x1B (BIOS sound driver mode): no BIOS sound driver in the port (hook H2)'),
     'Bios_Swi23': ('Port_BiosNop', 'swi 0x23 (SoundDriverVSyncOn): no BIOS sound driver (hook H2)'),
     'Bios_SoundGetJumpList': ('Port_BiosSoundGetJumpList', 'swi 0x2A: the BIOS sound jump list (hook H2; GS1 copies its relocated template, MPlayJumpTableCopy)'),
+    'Trig_Cos': ('Port_TlaTrigCos', 'adds a quarter turn, then TLA\'s own Trig_Sin (port/tla/hw/pc_tla.c; GS1\'s twin reads TLA\'s different sine table, trap 100)'),
     'Entry': ('main', 'cartridge entry (mode switches, stacks): the module entry port/pc/main.c'),
     'Irq_StopOnGamePakRemoved': ('Port_BiosStop', 'swi 3 after the cartridge is pulled: never in the port'),
     # heap_release's tail (local label + global alias Irq_HaltOnGamePakRemoved): `swi 3` (Stop) with no return, the

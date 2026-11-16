@@ -161,7 +161,7 @@ AlchemyUncreditedEnd_08002076	-	data	src/system/long_multiply	not an entry: a la
 Math_UnsignedMulHighAdd	a2c_08002080	a2c	src/system/long_multiply	D20 EQUIV 60	
 AlchemyUncredited_08002082	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
 AlchemyUncreditedEnd_08002082	-	data	src/system/long_multiply	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
-Trig_Cos	Trig_Cos	gs1	src/system/trig	GS1 twin: bytes differ@8; GS1 D20 EQUIV (tools/test_arm.sh)	
+Trig_Cos	Port_TlaTrigCos	bind	src/system/trig	adds a quarter turn, then TLA's own Trig_Sin (port/tla/hw/pc_tla.c; GS1's twin reads TLA's different sine table, trap 100)	
 Trig_Sin	a2c_08002096	a2c	src/system/trig	D20 EQUIV 60	
 Resource_Decode01	a2c_080128a8	a2c	src/system/decode_01	D20 EQUIV 60	Resource_Decode01Code
 AlchemyUncredited_080128aa	-	data	src/system/decode_01	not an entry: a label inside the routine before it, local or only branched to (hw2c: its flow continues past it)	
