@@ -2,6 +2,13 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS40 — 2026-11-16: TLA Djinn battles never started (docs/GS40.md)
+
+- User: a Djinn that wants to fight jumps on the party, nothing happens (Kandorean cave). Encounter_GetDjinnEnemyGroup had
+  no return (vendor UB, r0 on the ARM): group 0 in wasm. c_rules: return the getter's result; stops.c too. Probe: the
+  battle now starts. regress_tla ALL OK; rtw_e2e tla ALL PASS 20; TLA rtw 5d1b54c80e1e6c4f.
+- Open: the other 46 -Wreturn-type hits in TLA's vendor C (list in GS40.md), and GS1 the same check.
+
 ## GS39 — 2026-11-16: TLA World Map objects / rotated sprites blown up (docs/GS39.md)
 
 - User (iPhone): villages, caves, towers on the World Map drawn as a big mosaic while walking; monks' heads in a temple

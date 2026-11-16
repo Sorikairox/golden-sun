@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS40 (2026-11-16, main): **TLA Djinn battles never started** (docs/GS40.md): Encounter_GetDjinnEnemyGroup has no return
+  (r0 on the ARM), 0 in wasm; c_rules return the getter's result (+ stops.c); trap 101. TLA rtw 5d1b54c80e1e6c4f. Open:
+  audit of the other -Wreturn-type hits (GS40.md), GS1 unchecked.
 - GS39 (2026-11-16, main): **TLA World Map objects / rotated sprites blown up** (docs/GS39.md): Trig_Cos was GS1's C twin
   reading TLA's different sine table (cos 4x small off the axes); now TLA's own (Port_TlaTrigCos); trap 100. TLA rtw
   24a392d67acc0ce6. rtw e2e tests follow retrowser's new game page: gs1 19 + tla 20 ALL PASS. Pushed.
@@ -876,3 +879,6 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     layout); GS1's C Trig_Cos bound for TLA read TLA's table in GS1's layout (cosine 4x small off the axes: rotated
     sprites blown up). A twin whose bytes differ, or that reads data whose layout may differ, needs its own D20 check
     against TLA's bytes before bindings.tsv gives it kind gs1.
+101. (GS40) **a non-void function without a return is r0 on the ARM, 0 (or anything) in wasm**: the vendor marks some
+    (`UB: no return`, fix behind UBFIX); our -w hides the rest. Encounter_GetDjinnEnemyGroup's lost value stopped every
+    Djinn battle. Give each one whose value is used the ARM's r0 (c_rules); list them with -Wreturn-type (GS40.md).
