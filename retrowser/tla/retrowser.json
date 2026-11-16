@@ -12,8 +12,8 @@
   "files": {
     "wasm": {
       "path": "tla.wasm",
-      "sha256": "add6ff835e0ffceaa57c30d96b21fdeb6a301c9d63826199f98fdc2c76d72378",
-      "size": 21849585
+      "sha256": "db371189e487fd3db0bd10a587efb2b0718c892ecbe681955da53bf95c91be20",
+      "size": 21851292
     },
     "js": {
       "path": "tla.js",

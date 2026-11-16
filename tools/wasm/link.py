@@ -529,6 +529,15 @@ def run(objs, out, root, clang, jobs, stages):
             if name not in declared and name not in final_sig:
                 declared.add(name)
                 lines.insert(2, f'declare {tret} @"{name}"({", ".join(tparams)})')
+        cn = a2c.get(name) or a2c.get(resolve(name) or '') if a2c else None
+        if cn:
+            # GS42: the target is an asm2c routine: on the GBA a K&R call leaves its words in r0-r3 and the routine
+            # reads them, whatever the C declaration says. Enter the routine's wrapper with the caller's words
+            # (Dehkan Plateau's Func_020027e0 calls the asm Func_02002698(21, 25, 0x210), declared `f()`: the
+            # adapter to its 0-word wrapper dropped them all, and the routine set game flag 0 - Isaac joined)
+            lines.append(a2c_wrapper(a, ret, params, cn, a2c_stats))
+            a2c_stats['K&R adapter to asm2c (words kept)'] += 1
+            continue
         plist = ', '.join(f'{t} %a{i}' for i, t in enumerate(params))
         lines.append(f'define {ret} @"{a}"({plist}) {{\n{adapter(ret, params, tret, tparams, name)}\n}}')
     names_c = os.path.join(out, 'gen', 'stub_names.c')
