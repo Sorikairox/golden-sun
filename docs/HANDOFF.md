@@ -2,6 +2,14 @@
 
 Newest session first. Read `orchestrator.md` (rules, decisions, traps) and `docs/PLAN.md` before working.
 
+## GS39 — 2026-11-16: TLA World Map objects / rotated sprites blown up (docs/GS39.md)
+
+- User (iPhone): villages, caves, towers on the World Map drawn as a big mosaic while walking; monks' heads in a temple
+  cutscene. Trig_Cos was GS1's C twin reading TLA's different sine table; now Port_TlaTrigCos (TLA's own Trig_Sin +
+  0x4000). Daila checked frame by frame; regress_tla 71/72 (battle f24000 = the fix, updated). TLA rtw 24a392d67acc0ce6.
+- Open: tools/rtw_e2e.sh fails for GS1 and TLA at retrowser's new cartridge page (`use-stored` never shows; retrowser
+  changed 2026-11-15): update tests/rtw_e2e.mjs. Not pushed.
+
 ## GS38 — 2026-11-13: TLA no longer kills the page on iPhone (docs/GS38.md)
 
 - User: TLA reloads ~30 s into the first cinematic (iPhone). Cause as Conker P387: a2c_dispatch (93.6 KB, under JSC's

@@ -14,6 +14,9 @@ playable online between two browsers. Scope: Golden Sun 1 only; team trading and
 
 ## 1. Status snapshot (overwrite each session)
 
+- GS39 (2026-11-16, main): **TLA World Map objects / rotated sprites blown up** (docs/GS39.md): Trig_Cos was GS1's C twin
+  reading TLA's different sine table (cos 4x small off the axes); now TLA's own (Port_TlaTrigCos); trap 100. TLA rtw
+  24a392d67acc0ce6. rtw_e2e fails for both games on retrowser's new cartridge page (test needs updating).
 - GS38 (2026-11-13, main): **TLA no longer kills the page on iPhone** (docs/GS38.md): asm2c's a2c_dispatch in 45
   groups (JSC's OMG compile of the 93.6 KB switch took ~2 GB in WebKit); trap 99.
 - GS37 (2026-11-12, main, pushed): **TLA takes the GS1 party on retrowser with one Yes** (docs/GS37.md): retrowser's
@@ -869,3 +872,7 @@ DataChannels, room codes via a Netlify Function + Netlify Blobs, copy-paste fall
     switch full of Asyncify'd calls: iOS kills the page (a reload). Split such code into small functions, and call them
     through a pointer: wasm-opt -O2 inlines a function with a single direct caller. No table of consecutive indices or
     addresses in data (the leak check matches them against ROM tables). Profile in a WKWebView (docs/GS38.md).
+100. (GS39) **a GS1 twin must be the same routine, not similar bytes**: TLA's trig.s differs from GS1's (its own table
+    layout); GS1's C Trig_Cos bound for TLA read TLA's table in GS1's layout (cosine 4x small off the axes: rotated
+    sprites blown up). A twin whose bytes differ, or that reads data whose layout may differ, needs its own D20 check
+    against TLA's bytes before bindings.tsv gives it kind gs1.
